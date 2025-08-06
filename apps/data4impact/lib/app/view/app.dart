@@ -1,6 +1,7 @@
 import 'package:data4impact/core/service/app_global_context.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
 import 'package:data4impact/l10n/arb/app_localizations.dart';
+import 'package:data4impact/navigation/page/navigation_view.dart';
 import 'package:data4impact/splash/page/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
