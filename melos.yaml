@@ -1,0 +1,4 @@
+name: data4impact_app
+packages:
+  - apps/*
+  - packages/*

@@ -1,0 +1,32 @@
+name: data4impact
+description: Data 4 Impact
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  bloc: ^8.1.4
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^8.1.6
+  flutter_localizations:
+    sdk: flutter
+  flutter_spinkit: ^5.2.1
+  hydrated_bloc: ^9.1.5
+  intl: ^0.20.2
+  path_provider: ^2.1.5
+  sign_in_button: ^4.0.1
+  toastification: ^3.0.3
+
+dev_dependencies:
+  bloc_test: ^9.1.7
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.4
+  very_good_analysis: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
