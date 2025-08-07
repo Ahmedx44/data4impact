@@ -1,25 +1,21 @@
 import 'package:data4impact/core/widget/AfiyaButton.dart';
-import 'package:data4impact/login/page/login_page.dart';
+import 'package:data4impact/features/forget_password/page/forget_password_page.dart';
+import 'package:data4impact/features/navigation/page/navigation_page.dart';
+import 'package:data4impact/features/signup/page/sigup_page.dart';
 import 'package:flutter/material.dart';
 import 'package:sign_in_button/sign_in_button.dart';
 
-class SignUpView extends StatefulWidget {
-  SignUpView({super.key});
+class LoginView extends StatefulWidget {
+  LoginView({super.key});
 
   @override
-  State<SignUpView> createState() => _SignUpViewState();
+  State<LoginView> createState() => _LoginViewState();
 }
 
-class _SignUpViewState extends State<SignUpView> {
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _middleNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
+class _LoginViewState extends State<LoginView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-
   bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +30,7 @@ class _SignUpViewState extends State<SignUpView> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(height: height*0.01),
+              SizedBox(height: height * 0.05),
               Container(
                 width: 80,
                 height: 80,
@@ -69,57 +65,28 @@ class _SignUpViewState extends State<SignUpView> {
                   ),
                 ),
               ),
-              SizedBox(height: height * 0.01),
+              SizedBox(height: height * 0.02),
 
-              // Welcome text with better typography
               Text(
-                'Create Account',
+                'Welcome Back',
                 style: TextStyle(
-                  fontSize: 25,
+                  fontSize: 32,
                   fontWeight: FontWeight.w700,
                   color: Colors.grey.shade800,
                   letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 12),
               Text(
-                'Fill in your details to get started',
+                'Sign in to continue to your account',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.w400,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
 
-              // First Name field
-              _buildNameField(
-                context: context,
-                controller: _firstNameController,
-                label: 'First Name',
-                icon: Icons.person_outline,
-              ),
-              const SizedBox(height: 13),
-
-              // Middle Name field (optional)
-              _buildNameField(
-                context: context,
-                controller: _middleNameController,
-                label: 'Middle Name (Optional)',
-                icon: Icons.person_outline,
-              ),
-              const SizedBox(height: 13),
-
-              // Last Name field
-              _buildNameField(
-                context: context,
-                controller: _lastNameController,
-                label: 'Last Name',
-                icon: Icons.person_outline,
-              ),
-              SizedBox(height: height*0.01),
-
-              // Email field
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
@@ -178,9 +145,9 @@ class _SignUpViewState extends State<SignUpView> {
                   ),
                 ),
               ),
-               SizedBox(height: height*0.01),
+              const SizedBox(height: 24),
 
-              // Password field
+              // Password field with improved styling
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
@@ -240,7 +207,7 @@ class _SignUpViewState extends State<SignUpView> {
                       },
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
+                      vertical: 20,
                       horizontal: 16,
                     ),
                   ),
@@ -252,83 +219,39 @@ class _SignUpViewState extends State<SignUpView> {
                   ),
                 ),
               ),
-              SizedBox(height: height*0.01),
+              const SizedBox(height: 16),
 
-              // Confirm Password field
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _confirmPasswordController,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    labelStyle: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.primary,
-                        width: 2,
+              // Forgot password with better positioning
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<Widget>(
+                        builder: (context) => const ForgetPasswordPage(),
                       ),
-                    ),
-                    prefixIcon: Container(
-                      margin: const EdgeInsets.all(12),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.lock_outline,
-                        color: theme.colorScheme.primary,
-                        size: 20,
-                      ),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isConfirmPasswordVisible
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: Colors.grey.shade600,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                        });
-                      },
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 16,
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
                   ),
-                  obscureText: !_isConfirmPasswordVisible,
-                  style: TextStyle(
-                    color: Colors.grey.shade800,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
 
-              // Sign Up button
+              // Login button with improved styling
               Container(
                 width: double.infinity,
                 height: 60,
@@ -344,26 +267,34 @@ class _SignUpViewState extends State<SignUpView> {
                 ),
                 child: CustomButton(
                   height: 60,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute<Widget>(
+                        builder: (context) => const NavigationPage(),
+                      ),
+                    );
+                  },
                   width: double.infinity,
                   child: const Text(
-                    'Sign Up',
+                    'Sign In',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              // Already have an account link
+              // Sign up link with better styling
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Already have an account? ",
+                    "Don't have an account? ",
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 15,
@@ -374,12 +305,12 @@ class _SignUpViewState extends State<SignUpView> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
+                          builder: (context) => const SignupPage(),
                         ),
                       );
                     },
                     child: Text(
-                      'Sign In',
+                      'Create Account',
                       style: TextStyle(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,
@@ -391,7 +322,7 @@ class _SignUpViewState extends State<SignUpView> {
               ),
               const SizedBox(height: 32),
 
-              // OR divider
+              // OR divider with improved styling
               Row(
                 children: [
                   Expanded(
@@ -452,7 +383,7 @@ class _SignUpViewState extends State<SignUpView> {
               ),
               SizedBox(height: height * 0.02),
 
-              // Google sign in button
+              // Google sign in button with improved styling
               SignInButton(
                 Buttons.google,
                 text: "Continue with Google",
@@ -468,73 +399,6 @@ class _SignUpViewState extends State<SignUpView> {
               const SizedBox(height: 24),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNameField({
-    required BuildContext context,
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-  }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w500,
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: theme.colorScheme.primary,
-              width: 2,
-            ),
-          ),
-          prefixIcon: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: theme.colorScheme.primary,
-              size: 20,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 15,
-            horizontal: 16,
-          ),
-        ),
-        style: TextStyle(
-          color: Colors.grey.shade800,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
         ),
       ),
     );

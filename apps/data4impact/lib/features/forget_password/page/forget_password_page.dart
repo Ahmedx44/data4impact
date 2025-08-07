@@ -1,4 +1,4 @@
-import 'package:data4impact/forget_password/page/forget_password_view.dart';
+import 'package:data4impact/features/forget_password/page/forget_password_view.dart';
 import 'package:flutter/material.dart';
 
 class ForgetPasswordPage extends StatelessWidget {

@@ -1,4 +1,4 @@
-import 'package:data4impact/verify_email/page/verify_email_view.dart';
+import 'package:data4impact/features/verify_email/page/verify_email_view.dart';
 import 'package:flutter/material.dart';
 
 class VerifyEmailPage extends StatelessWidget {

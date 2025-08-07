@@ -1,4 +1,4 @@
-import 'package:data4impact/splash/page/splash_view.dart';
+import 'package:data4impact/features/splash/page/splash_view.dart';
 import 'package:flutter/material.dart';
 
 class SplashPage extends StatelessWidget {

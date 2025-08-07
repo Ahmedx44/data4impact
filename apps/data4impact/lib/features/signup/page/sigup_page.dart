@@ -1,4 +1,4 @@
-import 'package:data4impact/signup/page/sigup_view.dart';
+import 'package:data4impact/features/signup/page/sigup_view.dart';
 import 'package:flutter/material.dart';
 
 class SignupPage extends StatelessWidget {
