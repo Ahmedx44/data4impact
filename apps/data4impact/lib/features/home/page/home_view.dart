@@ -1,4 +1,7 @@
 import 'package:data4impact/features/home/widget/actitity_card.dart';
+import 'package:data4impact/features/home/widget/assignment.dart';
+import 'package:data4impact/features/home/widget/earning_view.dart';
+import 'package:data4impact/features/home/widget/performance_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,9 +29,10 @@ class HomeView extends StatelessWidget {
                         ),
                         Text(
                           'Dashboard',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -48,67 +52,63 @@ class HomeView extends StatelessWidget {
                   physics: const BouncingScrollPhysics(),
                   slivers: [
                     // Grid Cards Section
-                    SliverGrid(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final titles = [
-                            'Active Assignments',
-                            'Completed Assignments',
-                            'New Assignments',
-                            'Overdue Study',
-                            'Study Involved',
-                            'Pending Reviews',
-                          ];
-                          final values = [120, 5400, 2800, 4, 35, 89];
-                          final subtitles = [
-                            '2 Completed',
-                            'This month',
-                            'Across all projects',
-                            'All tracks',
-                            'Across all projects',
-                            'Needs attention',
-                          ];
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(horizontal: 5),
+                      sliver: SliverGrid(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final titles = [
+                              'Active Assignments',
+                              'Completed Assignments',
+                              'New Assignments',
+                              'Overdue Study',
+                              'Study Involved',
+                              'Pending Reviews',
+                            ];
+                            final values = [120, 5400, 2800, 4, 35, 89];
+                            final subtitles = [
+                              '2 Completed',
+                              'This month',
+                              'Across all projects',
+                              'All tracks',
+                              'Across all projects',
+                              'Needs attention',
+                            ];
 
-                          return AnimationConfiguration.staggeredGrid(
-                            position: index,
-                            duration: const Duration(milliseconds: 300),
-                            columnCount: 2,
-                            child: FadeInAnimation(
-                              child: ActivityCard(
-                                title: titles[index],
-                                value: values[index],
-                                subtitle: subtitles[index],
+                            return AnimationConfiguration.staggeredGrid(
+                              position: index,
+                              duration: const Duration(milliseconds: 300),
+                              columnCount: 2,
+                              child: FadeInAnimation(
+                                child: ActivityCard(
+                                  title: titles[index],
+                                  value: values[index],
+                                  subtitle: subtitles[index],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        childCount: 6,
-                      ),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 5,
-                        childAspectRatio: 1.4,
+                            );
+                          },
+                          childCount: 6,
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 5,
+                          childAspectRatio: 1.4,
+                        ),
                       ),
                     ),
 
                     // Tab Bar Section
                     SliverToBoxAdapter(
                       child: Container(
-                        margin:
-                            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
                         child: Column(
                           children: [
                             // Minimal Tab Bar
                             Container(
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: Theme.of(context).dividerColor,
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
                               child: TabBar(
                                 indicator: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8),
@@ -123,8 +123,8 @@ class HomeView extends StatelessWidget {
                                   horizontal: 4,
                                   vertical: 6,
                                 ),
-
-                                labelColor: Theme.of(context).colorScheme.primary,
+                                labelColor:
+                                    Theme.of(context).colorScheme.primary,
                                 unselectedLabelColor: Theme.of(context)
                                     .colorScheme
                                     .onSurface
@@ -137,8 +137,8 @@ class HomeView extends StatelessWidget {
                                   fontSize: 14,
                                   fontWeight: FontWeight.normal,
                                 ),
-
-                                dividerHeight: 0.1,
+                                dividerColor: Colors.transparent,
+                                dividerHeight: 0,
                                 tabs: const [
                                   Tab(text: 'Assignment'),
                                   Tab(text: 'Performance'),
@@ -148,13 +148,16 @@ class HomeView extends StatelessWidget {
                             ),
 
                             // Tab Content
-                            SizedBox(
-                              height: 200,
-                              child: TabBarView(
+                            Container(
+                              constraints: BoxConstraints(
+                                minHeight: 200,
+                                maxHeight: MediaQuery.of(context).size.height * 0.5,
+                              ),
+                              child:const TabBarView(
                                 children: [
-                                  _buildTabContent(context, 'Assignments content'),
-                                  _buildTabContent(context, 'Performance content'),
-                                  _buildTabContent(context, 'Earnings content'),
+                                  SingleChildScrollView(child: AssignmentView()),
+                                  SingleChildScrollView(child: PerformanceView()),
+                                  SingleChildScrollView(child: EarningView()),
                                 ],
                               ),
                             ),

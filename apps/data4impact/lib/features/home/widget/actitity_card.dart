@@ -41,7 +41,7 @@ class ActivityCard extends StatelessWidget {
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
-                    fontSize: 10,
+                    fontSize: 9,
                     letterSpacing: 0.5,
                   ),
                 ),
