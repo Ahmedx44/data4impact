@@ -8,116 +8,102 @@ class AssignmentCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      elevation: 0,
+      elevation: 2,
+      shadowColor: theme.colorScheme.primary.withOpacity(0.1),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-          width: 1,
+          color: theme.colorScheme.outline.withOpacity(0.15),
         ),
       ),
       color: theme.colorScheme.surface,
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// LEFT SIDE (Details, title, status, progress)
+            /// LEFT SIDE
             Expanded(
               flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// Top Row: Title + Overdue Tag
+                  /// Title & Tag
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Brand Awareness Analysis',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red[200],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Overdue',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 12,
-                          ),
-                        ),
+                      _StatusBadge(
+                        text: "Overdue",
+                        color: theme.colorScheme.errorContainer,
+                        textColor: theme.colorScheme.onErrorContainer,
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
 
                   /// Subtitle
-                  const Text(
+                  Text(
                     'Measuring brand recognition and recall across target demographics',
-                    style: TextStyle(fontSize: 12, color: Colors.black87),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
                   ),
 
                   const SizedBox(height: 12),
 
-                  /// Status and Earnings
+                  /// Status & Earnings
                   Row(
                     children: [
-                      Container(
+                      _StatusBadge(
+                        text: "Overdue",
+                        color: theme.colorScheme.primary.withOpacity(0.15),
+                        textColor: theme.colorScheme.primary,
+                        fontSize: 10,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 2, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Overdue',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 8,
-                          ),
+                          horizontal: 6,
+                          vertical: 2,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.circle, size: 8, color: Colors.black),
+                      Icon(Icons.circle,
+                          size: 6, color: theme.colorScheme.onSurface),
                       const SizedBox(width: 4),
-                      const Text(
+                      Text(
                         '5 days overdue',
-                        style: TextStyle(fontSize: 8),
+                        style:
+                            theme.textTheme.labelSmall!.copyWith(fontSize: 8),
                       ),
-                      const Spacer(),
-                      const Text(
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Text(
                         'Earnings: \$2,520.00',
-                        style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500, color: Colors.black87),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600, fontSize: 8),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 12),
 
-                  /// Linear Progress Bar
+                  /// Progress bar
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
                       value: 0.77,
-                      minHeight: 12,
-                      backgroundColor: Colors.grey[300],
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.2),
+                      minHeight: 10,
+                      backgroundColor:
+                          theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                 ],
@@ -126,43 +112,98 @@ class AssignmentCard extends StatelessWidget {
 
             const SizedBox(width: 16),
 
-            /// RIGHT SIDE (Progress Circle and Button)
+            /// RIGHT SIDE
             Column(
               children: [
                 Stack(
                   alignment: Alignment.center,
                   children: [
                     SizedBox(
-                      width: 35,
-                      height: 35,
+                      width: 40,
+                      height: 40,
                       child: CircularProgressIndicator(
                         value: 0.77,
                         strokeWidth: 4,
-                        backgroundColor: Colors.grey[300],
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.2),
+                        backgroundColor:
+                            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                        color: theme.colorScheme.primary,
                       ),
                     ),
-                    const Text(
+                    Text(
                       '77%',
-                      style: TextStyle(fontWeight: FontWeight.bold,fontSize: 10),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text('385/500',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                const Text('Responses', style: TextStyle(fontSize: 12)),
+                Text(
+                  '385/500',
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  'Responses',
+                  style: theme.textTheme.labelSmall,
+                ),
                 const SizedBox(height: 8),
-                TextButton(
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    backgroundColor: theme.colorScheme.primary,
+                  ),
                   onPressed: () {},
-                  child: const Text('Continue',style: TextStyle(fontSize: 10),),
+                  child: Text(
+                    'Continue',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onPrimary,
+                    ),
+                  ),
                 ),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small reusable status badge
+class _StatusBadge extends StatelessWidget {
+  final String text;
+  final Color color;
+  final Color textColor;
+  final double fontSize;
+  final EdgeInsets padding;
+
+  const _StatusBadge({
+    required this.text,
+    required this.color,
+    required this.textColor,
+    this.fontSize = 12,
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(50),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: fontSize,
+          color: textColor,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

@@ -1,5 +1,5 @@
 import 'package:data4impact/features/home/widget/actitity_card.dart';
-import 'package:data4impact/features/home/widget/assignment.dart';
+import 'package:data4impact/features/home/widget/assignment_view.dart';
 import 'package:data4impact/features/home/widget/earning_view.dart';
 import 'package:data4impact/features/home/widget/performance_view.dart';
 import 'package:flutter/material.dart';
@@ -151,7 +151,7 @@ class HomeView extends StatelessWidget {
                             Container(
                               constraints: BoxConstraints(
                                 minHeight: 200,
-                                maxHeight: MediaQuery.of(context).size.height * 0.5,
+                                maxHeight: MediaQuery.of(context).size.height ,
                               ),
                               child:const TabBarView(
                                 children: [
