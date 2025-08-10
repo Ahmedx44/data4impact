@@ -16,24 +16,33 @@ class AssignmentView extends StatelessWidget {
             Text(
               'Assignment',
               style: GoogleFonts.lexendDeca(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const Text('Your active data collection tasks'),
+            Text(
+              'Your active data collection tasks',
+              style: GoogleFonts.lexendDeca(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 16),
           ],
         ),
-       const Column(
-          children:  [
-            AssignmentCard(),
-            SizedBox(height: 12),
-            AssignmentCard(),
-            SizedBox(height: 12),
-            AssignmentCard(),
-            SizedBox(height: 12),
-            AssignmentCard(),
-          ],
+        SizedBox(
+          height: 400,
+          child:  ListView(
+            children: const [
+              AssignmentCard(),
+              SizedBox(height: 12),
+              AssignmentCard(),
+              SizedBox(height: 12),
+              AssignmentCard(),
+              SizedBox(height: 12),
+              AssignmentCard(),
+            ],
+          ),
         ),
       ],
     );

@@ -13,11 +13,17 @@ class PerformanceView extends StatelessWidget {
         Text(
           'Performance',
           style: GoogleFonts.lexendDeca(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const Text('Your performance summary'),
+        Text(
+          'Your performance summary',
+          style: GoogleFonts.lexendDeca(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 16),
 
         /// Grid of performance cards

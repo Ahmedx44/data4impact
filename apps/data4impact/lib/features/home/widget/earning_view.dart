@@ -54,19 +54,21 @@ class EarningView extends StatelessWidget {
         const SizedBox(height: 12),
 
         /// Earnings List
-        Column(
-          children: List.generate(6, (index) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _EarningBreakdownCard(
-                title: "Shopping Preferences Survey",
-                responses: "385 responses completed",
-                amount: "\$5,053.13",
-                base: "\$4,812.50",
-                bonus: "\$240.63",
-              ),
-            );
-          }),
+        SizedBox(
+          height: 300,
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            children: List.generate(
+              6,
+                  (index) => const _EarningBreakdownCard(
+                    title: "Shopping Preferences Survey",
+                    responses: "385 responses completed",
+                    amount: "\$5,053.13",
+                    base: "\$4,812.50",
+                    bonus: "\$240.63",
+                  ),
+            ),
+          ),
         ),
       ],
     );

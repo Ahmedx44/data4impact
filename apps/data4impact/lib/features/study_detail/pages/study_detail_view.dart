@@ -1,4 +1,5 @@
 import 'package:data4impact/core/widget/AfiyaButton.dart';
+import 'package:data4impact/features/data_collect/page/data_collection_page.dart';
 import 'package:data4impact/features/study_detail/widget/milestone_tracker.dart';
 import 'package:data4impact/features/study_detail/widget/response_time_distrubtion.dart';
 import 'package:data4impact/features/study_detail/widget/study_detail_actitity_card.dart';
@@ -146,7 +147,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
               child: TabBarView(
                 controller: _tabController,
                 children: const [
-                   ResponseTimeDistributionChart(),
+                  ResponseTimeDistributionChart(),
                   TopPerformersWidget(),
                   MilestoneTrackingWidget()
                 ],
@@ -167,7 +168,13 @@ class _StudyDetailViewState extends State<StudyDetailView>
                     color: Colors.white,
                   ),
                 ),
-                onTap: () {},
+                onTap: () {
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute<Widget>(
+                        builder: (context) => const DataCollectionPage(),
+                      ));
+                },
               ),
             ),
           ),

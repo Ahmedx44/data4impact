@@ -41,9 +41,9 @@ class ResponseTimeDistributionChart extends StatelessWidget {
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 50),
             AspectRatio(
-              aspectRatio: 1.2,
+              aspectRatio: 1.5,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
