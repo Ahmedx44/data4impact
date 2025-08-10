@@ -1,6 +1,8 @@
 import 'package:awesome_bottom_bar/awesome_bottom_bar.dart';
 import 'package:data4impact/core/theme/color.dart';
 import 'package:data4impact/features/home/page/home_page.dart';
+import 'package:data4impact/features/inbox/page/indox_page.dart';
+import 'package:data4impact/features/study/pages/study_page.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -24,8 +26,8 @@ class _NavigationViewState extends State<NavigationView> {
 
   final List<Widget> pages = const [
     HomePage(),
-    Center(child: Text('Inbox')),
-    Center(child: Text('Study')),
+    InboxPage(),
+    StudyPage(),
     Center(child: Text('Collectors')),
     Center(child: Text('Profile')),
   ];
