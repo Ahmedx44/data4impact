@@ -9,6 +9,7 @@ environment:
 dependencies:
   awesome_bottom_bar: ^1.2.4
   bloc: ^8.1.4
+  dio: ^5.9.0
   fl_chart: ^1.0.0
   flutter:
     sdk: flutter
@@ -22,6 +23,7 @@ dependencies:
   hydrated_bloc: ^9.1.5
   image_picker: ^1.1.2
   intl: ^0.20.2
+  logger: ^2.6.1
   path_provider: ^2.1.5
   sign_in_button: ^4.0.1
   toastification: ^3.0.3

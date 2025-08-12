@@ -63,7 +63,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
       title: 'Gender',
       subtitle: 'Please select your gender',
       type: QuestionType.singleChoice,
-      options: ['Male', 'Female', 'Non-binary', 'Prefer not to say'],
+      options: ['Male', 'Female'],
     ),
     Question(
       id: 'education',
