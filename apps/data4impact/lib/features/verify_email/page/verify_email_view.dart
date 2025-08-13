@@ -1,9 +1,12 @@
 import 'package:data4impact/core/widget/AfiyaButton.dart';
+import 'package:data4impact/features/verify_email/cubit/verify_email_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class VerifyEmailView extends StatefulWidget {
-  const VerifyEmailView({super.key});
+  const VerifyEmailView({super.key,required this.email});
+  final String email;
 
   @override
   State<VerifyEmailView> createState() => _VerifyEmailViewState();
@@ -13,14 +16,14 @@ class _VerifyEmailViewState extends State<VerifyEmailView> {
   final List<TextEditingController> _otpControllers =
   List.generate(6, (index) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
-  int _countdown = 300; // 5 minutes in seconds
+  int _countdown = 300;
   bool _canResend = false;
 
   @override
   void initState() {
     super.initState();
+    context.read<VerifyEmailCubit>().sendVerificationEmail(email: widget.email);
     _startCountdown();
-    // Set up focus nodes to move between OTP fields
     for (int i = 0; i < _focusNodes.length; i++) {
       _focusNodes[i].addListener(() {
         if (_focusNodes[i].hasFocus) {
@@ -62,6 +65,7 @@ class _VerifyEmailViewState extends State<VerifyEmailView> {
   void _resendCode() {
     if (_canResend) {
       setState(() {
+        context.read<VerifyEmailCubit>().sendVerificationEmail(email: widget.email);
         _countdown = 300;
         _canResend = false;
         _startCountdown();
@@ -290,7 +294,7 @@ class _VerifyEmailViewState extends State<VerifyEmailView> {
                     color: theme.colorScheme.primary,
                   ),
                   label: Text(
-                    'Back to login',
+                    'Back to sign in',
                     style: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,

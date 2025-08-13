@@ -3,54 +3,83 @@ import 'package:dio/dio.dart';
 
 class ApiClient {
   final Dio dio;
-  final LogType _logType = LogType.network; // Specific log type for API calls
 
   ApiClient({String? baseUrl})
       : dio = Dio(
-          BaseOptions(
-            baseUrl: baseUrl ?? "https://example.com/api",
-            connectTimeout: const Duration(seconds: 10),
-            receiveTimeout: const Duration(seconds: 10),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          ),
-        ) {
-    // Initialize logger if not already initialized
-    if (AppLogger.log == null) {
-      AppLogger.initialize();
-    }
-
-    // Add interceptors with AppLogger
+    BaseOptions(
+      baseUrl: baseUrl ?? "",
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      validateStatus: (status) => status! < 500,
+      followRedirects: true,
+      maxRedirects: 5,
+    ),
+  ) {
     dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          await AppLogger.logInfo(
-            "➡️ Request: ${options.method} ${options.uri}",
+        onRequest: (options, handler) {
+          AppLogger.logInfo(
+              '''
+🌐 REQUEST 🌐
+Method: ${options.method}
+URL: ${options.uri}
+Headers: ${options.headers}
+Body: ${options.data}
+'''
           );
-          if (options.data != null) {
-            await AppLogger.logInfo(
-              "Request Body: ${options.data}",
-            );
-          }
           return handler.next(options);
         },
-        onResponse: (response, handler) async {
-          await AppLogger.logInfo(
-            "✅ Response: ${response.statusCode} ${response.requestOptions.uri}",
+        onResponse: (response, handler) {
+          // Check for redirect
+          if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
+            AppLogger.logWarning(
+                'Redirect detected to: ${response.headers['location']}'
+            );
+          }
+
+          // Log the full response
+          AppLogger.logInfo(
+              '''
+📩 RESPONSE 📩
+Status: ${response.statusCode} ${response.statusMessage}
+URL: ${response.requestOptions.uri}
+Headers: ${response.headers}
+Body: ${response.data}
+'''
           );
-          await AppLogger.logInfo(
-            "Response Data: ${response.data}",
-          );
+
           return handler.next(response);
         },
-        onError: (DioException e, handler) async {
-          await AppLogger.reportError(
-            e,
-            e.stackTrace,
-            "❌ API Error: ${e.message}\nURL: ${e.requestOptions.uri}\nError Type: ${e.type}",
-            _logType,
-          );
+        onError: (DioException e, handler) {
+          // Handle redirect errors specifically
+          if ([301, 302, 303, 307, 308].contains(e.response?.statusCode)) {
+            AppLogger.logWarning(
+                'Redirect not followed to: ${e.response?.headers['location']}'
+            );
+          }
+
+          // Log error responses
+          if (e.response != null) {
+            AppLogger.logError(
+                '''
+🚨 ERROR RESPONSE 🚨
+Status: ${e.response?.statusCode}
+URL: ${e.requestOptions.uri}
+Headers: ${e.response?.headers}
+Body: ${e.response?.data}
+Error: ${e.message}
+'''
+            );
+          } else {
+            AppLogger.logError(
+                '🚨 NETWORK ERROR 🚨\nError: ${e.message}'
+            );
+          }
+
           return handler.next(e);
         },
       ),
@@ -58,78 +87,74 @@ class ApiClient {
   }
 
   /// GET request
-  Future<Response> get(String endpoint,
-      {Map<String, dynamic>? queryParams}) async {
+  Future<Response> get(String endpoint, {Map<String, dynamic>? queryParams}) async {
     try {
       final response = await dio.get(endpoint, queryParameters: queryParams);
       return response;
     } on DioException catch (e, stack) {
-      await AppLogger.reportError(
+      AppLogger.logError(
+        "GET request failed: ${e.message}\nURL: $endpoint",
         e,
         stack,
-        "GET request failed: ${e.message}\nURL: $endpoint",
-        _logType,
       );
       rethrow;
     }
   }
 
   /// POST request
-  Future<Response> post(String endpoint, {Map<String, dynamic>? data}) async {
+  Future<Response> post(String endpoint, {dynamic data}) async {
     try {
       final response = await dio.post(endpoint, data: data);
       return response;
     } on DioException catch (e, stack) {
-      await AppLogger.reportError(
+      AppLogger.logError(
+        "POST request failed: ${e.message}\nURL: $endpoint",
         e,
         stack,
-        "POST request failed: ${e.message}\nURL: $endpoint",
-        _logType,
       );
       rethrow;
     }
   }
 
   /// PUT request
-  Future<Response> put(String endpoint, {Map<String, dynamic>? data}) async {
+  Future<Response> put(String endpoint, {dynamic data}) async {
     try {
       final response = await dio.put(endpoint, data: data);
       return response;
     } on DioException catch (e, stack) {
-      await AppLogger.reportError(
+      AppLogger.logError(
+        "PUT request failed: ${e.message}\nURL: $endpoint",
         e,
         stack,
-        "PUT request failed: ${e.message}\nURL: $endpoint",
-        _logType,
       );
       rethrow;
     }
   }
 
   /// DELETE request
-  Future<Response> delete(String endpoint, {Map<String, dynamic>? data}) async {
+  Future<Response> delete(String endpoint, {dynamic data}) async {
     try {
       final response = await dio.delete(endpoint, data: data);
       return response;
     } on DioException catch (e, stack) {
-      await AppLogger.reportError(
+      AppLogger.logError(
+        "DELETE request failed: ${e.message}\nURL: $endpoint",
         e,
         stack,
-        "DELETE request failed: ${e.message}\nURL: $endpoint",
       );
       rethrow;
     }
   }
 
-  /// Add auth token dynamicall
+  /// Add auth token
   void setAuthToken(String token) {
     dio.options.headers['Authorization'] = 'Bearer $token';
-    AppLogger.logInfo("Auth token set");
+    AppLogger.logInfo("🔑 Auth token set");
   }
 
   /// Clear auth token
   void clearAuthToken() {
     dio.options.headers.remove('Authorization');
-    AppLogger.logInfo("Auth token cleared");
+    AppLogger.logInfo("🔑 Auth token cleared");
   }
 }
