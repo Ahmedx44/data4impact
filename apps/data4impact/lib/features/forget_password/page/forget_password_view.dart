@@ -1,15 +1,19 @@
-import 'package:data4impact/core/widget/AfiyaButton.dart';
+import 'package:data4impact/features/forget_password/cubit/forget_password_cubit.dart';
+import 'package:data4impact/features/forget_password/cubit/forget_password_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:data4impact/core/service/toast_service.dart';
+import 'package:data4impact/core/widget/AfiyaButton.dart';
 
-class ForgotPasswordView extends StatefulWidget {
-  const ForgotPasswordView({super.key});
+class ForgetPasswordView extends StatefulWidget {
+  const ForgetPasswordView({super.key});
 
   @override
-  State<ForgotPasswordView> createState() => _ForgotPasswordViewState();
+  State<ForgetPasswordView> createState() => _ForgotPasswordViewState();
 }
 
-class _ForgotPasswordViewState extends State<ForgotPasswordView> {
+class _ForgotPasswordViewState extends State<ForgetPasswordView> {
   final TextEditingController _emailController = TextEditingController();
   final List<TextEditingController> _otpControllers =
   List.generate(6, (index) => TextEditingController());
@@ -17,17 +21,15 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
-  int _currentStep = 0; // 0: Email, 1: OTP, 2: New Password
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  int _countdown = 120; // 2 minutes for OTP
+  int _countdown = 120;
   bool _canResendOtp = false;
 
   @override
   void initState() {
     super.initState();
     _startCountdown();
-    // Setup focus nodes
     for (int i = 0; i < _otpFocusNodes.length; i++) {
       _otpFocusNodes[i].addListener(() {
         if (_otpFocusNodes[i].hasFocus) {
@@ -76,7 +78,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         _canResendOtp = false;
         _startCountdown();
       });
-      // Resend OTP logic here
+      context.read<ForgetPasswordCubit>().sendResetEmail(_emailController.text);
     }
   }
 
@@ -93,25 +95,39 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
       _otpFocusNodes[index - 1].requestFocus();
     }
 
-    // Auto-submit if last digit entered
     if (index == 5 && value.isNotEmpty) {
       _handleContinue();
     }
   }
 
   void _handleContinue() {
-    if (_currentStep == 0) {
-      // Validate email and send OTP
-      setState(() => _currentStep = 1);
-    } else if (_currentStep == 1) {
-      // Validate OTP
-      final otp = _otpControllers.map((c) => c.text).join();
-      if (otp.length == 6) {
-        setState(() => _currentStep = 2);
+    final cubit = context.read<ForgetPasswordCubit>();
+    final state = cubit.state;
+
+    if (state.currentStep == 0) {
+      if (_emailController.text.isEmpty) {
+        ToastService.showErrorToast(message: 'Please enter your email');
+        return;
       }
+      cubit.sendResetEmail(_emailController.text);
+    } else if (state.currentStep == 1) {
+      final otp = _otpControllers.map((c) => c.text).join();
+      if (otp.length != 6) {
+        ToastService.showErrorToast(message: 'Please enter the full OTP');
+        return;
+      }
+      cubit.verifyOtp(otp);
     } else {
-      // Reset password logic
-      // Navigator.pop(context); // Return to login
+      if (_newPasswordController.text.isEmpty ||
+          _confirmPasswordController.text.isEmpty) {
+        ToastService.showErrorToast(message: 'Please enter both passwords');
+        return;
+      }
+      if (_newPasswordController.text != _confirmPasswordController.text) {
+        ToastService.showErrorToast(message: 'Passwords do not match');
+        return;
+      }
+      cubit.resetPassword(_newPasswordController.text);
     }
   }
 
@@ -120,197 +136,205 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
     final height = MediaQuery.sizeOf(context).height;
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(height: height * 0.05),
-              Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.primary.withOpacity(0.8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'D4I',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: height * 0.04),
-
-              // Title based on current step
-              Text(
-                _currentStep == 0
-                    ? 'Forgot Password'
-                    : _currentStep == 1
-                    ? 'Verify OTP'
-                    : 'Reset Password',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey.shade800,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _currentStep == 0
-                    ? 'Enter your email to receive a reset link'
-                    : _currentStep == 1
-                    ? 'We sent a code to your email'
-                    : 'Create a new password for your account',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w400,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (_currentStep == 1) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _emailController.text.isNotEmpty
-                      ? _emailController.text
-                      : 'user@example.com',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 40),
-
-              // Step Indicator
-              Row(
+    return BlocConsumer<ForgetPasswordCubit, ForgetPasswordState>(
+      listener: (context, state) {
+        if (state.isSuccess) {
+          Navigator.pop(context);
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: Colors.grey.shade50,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (index) {
-                  return Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: index <= _currentStep
-                              ? theme.colorScheme.primary
-                              : Colors.grey.shade300,
+                children: [
+                  SizedBox(height: height * 0.05),
+                  Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.primary.withOpacity(0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 8),
                         ),
-                        child: Center(
-                          child: Text(
-                            (index + 1).toString(),
-                            style: TextStyle(
-                              color: index <= _currentStep
-                                  ? Colors.white
-                                  : Colors.grey.shade600,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'D4I',
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 1.2,
                         ),
                       ),
-                      if (index < 2)
-                        Container(
-                          width: 40,
-                          height: 2,
-                          color: index < _currentStep
-                              ? theme.colorScheme.primary
-                              : Colors.grey.shade300,
-                        ),
-                    ],
-                  );
-                }),
-              ),
-              const SizedBox(height: 40),
+                    ),
+                  ),
+                  SizedBox(height: height * 0.04),
 
-              // Dynamic content based on current step
-              if (_currentStep == 0) _buildEmailStep(theme),
-              if (_currentStep == 1) _buildOtpStep(theme),
-              if (_currentStep == 2) _buildPasswordStep(theme),
-
-              const SizedBox(height: 32),
-
-              // Continue/Reset Button
-              Container(
-                width: double.infinity,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
+                  Text(
+                    state.currentStep == 0
+                        ? 'Forgot Password'
+                        : state.currentStep == 1
+                        ? 'Verify OTP'
+                        : 'Reset Password',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey.shade800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    state.currentStep == 0
+                        ? 'Enter your email to receive a reset link'
+                        : state.currentStep == 1
+                        ? 'We sent a code to your email'
+                        : 'Create a new password for your account',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (state.currentStep == 1) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      state.email ?? _emailController.text,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
-                ),
-                child: CustomButton(
-                  height: 60,
-                  onTap: _handleContinue,
-                  width: double.infinity,
-                  child: Text(
-                    _currentStep == 2 ? 'Reset Password' : 'Continue',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(height: 40),
 
-              // Back to Login
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(
-                    Icons.arrow_back,
-                    size: 18,
-                    color: theme.colorScheme.primary,
+                  // Step Indicator
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(3, (index) {
+                      return Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: index <= state.currentStep
+                                  ? theme.colorScheme.primary
+                                  : Colors.grey.shade300,
+                            ),
+                            child: Center(
+                              child: Text(
+                                (index + 1).toString(),
+                                style: TextStyle(
+                                  color: index <= state.currentStep
+                                      ? Colors.white
+                                      : Colors.grey.shade600,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (index < 2)
+                            Container(
+                              width: 40,
+                              height: 2,
+                              color: index < state.currentStep
+                                  ? theme.colorScheme.primary
+                                  : Colors.grey.shade300,
+                            ),
+                        ],
+                      );
+                    }),
                   ),
-                  label: Text(
-                    'Back to login',
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                  const SizedBox(height: 40),
+
+                  // Dynamic content based on current step
+                  if (state.currentStep == 0) _buildEmailStep(theme),
+                  if (state.currentStep == 1) _buildOtpStep(theme),
+                  if (state.currentStep == 2) _buildPasswordStep(theme),
+
+                  const SizedBox(height: 32),
+
+                  // Continue/Reset Button
+                  Container(
+                    width: double.infinity,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: CustomButton(
+                      height: 60,
+                      onTap: state.isLoading ? (){} : _handleContinue,
+                      width: double.infinity,
+                      child: state.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                        state.currentStep == 2 ? 'Reset Password' : 'Continue',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 24),
+
+                  // Back to Login
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        Icons.arrow_back,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      label: Text(
+                        'Back to login',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

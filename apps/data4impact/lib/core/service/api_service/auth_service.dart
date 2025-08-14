@@ -93,4 +93,45 @@ class AuthService {
       throw e;
     }
   }
+
+  Future<void> forgetPassword(String email) async {
+    try {
+      await apiClient.post(
+        '/auth/forget-password',
+        data: {'email': email},
+      );
+    } on DioException catch (e) {
+      throw e;
+    }
+  }
+
+  Future<void> verifyEmailOtp(String email, String otp) async {
+    try {
+      await apiClient.post(
+        '/auth/verify-email',
+        data: {
+          'email': email,
+          'otp': otp,
+        },
+      );
+    } on DioException catch (e) {
+      throw e;
+    }
+  }
+
+  Future<void> setNewPassword(String email, String otp, String newPassword) async {
+    try {
+      await apiClient.post(
+        '/auth/set-password',
+        data: {
+          'email': email,
+          'otp': otp,
+          'password': newPassword,
+        },
+      );
+    } on DioException catch (e) {
+      throw e;
+    }
+  }
+
 }
