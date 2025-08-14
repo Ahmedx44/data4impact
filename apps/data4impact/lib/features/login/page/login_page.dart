@@ -12,6 +12,7 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => SigninCubit(
+        flavor: 'data4impact.dev',
         authService: AuthService(
           context.read<ApiClient>(),
         ),

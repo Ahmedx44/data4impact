@@ -52,7 +52,7 @@ class _LoginViewState extends State<LoginView> {
         }
 
         if (state.error != null) {
-          showDialog(
+          showDialog<Widget>(
             context: context,
             builder: (context) => AlertDialog(
               title: const Text('Login Error'),
@@ -416,7 +416,9 @@ class _LoginViewState extends State<LoginView> {
                   SignInButton(
                     Buttons.google,
                     text: "Continue with Google",
-                    onPressed: () {},
+                    onPressed: () {
+                      context.read<SigninCubit>().signInWithGoogle();
+                    },
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(

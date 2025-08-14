@@ -6,51 +6,46 @@ class ApiClient {
 
   ApiClient({String? baseUrl})
       : dio = Dio(
-    BaseOptions(
-      baseUrl: baseUrl ?? "",
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      validateStatus: (status) => status! < 500,
-      followRedirects: true,
-      maxRedirects: 5,
-    ),
-  ) {
+          BaseOptions(
+            baseUrl: baseUrl ?? "",
+            connectTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 10),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            validateStatus: (status) => status! < 500,
+            followRedirects: true,
+            maxRedirects: 5,
+          ),
+        ) {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          AppLogger.logInfo(
-              '''
+          AppLogger.logInfo('''
 🌐 REQUEST 🌐
 Method: ${options.method}
 URL: ${options.uri}
 Headers: ${options.headers}
 Body: ${options.data}
-'''
-          );
+''');
           return handler.next(options);
         },
         onResponse: (response, handler) {
           // Check for redirect
           if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
             AppLogger.logWarning(
-                'Redirect detected to: ${response.headers['location']}'
-            );
+                'Redirect detected to: ${response.headers['location']}');
           }
 
           // Log the full response
-          AppLogger.logInfo(
-              '''
+          AppLogger.logInfo('''
 📩 RESPONSE 📩
 Status: ${response.statusCode} ${response.statusMessage}
 URL: ${response.requestOptions.uri}
 Headers: ${response.headers}
 Body: ${response.data}
-'''
-          );
+''');
 
           return handler.next(response);
         },
@@ -58,26 +53,21 @@ Body: ${response.data}
           // Handle redirect errors specifically
           if ([301, 302, 303, 307, 308].contains(e.response?.statusCode)) {
             AppLogger.logWarning(
-                'Redirect not followed to: ${e.response?.headers['location']}'
-            );
+                'Redirect not followed to: ${e.response?.headers['location']}');
           }
 
           // Log error responses
           if (e.response != null) {
-            AppLogger.logError(
-                '''
+            AppLogger.logError('''
 🚨 ERROR RESPONSE 🚨
 Status: ${e.response?.statusCode}
 URL: ${e.requestOptions.uri}
 Headers: ${e.response?.headers}
 Body: ${e.response?.data}
 Error: ${e.message}
-'''
-            );
+''');
           } else {
-            AppLogger.logError(
-                '🚨 NETWORK ERROR 🚨\nError: ${e.message}'
-            );
+            AppLogger.logError('🚨 NETWORK ERROR 🚨\nError: ${e.message}');
           }
 
           return handler.next(e);
@@ -87,9 +77,17 @@ Error: ${e.message}
   }
 
   /// GET request
-  Future<Response> get(String endpoint, {Map<String, dynamic>? queryParams}) async {
+  Future<Response> get(
+      String endpoint, {
+        Map<String, dynamic>? queryParameters,
+        Options? options,
+      }) async {
     try {
-      final response = await dio.get(endpoint, queryParameters: queryParams);
+      final response = await dio.get(
+        endpoint,
+        queryParameters: queryParameters,
+        options: options,
+      );
       return response;
     } on DioException catch (e, stack) {
       AppLogger.logError(

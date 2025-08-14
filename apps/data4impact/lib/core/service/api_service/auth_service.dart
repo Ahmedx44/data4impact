@@ -51,4 +51,46 @@ class AuthService {
       throw e;
     }
   }
+
+  Future<String> getOAuthUrl(String provider) async {
+    try {
+      final response = await apiClient.get(
+        '/oauth/url/$provider',
+      );
+      return response.data['url'] as String;
+    } on DioException catch (e) {
+      throw e;
+    }
+  }
+
+  Future<void> handleOAuthRedirect({
+    required String provider,
+    required String code,
+    required String state,
+    required String flavor,
+  }) async {
+    try {
+      final appName = switch (flavor) {
+        'production' => 'Data4impact',
+        'staging' => '[STG] Data4impact',
+        'development' => '[DEV] Data4impact',
+        _ => 'Data4impact',
+      };
+
+      await apiClient.get(
+        '/oauth/redirect/$provider',
+        queryParameters: {
+          'code': code,
+          'state': state,
+        },
+        options: Options(
+          headers: {
+            'user-agent': '$appName/1.0.0',
+          },
+        ),
+      );
+    } on DioException catch (e) {
+      throw e;
+    }
+  }
 }
