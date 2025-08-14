@@ -30,21 +30,25 @@ class SignInResponseModel {
   });
 
   factory SignInResponseModel.fromJson(Map<String, dynamic> json) {
-    return SignInResponseModel(
-      id: json['_id'] as String,
-      firstName: json['firstName'] as String,
-      middleName: json['middleName'] as String?,
-      lastName: json['lastName'] as String,
-      role: json['role'] as String,
-      phone: json['phone'] as String,
-      email: json['email'] as String,
-      emailVerified: json['emailVerified'] as bool,
-      imageUrl: json['imageUrl'] as String?,
-      active: json['active'] as bool,
-      systemOwner: json['systemOwner'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-    );
+    try {
+      return SignInResponseModel(
+        id: json['_id'] as String,
+        firstName: json['firstName'] as String,
+        middleName: json['middleName'] as String?,
+        lastName: json['lastName'] as String,
+        role: json['role'] as String,
+        phone: json['phone'] as String,
+        email: json['email'] as String,
+        emailVerified: json['emailVerified'] as bool,
+        active: json['active'] as bool,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        updatedAt: DateTime.parse(json['updatedAt'] as String),
+        systemOwner: json['systemOwner'].toString(),
+      );
+    } catch (e, stack) {
+      print('Error parsing user: $e\n$stack');
+      rethrow;
+    }
   }
 
   @override

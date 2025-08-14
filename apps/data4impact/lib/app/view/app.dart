@@ -6,6 +6,7 @@ import 'package:data4impact/features/splash/page/splash_page.dart';
 import 'package:data4impact/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:toastification/toastification.dart';
 
 class App extends StatelessWidget {
@@ -16,6 +17,7 @@ class App extends StatelessWidget {
     // Initialize your API client and auth service
     final apiClient = ApiClient(baseUrl: 'https://api.data4impact.et/');
     final authService = AuthService(apiClient);
+    final secureStorage=FlutterSecureStorage();
 
     AppGlobalContext.setContext(context);
 
@@ -23,6 +25,7 @@ class App extends StatelessWidget {
       providers: [
         RepositoryProvider.value(value: apiClient),
         RepositoryProvider.value(value: authService),
+        RepositoryProvider.value(value: secureStorage),
       ],
       child: MultiBlocProvider(
         providers: [

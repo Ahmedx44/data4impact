@@ -21,23 +21,23 @@ class AuthService {
         response.data as Map<String, dynamic>,
       );
     } on DioException catch (e) {
-      // Rethrow the original DioException so cubit can handle it
       rethrow;
     }
   }
 
-  Future<SignInResponseModel> signIn(SignInRequestModel request) async {
-    try {
-      final response = await apiClient.post(
-        '/auth/login',
-        data: request.toJson(),
-      );
+  Future<({SignInResponseModel user, Headers headers})> signIn(
+      SignInRequestModel request) async {
+    final response = await apiClient.post(
+      '/auth/login',
+      data: request.toJson(),
+    );
 
-      return SignInResponseModel.fromJson(
-          response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw e;
-    }
+    print('Raw response data: ${response.data}'); // Debug print
+
+    return (
+      user: SignInResponseModel.fromJson(response.data as Map<String, dynamic>),
+      headers: response.headers,
+    );
   }
 
   Future<Map<String, dynamic>> sendEmailVerification(String email) async {
@@ -119,7 +119,8 @@ class AuthService {
     }
   }
 
-  Future<void> setNewPassword(String email, String otp, String newPassword) async {
+  Future<void> setNewPassword(
+      String email, String otp, String newPassword) async {
     try {
       await apiClient.post(
         '/auth/set-password',
@@ -133,5 +134,4 @@ class AuthService {
       throw e;
     }
   }
-
 }

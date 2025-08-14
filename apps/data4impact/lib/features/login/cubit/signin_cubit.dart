@@ -2,19 +2,23 @@ import 'dart:math';
 
 import 'package:bloc/bloc.dart';
 import 'package:data4impact/core/model/signup/signin/signin_Request_model.dart';
+import 'package:data4impact/core/model/signup/signin/signin_response_model.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/login/cubit/signin_state.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 class SigninCubit extends Cubit<SigninState> {
   final AuthService authService;
-  final String flavor; // Add flavor parameter
+  final String flavor;
+  final FlutterSecureStorage secureStorage;
 
   SigninCubit({
     required this.authService,
-    required this.flavor, // Initialize with flavor
+    required this.flavor,
+    required this.secureStorage,
   }) : super(const SigninState());
 
   Future<void> login({
@@ -28,14 +32,24 @@ class SigninCubit extends Cubit<SigninState> {
         SignInRequestModel(email: email, password: password),
       );
 
-      ToastService.showSuccessToast(message: 'Login successful');
+      // Debug print to verify response
+      print('Response received: ${response.headers}');
+      print('User data: ${response.user}');
+
+      // Store session cookie
+      await _storeSessionCookie(response.headers);
+
+      // Update state with success and user data
       emit(state.copyWith(
         isLoading: false,
         isSuccess: true,
-        user: response,
+        user: response.user,
       ));
+
+      ToastService.showSuccessToast(message: 'Login successful');
     } on DioException catch (e) {
       final errorMessage = _extractErrorMessage(e);
+      print('Login error: $errorMessage'); // Debug print
       ToastService.showErrorToast(message: errorMessage);
       emit(state.copyWith(
         isLoading: false,
@@ -43,6 +57,7 @@ class SigninCubit extends Cubit<SigninState> {
         error: errorMessage,
       ));
     } catch (e, stack) {
+      print('Unexpected error: $e\n$stack'); // Debug print
       const errorMessage = 'An unexpected error occurred. Please try again.';
       ToastService.showErrorToast(message: errorMessage);
       emit(state.copyWith(
@@ -50,6 +65,29 @@ class SigninCubit extends Cubit<SigninState> {
         isSuccess: false,
         error: errorMessage,
       ));
+    }
+  }
+
+  Future<void> _storeSessionCookie(Headers? headers) async {
+    if (headers == null) return;
+
+    final cookies = headers['set-cookie'];
+    if (cookies == null || cookies.isEmpty) return;
+
+    // Find the session cookie
+    for (final cookie in cookies) {
+      if (cookie.contains('sessionId=')) {
+        // Extract just the sessionId value (between = and ;)
+        final startIndex = cookie.indexOf('=') + 1;
+        final endIndex = cookie.indexOf(';');
+        final sessionValue = cookie.substring(startIndex, endIndex);
+
+        await secureStorage.write(
+          key: 'session_cookie',
+          value: sessionValue,
+        );
+        break;
+      }
     }
   }
 
