@@ -36,7 +36,7 @@ class HomeView extends StatelessWidget {
       ),
       body: SafeArea(
         child: DefaultTabController(
-          length: 3,
+          length: 2,
           child: Column(
             children: [
               Expanded(
@@ -134,7 +134,6 @@ class HomeView extends StatelessWidget {
                                   tabs: const [
                                     Tab(text: 'Assignment'),
                                     Tab(text: 'Performance'),
-                                    Tab(text: 'Earning'),
                                   ],
                                 ),
                               ),
@@ -150,7 +149,6 @@ class HomeView extends StatelessWidget {
                                     children: [
                                       AssignmentView(),
                                       PerformanceView(),
-                                      EarningView(),
                                     ],
                                   ),
                                 ),
@@ -165,22 +163,6 @@ class HomeView extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabContent(BuildContext context, String text) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          text,
-          style: GoogleFonts.lexendDeca(
-            fontSize: 14,
-            color: Colors.grey.shade600,
-          ),
-          textAlign: TextAlign.center,
         ),
       ),
     );

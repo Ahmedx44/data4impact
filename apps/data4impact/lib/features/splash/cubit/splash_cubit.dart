@@ -17,7 +17,6 @@ class SplashCubit extends Cubit<SplashState> {
 
     try {
       final sessionCookie = await secureStorage.read(key: 'session_cookie');
-      await Future.delayed(const Duration(seconds: 2));
 
       if (sessionCookie != null && sessionCookie.isNotEmpty) {
         emit(SplashAuthenticated());

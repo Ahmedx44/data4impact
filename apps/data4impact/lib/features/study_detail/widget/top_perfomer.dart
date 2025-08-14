@@ -52,7 +52,6 @@ class TopPerformersWidget extends StatelessWidget {
                     rank: '#1',
                     name: 'Hanan Jeylan Wako',
                     responses: '247 responses',
-                    amount: 'ETB 909.00',
                     color: colorScheme,
                   ),
                   const SizedBox(height: 8),
@@ -60,7 +59,6 @@ class TopPerformersWidget extends StatelessWidget {
                     rank: '#2',
                     name: 'Ziyad Ahmed Ali',
                     responses: '230 responses',
-                    amount: 'ETB 909.00',
                     color: colorScheme,
                   ),
                   const SizedBox(height: 8),
@@ -68,7 +66,6 @@ class TopPerformersWidget extends StatelessWidget {
                     rank: '#3',
                     name: 'Selahadin Hamid Abdellah',
                     responses: '229 responses',
-                    amount: 'ETB 909.00',
                     color: colorScheme,
                   ),
                   const SizedBox(height: 8),
@@ -76,7 +73,6 @@ class TopPerformersWidget extends StatelessWidget {
                     rank: '#4',
                     name: 'Abdurahman Kasim Kalid',
                     responses: '227 responses',
-                    amount: 'ETB 909.00',
                     color: colorScheme,
                   ),
                 ],
@@ -92,7 +88,6 @@ class TopPerformersWidget extends StatelessWidget {
     required String rank,
     required String name,
     required String responses,
-    required String amount,
     required ColorScheme color,
   }) {
     return Container(
@@ -146,23 +141,6 @@ class TopPerformersWidget extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // Amount
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              amount,
-              style: GoogleFonts.lexendDeca(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: color.primary,
-              ),
             ),
           ),
         ],
