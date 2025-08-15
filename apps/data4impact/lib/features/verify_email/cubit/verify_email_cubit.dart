@@ -66,7 +66,6 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
       ToastService.showErrorToast(message: 'Unexpected response format');
 
     } on DioException catch (e) {
-      // Special case: Handle 200 status code responses caught as DioException
       if (e.response?.statusCode == 200) {
         final message = e.response?.data['message'] ?? 'Email verified successfully';
         emit(state.copyWith(

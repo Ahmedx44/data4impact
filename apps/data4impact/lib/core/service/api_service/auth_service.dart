@@ -110,7 +110,6 @@ class AuthService {
       throw e;
     }
   }
-
   Future<Map<String, dynamic>> verifyEmailOtp(String email, String otp) async {
     try {
       final response = await apiClient.post(
@@ -121,33 +120,20 @@ class AuthService {
         },
       );
 
-      // Cast the response data to Map and return it
       final responseData = response.data as Map<String, dynamic>;
-      print('debug: Verification response: $responseData');
-
-      // Check if the response indicates success
-      if (response.statusCode == 200 &&
-          (responseData['success'] == true ||
-              responseData['verified'] == true)) {
+      if (response.statusCode == 200) {
         return responseData;
-      } else {
-        // If status is 200 but verification failed according to response body
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          error: responseData['message'] ?? 'Email verification failed',
-        );
       }
-    } on DioException catch (e) {
-      print('debug: Verification error: ${e.response?.data}');
-      // Re-throw with enhanced error information
+
       throw DioException(
-        requestOptions: e.requestOptions,
-        response: e.response,
-        error: e.response?.data['message'] ?? 'Invalid OTP Credential',
+        requestOptions: response.requestOptions,
+        response: response,
+        error: responseData['message'] ?? 'Email verification failed',
       );
+    } on DioException catch (e) {
+
+      rethrow;
     } catch (e) {
-      print('debug: Unexpected verification error: $e');
       throw DioException(
         requestOptions: RequestOptions(path: '/auth/verify-email'),
         error: 'An unexpected error occurred during verification',
