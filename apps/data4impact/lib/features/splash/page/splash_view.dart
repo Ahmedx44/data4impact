@@ -14,15 +14,27 @@ class SplashView extends StatefulWidget {
 
 class _SplashViewState extends State<SplashView> {
   @override
+  void initState() {
+    super.initState();
+
+    Future.delayed(
+     const Duration(seconds: 2),
+      () {
+        context.read<SplashCubit>().checkAuthentication();
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocListener<SplashCubit, SplashState>(
       listener: (context, state) {
-        if (state is SplashAuthenticated) {
+        if (state.status == SplashStatus.authenticated) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const NavigationPage()),
           );
-        } else if (state is SplashUnauthenticated) {
+        } else if (state.status == SplashStatus.unauthenticated) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const LoginPage()),

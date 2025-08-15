@@ -1,30 +1,27 @@
-
 import 'package:bloc/bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 
 part 'splash_state.dart';
 
 class SplashCubit extends Cubit<SplashState> {
   final FlutterSecureStorage secureStorage;
 
-  SplashCubit({required this.secureStorage}) : super(SplashInitial()) {
-    checkAuthentication();
-  }
+  SplashCubit({required this.secureStorage})
+      : super(SplashState(status: SplashStatus.initial));
 
   Future<void> checkAuthentication() async {
-    emit(SplashLoading());
+    emit(state.copyWith(status: SplashStatus.loading));
 
     try {
       final sessionCookie = await secureStorage.read(key: 'session_cookie');
 
       if (sessionCookie != null && sessionCookie.isNotEmpty) {
-        emit(SplashAuthenticated());
+        emit(state.copyWith(status: SplashStatus.authenticated));
       } else {
-        emit(SplashUnauthenticated());
+        emit(state.copyWith(status: SplashStatus.unauthenticated));
       }
     } catch (e) {
-      emit(SplashUnauthenticated());
+      emit(state.copyWith(status: SplashStatus.unauthenticated));
     }
   }
 }

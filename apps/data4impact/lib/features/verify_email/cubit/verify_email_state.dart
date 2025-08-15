@@ -1,22 +1,24 @@
-import 'package:equatable/equatable.dart';
+// features/verify_email/cubit/verify_email_state.dart
+part of 'verify_email_cubit.dart';
 
-class VerifyEmailState extends Equatable {
+class VerifyEmailState {
   final bool isLoading;
+  final bool isSuccess;
 
-  const VerifyEmailState({
+
+  VerifyEmailState({
     this.isLoading = false,
+    this.isSuccess = false,
+
   });
 
   VerifyEmailState copyWith({
     bool? isLoading,
+    bool? isSuccess,
   }) {
     return VerifyEmailState(
       isLoading: isLoading ?? this.isLoading,
+      isSuccess: isSuccess ?? this.isSuccess,
     );
   }
-
-  @override
-  List<Object?> get props => [
-        isLoading,
-      ];
 }

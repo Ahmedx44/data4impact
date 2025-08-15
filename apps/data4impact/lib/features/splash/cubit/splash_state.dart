@@ -1,12 +1,20 @@
-// splash_state.dart
 part of 'splash_cubit.dart';
 
-abstract class SplashState {}
+enum SplashStatus {
+  initial,
+  loading,
+  authenticated,
+  unauthenticated,
+}
 
-class SplashInitial extends SplashState {}
+class SplashState {
+  final SplashStatus status;
 
-class SplashLoading extends SplashState {}
+  const SplashState({required this.status});
 
-class SplashAuthenticated extends SplashState {}
-
-class SplashUnauthenticated extends SplashState {}
+  SplashState copyWith({SplashStatus? status}) {
+    return SplashState(
+      status: status ?? this.status,
+    );
+  }
+}

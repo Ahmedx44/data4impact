@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:bloc/bloc.dart';
 import 'package:data4impact/core/model/signup/signin/signin_Request_model.dart';
-import 'package:data4impact/core/model/signup/signin/signin_response_model.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/login/cubit/signin_state.dart';
@@ -32,10 +31,6 @@ class SigninCubit extends Cubit<SigninState> {
         SignInRequestModel(email: email, password: password),
       );
 
-      // Debug print to verify response
-      print('Response received: ${response.headers}');
-      print('User data: ${response.user}');
-
       // Store session cookie
       await _storeSessionCookie(response.headers);
 
@@ -49,7 +44,6 @@ class SigninCubit extends Cubit<SigninState> {
       ToastService.showSuccessToast(message: 'Login successful');
     } on DioException catch (e) {
       final errorMessage = _extractErrorMessage(e);
-      print('Login error: $errorMessage'); // Debug print
       ToastService.showErrorToast(message: errorMessage);
       emit(state.copyWith(
         isLoading: false,
@@ -57,7 +51,6 @@ class SigninCubit extends Cubit<SigninState> {
         error: errorMessage,
       ));
     } catch (e, stack) {
-      print('Unexpected error: $e\n$stack'); // Debug print
       const errorMessage = 'An unexpected error occurred. Please try again.';
       ToastService.showErrorToast(message: errorMessage);
       emit(state.copyWith(
@@ -74,10 +67,8 @@ class SigninCubit extends Cubit<SigninState> {
     final cookies = headers['set-cookie'];
     if (cookies == null || cookies.isEmpty) return;
 
-    // Find the session cookie
     for (final cookie in cookies) {
       if (cookie.contains('sessionId=')) {
-        // Extract just the sessionId value (between = and ;)
         final startIndex = cookie.indexOf('=') + 1;
         final endIndex = cookie.indexOf(';');
         final sessionValue = cookie.substring(startIndex, endIndex);
@@ -92,6 +83,7 @@ class SigninCubit extends Cubit<SigninState> {
   }
 
   Future<void> signInWithGoogle() async {
+    print('debug: Starting Google Sign-In');
     emit(state.copyWith(
       isLoading: true,
       error: null,
@@ -100,28 +92,30 @@ class SigninCubit extends Cubit<SigninState> {
     ));
 
     try {
-      // 1. Get OAuth URL from backend
       final authUrl = await authService.getOAuthUrl('google');
 
-      // Generate random CSRF token (renamed from 'state')
       final csrfToken = _generateRandomString(32);
+
       final callbackUrlScheme = _getCallbackUrlScheme();
 
-      // Parse URL and ensure only one CSRF token
       final uri = Uri.parse(authUrl);
       final queryParams = Map<String, String>.from(uri.queryParameters)
-        ..['state'] = csrfToken; // Override any existing state
+        ..['state'] = csrfToken;
 
       final finalAuthUrl = uri.replace(queryParameters: queryParams).toString();
 
-      // 2. Open browser for authentication
       final result = await FlutterWebAuth2.authenticate(
         url: finalAuthUrl,
         callbackUrlScheme: callbackUrlScheme,
       );
 
-      // 3. Parse callback URL
       final callbackUri = Uri.parse(result);
+
+      if (callbackUri.queryParameters.containsKey('error')) {
+        final errorFromProvider = callbackUri.queryParameters['error'];
+        throw Exception('OAuth failed: $errorFromProvider');
+      }
+
       final code = callbackUri.queryParameters['code']!;
       final returnedCsrfToken = callbackUri.queryParameters['state']!;
 
@@ -129,7 +123,6 @@ class SigninCubit extends Cubit<SigninState> {
         throw Exception('Invalid CSRF token - possible security issue');
       }
 
-      // 4. Handle the redirect with backend
       await authService.handleOAuthRedirect(
         provider: 'google',
         code: code,

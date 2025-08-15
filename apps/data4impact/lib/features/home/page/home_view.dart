@@ -1,8 +1,10 @@
+import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/home/widget/actitity_card.dart';
 import 'package:data4impact/features/home/widget/assignment_view.dart';
 import 'package:data4impact/features/home/widget/earning_view.dart';
 import 'package:data4impact/features/home/widget/performance_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -17,11 +19,16 @@ class HomeView extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Dashboard',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            GestureDetector(
+              onTap: () {
+                context.read<HomeCubit>().logout(context);
+              },
+              child: Text(
+                'Dashboard',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
             ),
             const SizedBox(height: 4),
             Text(

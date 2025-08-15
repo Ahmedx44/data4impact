@@ -32,7 +32,7 @@ class AuthService {
       data: request.toJson(),
     );
 
-    print('Raw response data: ${response.data}'); // Debug print
+    print('Raw response data: ${response.data}');
 
     return (
       user: SignInResponseModel.fromJson(response.data as Map<String, dynamic>),
@@ -53,12 +53,13 @@ class AuthService {
   }
 
   Future<String> getOAuthUrl(String provider) async {
+    print('debug: Getting OAuth URL for provider: $provider');
     try {
-      final response = await apiClient.get(
-        '/oauth/url/$provider',
-      );
+      final response = await apiClient.get('/oauth/url/$provider');
+      print('debug: OAuth URL response: ${response.data}');
       return response.data['url'] as String;
     } on DioException catch (e) {
+      print('debug: DioException in getOAuthUrl: $e');
       throw e;
     }
   }
@@ -69,6 +70,7 @@ class AuthService {
     required String state,
     required String flavor,
   }) async {
+    print('debug: Handling OAuth redirect...');
     try {
       final appName = switch (flavor) {
         'production' => 'Data4impact',
@@ -76,8 +78,9 @@ class AuthService {
         'development' => '[DEV] Data4impact',
         _ => 'Data4impact',
       };
+      print('debug: App Name: $appName');
 
-      await apiClient.get(
+      final response = await apiClient.get(
         '/oauth/redirect/$provider',
         queryParameters: {
           'code': code,
@@ -89,7 +92,10 @@ class AuthService {
           },
         ),
       );
+
+      print('debug: Redirect response: ${response.data}');
     } on DioException catch (e) {
+      print('debug: DioException in handleOAuthRedirect: $e');
       throw e;
     }
   }
@@ -105,17 +111,47 @@ class AuthService {
     }
   }
 
-  Future<void> verifyEmailOtp(String email, String otp) async {
+  Future<Map<String, dynamic>> verifyEmailOtp(String email, String otp) async {
     try {
-      await apiClient.post(
+      final response = await apiClient.post(
         '/auth/verify-email',
         data: {
           'email': email,
           'otp': otp,
         },
       );
+
+      // Cast the response data to Map and return it
+      final responseData = response.data as Map<String, dynamic>;
+      print('debug: Verification response: $responseData');
+
+      // Check if the response indicates success
+      if (response.statusCode == 200 &&
+          (responseData['success'] == true ||
+              responseData['verified'] == true)) {
+        return responseData;
+      } else {
+        // If status is 200 but verification failed according to response body
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: responseData['message'] ?? 'Email verification failed',
+        );
+      }
     } on DioException catch (e) {
-      throw e;
+      print('debug: Verification error: ${e.response?.data}');
+      // Re-throw with enhanced error information
+      throw DioException(
+        requestOptions: e.requestOptions,
+        response: e.response,
+        error: e.response?.data['message'] ?? 'Invalid OTP Credential',
+      );
+    } catch (e) {
+      print('debug: Unexpected verification error: $e');
+      throw DioException(
+        requestOptions: RequestOptions(path: '/auth/verify-email'),
+        error: 'An unexpected error occurred during verification',
+      );
     }
   }
 

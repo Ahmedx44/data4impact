@@ -1,3 +1,4 @@
+// features/verify_email/page/verify_email_page.dart
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/features/verify_email/cubit/verify_email_cubit.dart';
@@ -12,11 +13,9 @@ class VerifyEmailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<VerifyEmailCubit>(
+    return BlocProvider(
       create: (context) => VerifyEmailCubit(
-        authService: AuthService(
-          context.read<ApiClient>(),
-        ),
+        authService: AuthService(context.read<ApiClient>()),
       ),
       child: VerifyEmailView(email: email),
     );
