@@ -43,39 +43,60 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
     required String otp,
   }) async {
     emit(state.copyWith(isLoading: true));
+
     try {
       final response = await authService.verifyEmailOtp(email, otp);
 
-      if (response['success'] == true || response['verified'] == true) {
-        emit(state.copyWith(isLoading: false, isSuccess: true));
-        ToastService.showSuccessToast(message: 'Email verified successfully!');
-        return;
-      } else {
-        final errorMessage = response['message'] ?? 'Email verification failed';
+      // Handle successful verification
+      if (response is Map && response['message'] != null) {
         emit(state.copyWith(
           isLoading: false,
+          isSuccess: true,
+          verificationMessage: response['message'].toString(),
         ));
-        ToastService.showErrorToast(message: errorMessage.toString());
+        ToastService.showSuccessToast(message: response['message'].toString());
         return;
       }
+
+      // Handle unexpected response format
+      emit(state.copyWith(
+        isLoading: false,
+        errorMessage: 'Unexpected response format',
+      ));
+      ToastService.showErrorToast(message: 'Unexpected response format');
+
     } on DioException catch (e) {
-      final errorMessage = _getErrorMessage(e);
-      emit(state.copyWith(
-        isLoading: false,
-      ));
-      ToastService.showErrorToast(message: errorMessage.toString());
-      return;
+      // Special case: Handle 200 status code responses caught as DioException
+      if (e.response?.statusCode == 200) {
+        final message = e.response?.data['message'] ?? 'Email verified successfully';
+        emit(state.copyWith(
+          isLoading: false,
+          isSuccess: true,
+          verificationMessage: message.toString(),
+        ));
+        ToastService.showSuccessToast(message: message.toString());
+      } else {
+        final errorMessage = _getErrorMessage(e);
+        emit(state.copyWith(
+          isLoading: false,
+          errorMessage: errorMessage,
+        ));
+        ToastService.showErrorToast(message: errorMessage);
+      }
     } catch (e) {
-      const errorMessage = 'Email verification failed';
       emit(state.copyWith(
         isLoading: false,
+        errorMessage: 'Email verification failed',
       ));
-      ToastService.showErrorToast(message: errorMessage.toString());
-      return;
+      ToastService.showErrorToast(message: 'Email verification failed');
     }
   }
 
   String _getErrorMessage(DioException e) {
+    if (e.response?.statusCode == 200) {
+      return e.response?.data['message'].toString() ?? 'Operation completed successfully';
+    }
+
     try {
       final responseData = e.response?.data;
       if (responseData is Map<String, dynamic>) {
