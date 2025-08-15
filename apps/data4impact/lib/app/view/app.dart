@@ -1,5 +1,6 @@
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
+import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/app_global_context.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
 import 'package:data4impact/features/splash/page/splash_page.dart';
@@ -16,8 +17,9 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize your API client and auth service
     final apiClient = ApiClient(baseUrl: 'https://api.data4impact.et/');
-    final authService = AuthService(apiClient);
     final secureStorage=FlutterSecureStorage();
+    final authService = AuthService(apiClient);
+    final projectService=ProjectService(apiClient: apiClient, secureStorage:secureStorage);
 
     AppGlobalContext.setContext(context);
 
@@ -26,6 +28,7 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: apiClient),
         RepositoryProvider.value(value: authService),
         RepositoryProvider.value(value: secureStorage),
+        RepositoryProvider.value(value: projectService),
       ],
       child: MultiBlocProvider(
         providers: [

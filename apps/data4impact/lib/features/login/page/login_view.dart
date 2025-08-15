@@ -41,28 +41,11 @@ class _LoginViewState extends State<LoginView> {
         } else {
           DialogLoading.hide(context);
         }
-
         if (state.isSuccess) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute<Widget>(
               builder: (context) => const NavigationPage(),
-            ),
-          );
-        }
-
-        if (state.error != null) {
-          showDialog<Widget>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Login Error'),
-              content: Text(state.error!),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
             ),
           );
         }

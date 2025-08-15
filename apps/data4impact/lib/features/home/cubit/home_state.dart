@@ -1,52 +1,29 @@
+import 'package:data4impact/core/service/api_service/Model/project.dart';
 import 'package:equatable/equatable.dart';
 
-abstract class HomeState extends Equatable {
-  const HomeState();
+class HomeState extends Equatable {
+  final bool isLoading;
+  final String? message;
+  final List<Project> projects;
 
-  @override
-  List<Object> get props => [];
-}
-
-class HomeInitial extends HomeState {
-  const HomeInitial();
-}
-
-class HomeLoading extends HomeState {
-  const HomeLoading();
-}
-
-class HomeLoaded extends HomeState {
-  final String welcomeMessage;
-  final int counter;
-  final List<String> items;
-
-  const HomeLoaded({
-    this.welcomeMessage = 'Welcome!',
-    this.counter = 0,
-    this.items = const [],
+  const HomeState({
+    this.isLoading = false,
+    this.message,
+    this.projects = const [],
   });
 
-  @override
-  List<Object> get props => [welcomeMessage, counter, items];
-
-  HomeLoaded copyWith({
-    String? welcomeMessage,
-    int? counter,
-    List<String>? items,
+  HomeState copyWith({
+    bool? isLoading,
+    String? message,
+    List<Project>? projects,
   }) {
-    return HomeLoaded(
-      welcomeMessage: welcomeMessage ?? this.welcomeMessage,
-      counter: counter ?? this.counter,
-      items: items ?? this.items,
+    return HomeState(
+      isLoading: isLoading ?? this.isLoading,
+      message: message ?? this.message,
+      projects: projects ?? this.projects,
     );
   }
-}
-
-class HomeError extends HomeState {
-  final String message;
-
-  const HomeError(this.message);
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [isLoading, message, projects];
 }

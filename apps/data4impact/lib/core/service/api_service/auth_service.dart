@@ -32,8 +32,6 @@ class AuthService {
       data: request.toJson(),
     );
 
-    print('Raw response data: ${response.data}');
-
     return (
       user: SignInResponseModel.fromJson(response.data as Map<String, dynamic>),
       headers: response.headers,
@@ -53,13 +51,10 @@ class AuthService {
   }
 
   Future<String> getOAuthUrl(String provider) async {
-    print('debug: Getting OAuth URL for provider: $provider');
     try {
       final response = await apiClient.get('/oauth/url/$provider');
-      print('debug: OAuth URL response: ${response.data}');
       return response.data['url'] as String;
     } on DioException catch (e) {
-      print('debug: DioException in getOAuthUrl: $e');
       throw e;
     }
   }
@@ -70,7 +65,6 @@ class AuthService {
     required String state,
     required String flavor,
   }) async {
-    print('debug: Handling OAuth redirect...');
     try {
       final appName = switch (flavor) {
         'production' => 'Data4impact',
@@ -78,7 +72,6 @@ class AuthService {
         'development' => '[DEV] Data4impact',
         _ => 'Data4impact',
       };
-      print('debug: App Name: $appName');
 
       final response = await apiClient.get(
         '/oauth/redirect/$provider',
@@ -93,9 +86,7 @@ class AuthService {
         ),
       );
 
-      print('debug: Redirect response: ${response.data}');
     } on DioException catch (e) {
-      print('debug: DioException in handleOAuthRedirect: $e');
       throw e;
     }
   }

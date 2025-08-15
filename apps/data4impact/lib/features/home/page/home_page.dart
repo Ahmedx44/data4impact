@@ -1,3 +1,4 @@
+import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/home/page/home_view.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ class HomePage extends StatelessWidget {
     return BlocProvider<HomeCubit>(
       create: (context) => HomeCubit(
         secureStorage: context.read<FlutterSecureStorage>(),
+        projectService: context.read<ProjectService>(),
       ),
       child: const HomeView(),
     );

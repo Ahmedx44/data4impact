@@ -24,17 +24,15 @@ class SigninCubit extends Cubit<SigninState> {
     required String email,
     required String password,
   }) async {
-    emit(state.copyWith(isLoading: true, error: null, isSuccess: false));
+    emit(state.copyWith(isLoading: true, isSuccess: false));
 
     try {
       final response = await authService.signIn(
         SignInRequestModel(email: email, password: password),
       );
 
-      // Store session cookie
       await _storeSessionCookie(response.headers);
 
-      // Update state with success and user data
       emit(state.copyWith(
         isLoading: false,
         isSuccess: true,
@@ -48,7 +46,6 @@ class SigninCubit extends Cubit<SigninState> {
       emit(state.copyWith(
         isLoading: false,
         isSuccess: false,
-        error: errorMessage,
       ));
     } catch (e, stack) {
       const errorMessage = 'An unexpected error occurred. Please try again.';
@@ -56,7 +53,6 @@ class SigninCubit extends Cubit<SigninState> {
       emit(state.copyWith(
         isLoading: false,
         isSuccess: false,
-        error: errorMessage,
       ));
     }
   }
@@ -69,24 +65,21 @@ class SigninCubit extends Cubit<SigninState> {
 
     for (final cookie in cookies) {
       if (cookie.contains('sessionId=')) {
-        final startIndex = cookie.indexOf('=') + 1;
         final endIndex = cookie.indexOf(';');
-        final sessionValue = cookie.substring(startIndex, endIndex);
+        final sessionPair = cookie.substring(0, endIndex);
 
         await secureStorage.write(
           key: 'session_cookie',
-          value: sessionValue,
+          value: sessionPair,
         );
         break;
       }
     }
-  }
+}
 
   Future<void> signInWithGoogle() async {
-    print('debug: Starting Google Sign-In');
     emit(state.copyWith(
       isLoading: true,
-      error: null,
       isSuccess: false,
       isGoogleSignIn: true,
     ));
@@ -142,7 +135,6 @@ class SigninCubit extends Cubit<SigninState> {
       emit(state.copyWith(
         isLoading: false,
         isSuccess: false,
-        error: errorMessage,
         isGoogleSignIn: false,
       ));
     } catch (e) {
@@ -151,7 +143,6 @@ class SigninCubit extends Cubit<SigninState> {
       emit(state.copyWith(
         isLoading: false,
         isSuccess: false,
-        error: errorMessage,
         isGoogleSignIn: false,
       ));
     }

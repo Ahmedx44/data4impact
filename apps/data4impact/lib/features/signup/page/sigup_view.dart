@@ -92,7 +92,7 @@ class _SignUpViewState extends State<SignUpView> {
         }
 
         if (state.isSuccess) {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute<Widget>(
               builder: (_) => VerifyEmailPage(

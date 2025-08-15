@@ -1,11 +1,7 @@
-// features/verify_email/cubit/verify_email_cubit.dart
 import 'package:bloc/bloc.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/toast_service.dart';
-import 'package:data4impact/features/login/page/login_page.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:meta/meta.dart';
 
 part 'verify_email_state.dart';
 
@@ -22,7 +18,8 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
       await authService.sendEmailVerification(email);
       emit(state.copyWith(isLoading: false, isSuccess: true));
       ToastService.showSuccessToast(
-          message: 'Verification email sent successfully');
+        message: 'Verification email sent successfully',
+      );
     } on DioException catch (e) {
       final errorMessage = _getErrorMessage(e);
       emit(state.copyWith(
@@ -47,7 +44,6 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
     try {
       final response = await authService.verifyEmailOtp(email, otp);
 
-      // Handle successful verification
       if (response is Map && response['message'] != null) {
         emit(state.copyWith(
           isLoading: false,
@@ -57,17 +53,15 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
         ToastService.showSuccessToast(message: response['message'].toString());
         return;
       }
-
-      // Handle unexpected response format
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Unexpected response format',
       ));
       ToastService.showErrorToast(message: 'Unexpected response format');
-
     } on DioException catch (e) {
       if (e.response?.statusCode == 200) {
-        final message = e.response?.data['message'] ?? 'Email verified successfully';
+        final message =
+            e.response?.data['message'] ?? 'Email verified successfully';
         emit(state.copyWith(
           isLoading: false,
           isSuccess: true,
@@ -93,7 +87,8 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
 
   String _getErrorMessage(DioException e) {
     if (e.response?.statusCode == 200) {
-      return e.response?.data['message'].toString() ?? 'Operation completed successfully';
+      return e.response?.data['message'].toString() ??
+          'Operation completed successfully';
     }
 
     try {

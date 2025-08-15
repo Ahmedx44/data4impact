@@ -105,10 +105,11 @@ class _VerifyEmailViewState extends State<VerifyEmailView> {
 
         if (state.isSuccess == true) {
           Navigator.pushReplacement(
-              context,
-              MaterialPageRoute<Widget>(
-                builder: (context) => const LoginPage(),
-              ));
+            context,
+            MaterialPageRoute<Widget>(
+              builder: (context) => const LoginPage(),
+            ),
+          );
         }
       },
       builder: (context, state) {

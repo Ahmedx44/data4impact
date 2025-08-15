@@ -1,19 +1,32 @@
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/home/widget/actitity_card.dart';
 import 'package:data4impact/features/home/widget/assignment_view.dart';
-import 'package:data4impact/features/home/widget/earning_view.dart';
 import 'package:data4impact/features/home/widget/performance_view.dart';
+import 'package:data4impact/features/home/widget/project_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   const HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<HomeCubit>().fetchAllProjects();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const ProjectDrawer(),
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Column(
