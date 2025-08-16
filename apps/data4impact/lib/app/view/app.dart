@@ -1,8 +1,10 @@
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
+import 'package:data4impact/core/service/api_service/segment_service.dart';
 import 'package:data4impact/core/service/app_global_context.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
+import 'package:data4impact/core/theme/theme.dart';
 import 'package:data4impact/features/splash/page/splash_page.dart';
 import 'package:data4impact/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -17,9 +19,12 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize your API client and auth service
     final apiClient = ApiClient(baseUrl: 'https://api.data4impact.et/');
-    final secureStorage=FlutterSecureStorage();
+    final secureStorage = FlutterSecureStorage();
     final authService = AuthService(apiClient);
-    final projectService=ProjectService(apiClient: apiClient, secureStorage:secureStorage);
+    final segmentSerive =
+        SegmentService(apiClient: apiClient, secureStorage: secureStorage);
+    final projectService =
+        ProjectService(apiClient: apiClient, secureStorage: secureStorage);
 
     AppGlobalContext.setContext(context);
 
@@ -29,6 +34,7 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: authService),
         RepositoryProvider.value(value: secureStorage),
         RepositoryProvider.value(value: projectService),
+        RepositoryProvider.value(value: segmentSerive),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -41,9 +47,9 @@ class App extends StatelessWidget {
           builder: (context, themeMode) {
             return ToastificationWrapper(
               child: MaterialApp(
-                theme: ThemeData.light(),
-                darkTheme: ThemeData.dark(),
-                themeMode: themeMode,
+                theme: lightTheme,
+                darkTheme: darkTheme,
+                themeMode: context.watch<ThemeCubit>().state,
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
                 debugShowCheckedModeBanner: false,

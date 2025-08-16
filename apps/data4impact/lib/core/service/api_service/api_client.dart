@@ -100,7 +100,7 @@ Error: ${e.message}
   }
 
   /// POST request
-  Future<Response> post(String endpoint, {dynamic data}) async {
+  Future<Response> post(String endpoint, {dynamic data,  Map<String, String>? queryParameters,  Options? options}) async {
     try {
       final response = await dio.post(endpoint, data: data);
       return response;

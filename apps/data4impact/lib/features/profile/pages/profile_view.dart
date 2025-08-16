@@ -1,4 +1,6 @@
+import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -38,8 +40,24 @@ class _ProfilePageState extends State<ProfileView> {
             ),
             pinned: true,
             actions: [
+              // Dark mode toggle button
+              BlocBuilder<ThemeCubit, ThemeMode>(
+                builder: (context, themeMode) {
+                  return IconButton(
+                    icon: Icon(
+                      themeMode == ThemeMode.dark
+                          ? Icons.light_mode
+                          : Icons.dark_mode,
+                      color: colorScheme.onPrimary,
+                    ),
+                    onPressed: () {
+                      context.read<ThemeCubit>().toggleTheme();
+                    },
+                  );
+                },
+              ),
               IconButton(
-                icon: const Icon(Icons.edit),
+                icon: Icon(Icons.edit, color: colorScheme.onPrimary),
                 onPressed: () {
                   // Handle edit profile
                 },
