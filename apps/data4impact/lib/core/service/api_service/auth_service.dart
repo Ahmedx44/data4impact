@@ -1,14 +1,19 @@
+import 'dart:convert';
+
 import 'package:data4impact/core/model/signup/signin/signin_Request_model.dart';
 import 'package:data4impact/core/model/signup/signin/signin_response_model.dart';
 import 'package:data4impact/core/model/signup/signup_response_model.dart';
 import 'package:data4impact/core/model/signup/singup_request_modell.dart';
+import 'package:data4impact/core/service/api_service/Model/current_user.dart';
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
   final ApiClient apiClient;
+  final FlutterSecureStorage secureStorage;
 
-  AuthService(this.apiClient);
+  AuthService({required this.apiClient, required this.secureStorage});
 
   Future<SignupResponseModel> signUp(SignupRequestModel request) async {
     try {
@@ -85,7 +90,6 @@ class AuthService {
           },
         ),
       );
-
     } on DioException catch (e) {
       throw e;
     }
@@ -101,6 +105,7 @@ class AuthService {
       throw e;
     }
   }
+
   Future<Map<String, dynamic>> verifyEmailOtp(String email, String otp) async {
     try {
       final response = await apiClient.post(
@@ -122,7 +127,6 @@ class AuthService {
         error: responseData['message'] ?? 'Email verification failed',
       );
     } on DioException catch (e) {
-
       rethrow;
     } catch (e) {
       throw DioException(
@@ -146,5 +150,63 @@ class AuthService {
     } on DioException catch (e) {
       throw e;
     }
+  }
+
+  Future<CurrentUser> getCurrentUser() async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) {
+        throw Exception('No authentication cookie found');
+      }
+
+      final response = await apiClient.get(
+        '/auth/me',
+        options: Options(headers: {
+          'Cookie': cookie,
+        }),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return CurrentUser.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw Exception('Unexpected response format');
+      }
+    } on DioException catch (e) {
+      print('DioError: ${e.response?.data}');
+      rethrow;
+    }
+  }
+
+  Future<void> _storeCurrentUser(CurrentUser user) async {
+    // Convert CurrentUser to JSON string and store it
+    final userJson = user.toJson().toString();
+    await secureStorage.write(key: 'current_user', value: userJson);
+  }
+
+  Future<CurrentUser?> getStoredCurrentUser() async {
+    try {
+      final userJson = await secureStorage.read(key: 'current_user');
+      if (userJson != null) {
+        final userMap = Map<String, dynamic>.from(userJson as Map<String,dynamic>);
+        return CurrentUser.fromJson(userMap);
+      }
+      return null;
+    } catch (e) {
+      print('Error retrieving stored user: $e');
+      return null;
+    }
+  }
+
+  Future<void> clearStoredCurrentUser() async {
+    await secureStorage.delete(key: 'current_user');
+  }
+
+
+  Future<String?> getStoredRole() async {
+    return await secureStorage.read(key: 'user_role');
+  }
+
+  Future<void> clearStoredRole() async {
+    await secureStorage.delete(key: 'user_role');
   }
 }

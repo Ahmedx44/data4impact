@@ -15,7 +15,7 @@ class HomeCubit extends Cubit<HomeState> {
     required this.secureStorage,
     required this.projectService,
     required this.segmentService,
-  }) : super(HomeState());
+  }) : super(const HomeState());
 
   final FlutterSecureStorage secureStorage;
   final ProjectService projectService;
@@ -58,16 +58,14 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> joinSegmentViaLink(String url, BuildContext context) async {
     emit(state.copyWith(invitationLoading: true));
 
+    print('reached here');
     try {
       final uri = Uri.parse(url);
+      print('url: ${url}');
       final pathSegments = uri.pathSegments;
 
-      if (pathSegments.length < 4 || pathSegments[0] != 'imf') {
-        throw Exception('Invalid invitation link format');
-      }
-
-      final projectSlug = pathSegments[1];
-      final segmentId = pathSegments[3];
+      final projectSlug = pathSegments[0];
+      final segmentId = pathSegments[2];
 
       final response = await segmentService.getSegmentById(
         segmentId: segmentId,
@@ -76,11 +74,14 @@ class HomeCubit extends Cubit<HomeState> {
 
       emit(state.copyWith(invitationLoading: false));
 
-      // Use Navigator.push after ensuring the context is still valid
       if (context.mounted) {
         await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => AcceptInvitationView(segmentData: response),
+            builder: (context) => AcceptInvitationView(
+              segmentData: response,
+              homeState: state,
+              projectSlug: projectSlug,
+            ),
           ),
         );
       }

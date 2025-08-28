@@ -4,13 +4,14 @@ import 'package:data4impact/features/study_detail/widget/milestone_tracker.dart'
 import 'package:data4impact/features/study_detail/widget/response_time_distrubtion.dart';
 import 'package:data4impact/features/study_detail/widget/study_detail_actitity_card.dart';
 import 'package:data4impact/features/study_detail/widget/top_perfomer.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class StudyDetailView extends StatefulWidget {
-  const StudyDetailView({super.key});
+  final String studyId;
+
+  const StudyDetailView({super.key, required this.studyId});
 
   @override
   State<StudyDetailView> createState() => _StudyDetailViewState();
@@ -36,6 +37,13 @@ class _StudyDetailViewState extends State<StudyDetailView>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // In a real app, you would get this data from a Cubit/Bloc
+    final currentResponses = 385;
+    final totalResponses = 500;
+    final daysRemaining = 10;
+    final progress = currentResponses / totalResponses;
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -60,11 +68,12 @@ class _StudyDetailViewState extends State<StudyDetailView>
       ),
       body: CustomScrollView(
         slivers: [
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: ProgressTimelineWidget(
-              currentResponses: 385,
-              totalResponses: 500,
-              daysRemaining: 10,
+              currentResponses: currentResponses,
+              totalResponses: totalResponses,
+              daysRemaining: daysRemaining,
+              progress: progress,
             ),
           ),
           SliverPadding(
@@ -78,10 +87,15 @@ class _StudyDetailViewState extends State<StudyDetailView>
                     'Data Collectors',
                     'Cost Per Response',
                   ];
-                  final values = [50, 72.5, 20, 12];
+                  final values = [
+                    totalResponses,
+                    (progress * 100).toStringAsFixed(1),
+                    20,
+                    12
+                  ];
                   final subtitles = [
-                    '500 Remaining',
-                    '+3.2% from last week',
+                    '${totalResponses - currentResponses} Remaining',
+                    '${(progress * 100).toStringAsFixed(1)}% completion',
                     'All active',
                     "- \$1.20 from target",
                   ];
@@ -170,10 +184,11 @@ class _StudyDetailViewState extends State<StudyDetailView>
                 ),
                 onTap: () {
                   Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute<Widget>(
-                        builder: (context) => const DataCollectionPage(),
-                      ));
+                    context,
+                    MaterialPageRoute<Widget>(
+                      builder: (context) =>  DataCollectionPage(studyId: widget.studyId),
+                    ),
+                  );
                 },
               ),
             ),
@@ -193,18 +208,19 @@ class ProgressTimelineWidget extends StatelessWidget {
   final int currentResponses;
   final int totalResponses;
   final int daysRemaining;
+  final double progress;
 
   const ProgressTimelineWidget({
     super.key,
     required this.currentResponses,
     required this.totalResponses,
     required this.daysRemaining,
+    required this.progress,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    double progress = currentResponses / totalResponses;
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -273,14 +289,16 @@ class ProgressTimelineWidget extends StatelessWidget {
                           color: theme.colorScheme.onSurface.withOpacity(0.6)),
                     ),
                     Text(
-                      "- $daysRemaining days",
+                      daysRemaining > 0 ? "- $daysRemaining days" : "Completed",
                       style: GoogleFonts.lexendDeca(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: theme.colorScheme.onSurface),
+                          color: daysRemaining > 0
+                              ? theme.colorScheme.onSurface
+                              : theme.colorScheme.primary),
                     ),
                     Text(
-                      "remaining",
+                      daysRemaining > 0 ? "remaining" : "on time",
                       style: GoogleFonts.lexendDeca(
                           fontSize: 12,
                           color: theme.colorScheme.onSurface.withOpacity(0.6)),

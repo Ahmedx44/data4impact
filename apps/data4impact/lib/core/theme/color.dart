@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Common
   static const Color primary = Colors.deepPurple;
-  static const Color accent = Color(0xFF9575CD); // Light purple
+  static const Color accent = Color(0xFF9575CD);
   static const Color error = Colors.redAccent;
 
   // Light mode

@@ -5,6 +5,7 @@ import 'package:data4impact/features/verify_email/cubit/verify_email_cubit.dart'
 import 'package:data4impact/features/verify_email/page/verify_email_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class VerifyEmailPage extends StatelessWidget {
   const VerifyEmailPage({super.key, required this.email});
@@ -15,7 +16,10 @@ class VerifyEmailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => VerifyEmailCubit(
-        authService: AuthService(context.read<ApiClient>()),
+        authService:AuthService(
+          apiClient: context.read<ApiClient>(),
+          secureStorage: context.read<FlutterSecureStorage>(),
+        ),
       ),
       child: VerifyEmailView(email: email),
     );

@@ -100,9 +100,19 @@ Error: ${e.message}
   }
 
   /// POST request
-  Future<Response> post(String endpoint, {dynamic data,  Map<String, String>? queryParameters,  Options? options}) async {
+  Future<Response> post(
+      String endpoint, {
+        dynamic data,
+        Map<String, String>? queryParameters,
+        Options? options, // <- accept options
+      }) async {
     try {
-      final response = await dio.post(endpoint, data: data);
+      final response = await dio.post(
+        endpoint,
+        data: data,
+        queryParameters: queryParameters,
+        options: options, // <- pass it here!
+      );
       return response;
     } on DioException catch (e, stack) {
       AppLogger.logError(
@@ -113,6 +123,7 @@ Error: ${e.message}
       rethrow;
     }
   }
+
 
   /// PUT request
   Future<Response> put(String endpoint, {dynamic data}) async {

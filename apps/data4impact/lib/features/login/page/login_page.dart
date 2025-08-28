@@ -16,7 +16,8 @@ class LoginPage extends StatelessWidget {
         flavor: 'data4impact.dev',
         secureStorage: context.read<FlutterSecureStorage>(),
         authService: AuthService(
-          context.read<ApiClient>(),
+          apiClient: context.read<ApiClient>(),
+          secureStorage: context.read<FlutterSecureStorage>(),
         ),
       ),
       child: const LoginView(),

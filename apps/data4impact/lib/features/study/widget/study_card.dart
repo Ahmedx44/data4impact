@@ -1,12 +1,27 @@
 import 'package:flutter/material.dart';
 
 class StudyCard extends StatelessWidget {
-  const StudyCard({super.key});
+  final String title;
+  final String description;
+  final double progress;
+  final String status;
+  final String? dueDate;
+  final VoidCallback callback;
+
+  const StudyCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.progress,
+    required this.status,
+    required this.callback,
+    this.dueDate,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isOverdue = true; // You can make this dynamic
+    final isOverdue = status == 'overdue';
 
     return Card(
       elevation: 1,
@@ -29,7 +44,7 @@ class StudyCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Brand Awareness Analysis',
+                    title,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.onSurface,
@@ -37,7 +52,7 @@ class StudyCard extends StatelessWidget {
                   ),
                 ),
                 _StatusBadge(
-                  text: isOverdue ? "Overdue" : "In Progress",
+                  text: status,
                   color: isOverdue
                       ? theme.colorScheme.errorContainer
                       : theme.colorScheme.primaryContainer,
@@ -52,7 +67,7 @@ class StudyCard extends StatelessWidget {
 
             /// Description
             Text(
-              'Measuring brand recognition and recall across target demographics',
+              description,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
@@ -74,7 +89,7 @@ class StudyCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '77% (385/500)',
+                      '${(progress * 100).toStringAsFixed(0)}%',
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.primary,
@@ -86,7 +101,7 @@ class StudyCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
-                    value: 0.77,
+                    value: progress,
                     minHeight: 10,
                     backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
                     color: theme.colorScheme.primary,
@@ -104,33 +119,27 @@ class StudyCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.schedule,
-                          size: 16,
-                          color: isOverdue
-                              ? theme.colorScheme.error
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isOverdue ? '5 days overdue' : 'Due in 3 days',
-                          style: theme.textTheme.labelSmall?.copyWith(
+                    if (dueDate != null)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            size: 16,
                             color: isOverdue
                                 ? theme.colorScheme.error
                                 : theme.colorScheme.onSurface.withOpacity(0.6),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Earnings: \$2,520.00',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                          const SizedBox(width: 4),
+                          Text(
+                            isOverdue ? 'Overdue' : 'Due $dueDate',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: isOverdue
+                                  ? theme.colorScheme.error
+                                  : theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
                   ],
                 ),
                 ElevatedButton(
@@ -142,7 +151,7 @@ class StudyCard extends StatelessWidget {
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
                   ),
-                  onPressed: () {},
+                  onPressed: callback,
                   child: const Text('Continue'),
                 ),
               ],

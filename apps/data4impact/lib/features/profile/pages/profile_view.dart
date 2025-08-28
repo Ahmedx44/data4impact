@@ -1,4 +1,7 @@
+import 'package:data4impact/core/service/api_service/Model/current_user.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
+import 'package:data4impact/features/profile/cubit/profile_cubit.dart';
+import 'package:data4impact/features/profile/cubit/profile_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,6 +18,13 @@ class _ProfilePageState extends State<ProfileView> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+    // Fetch user data when the profile view is opened
+    context.read<ProfileCubit>().fetchCurrentUser();
+  }
+
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -29,54 +39,64 @@ class _ProfilePageState extends State<ProfileView> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceVariant.withOpacity(0.1),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 220,
-            flexibleSpace: FlexibleSpaceBar(
-              background: _buildProfileHeader(context),
-            ),
-            pinned: true,
-            actions: [
-              // Dark mode toggle button
-              BlocBuilder<ThemeCubit, ThemeMode>(
-                builder: (context, themeMode) {
-                  return IconButton(
+    return BlocBuilder<ProfileCubit, ProfileState>(
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.1),
+          body: state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 220,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: _buildProfileHeader(context, state.user),
+                ),
+                pinned: true,
+                actions: [
+                  // Dark mode toggle button
+                  IconButton(
                     icon: Icon(
-                      themeMode == ThemeMode.dark
+                      state.isDarkMode
                           ? Icons.light_mode
                           : Icons.dark_mode,
                       color: colorScheme.onPrimary,
                     ),
                     onPressed: () {
+                      context.read<ProfileCubit>().toggleDarkMode();
+                      // Also update the global theme
                       context.read<ThemeCubit>().toggleTheme();
                     },
-                  );
-                },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.edit, color: colorScheme.onPrimary),
+                    onPressed: () {
+                      // Handle edit profile
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.refresh, color: colorScheme.onPrimary),
+                    onPressed: () {
+                      context.read<ProfileCubit>().refreshUserData();
+                    },
+                  ),
+                ],
               ),
-              IconButton(
-                icon: Icon(Icons.edit, color: colorScheme.onPrimary),
-                onPressed: () {
-                  // Handle edit profile
-                },
+              SliverList(
+                delegate: SliverChildListDelegate([
+                  if (state.user != null) _buildPersonalInfoSection(context, state.user!),
+                  _buildExperienceSection(context),
+                  const SizedBox(height: 20),
+                ]),
               ),
             ],
           ),
-          SliverList(
-            delegate: SliverChildListDelegate([
-              _buildPersonalInfoSection(context),
-              _buildExperienceSection(context),
-              const SizedBox(height: 20),
-            ]),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
+  Widget _buildProfileHeader(BuildContext context, CurrentUser? user) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -121,6 +141,21 @@ class _ProfilePageState extends State<ProfileView> {
                     _profileImage!,
                     fit: BoxFit.cover,
                   )
+                      : user?.imageUrl != null
+                      ? Image.network(
+                    user!.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: colorScheme.primaryContainer,
+                        child: Icon(
+                          Icons.person,
+                          size: 50,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      );
+                    },
+                  )
                       : Container(
                     color: colorScheme.primaryContainer,
                     child: Icon(
@@ -164,7 +199,7 @@ class _ProfilePageState extends State<ProfileView> {
             child: Column(
               children: [
                 Text(
-                  'Harun Jeylan Wako',
+                  user?.fullName ?? 'Loading...',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.bold,
@@ -172,7 +207,7 @@ class _ProfilePageState extends State<ProfileView> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Survey Design, Consumer Research',
+                  user?.role.toUpperCase() ?? 'Loading role...',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onPrimary.withOpacity(0.9),
                   ),
@@ -187,7 +222,7 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  Widget _buildPersonalInfoSection(BuildContext context) {
+  Widget _buildPersonalInfoSection(BuildContext context, CurrentUser user) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -215,7 +250,7 @@ class _ProfilePageState extends State<ProfileView> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.edit, size: 20),
+                    icon: const Icon(Icons.edit, size: 20),
                     color: colorScheme.primary,
                     onPressed: () {
                       // Handle edit personal info
@@ -229,19 +264,25 @@ class _ProfilePageState extends State<ProfileView> {
               context,
               icon: Icons.email,
               title: 'Email',
-              value: 'harunjeylam@gmail.com',
-            ),
-            _buildInfoTile(
-              context,
-              icon: Icons.link,
-              title: 'LinkedIn',
-              value: 'www.linkedin.com/in/harunjeylan',
+              value: user.email,
             ),
             _buildInfoTile(
               context,
               icon: Icons.phone,
               title: 'Phone',
-              value: '+251 984 444 5055',
+              value: user.phone ?? 'No phone number provided',
+            ),
+            _buildInfoTile(
+              context,
+              icon: Icons.verified_user,
+              title: 'Email Verified',
+              value: user.emailVerified ? 'Verified' : 'Not Verified',
+            ),
+            _buildInfoTile(
+              context,
+              icon: Icons.person,
+              title: 'User ID',
+              value: user.id,
               isLast: true,
             ),
           ],
@@ -336,14 +377,14 @@ class _ProfilePageState extends State<ProfileView> {
                   Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.add, size: 20),
+                        icon: const Icon(Icons.add, size: 20),
                         color: colorScheme.primary,
                         onPressed: () {
                           // Handle add experience
                         },
                       ),
                       IconButton(
-                        icon: Icon(Icons.edit, size: 20),
+                        icon: const Icon(Icons.edit, size: 20),
                         color: colorScheme.primary,
                         onPressed: () {
                           // Handle edit experience

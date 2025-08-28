@@ -21,7 +21,7 @@ class _JoinWithLinkViewState extends State<JoinWithLinkView> {
   }
 
   Future<void> _validateAndJoin() async {
-    if (!_formKey.currentState!.validate()) return;
+  /*  if (!_formKey.currentState!.validate()) return;*/
 
     final cubit = context.read<HomeCubit>();
     try {
@@ -112,7 +112,6 @@ class _JoinWithLinkViewState extends State<JoinWithLinkView> {
                         controller: _linkController,
                         decoration: InputDecoration(
                           labelText: "Invitation Link",
-                          hintText: "https://data4impact.et/imf/majlis-starategy/segments/...",
                           prefixIcon: const Icon(Icons.link),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -125,7 +124,7 @@ class _JoinWithLinkViewState extends State<JoinWithLinkView> {
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 14),
                         ),
-                        validator: (value) {
+                        /*validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter an invitation link';
                           }
@@ -139,13 +138,24 @@ class _JoinWithLinkViewState extends State<JoinWithLinkView> {
                           if (!value.toLowerCase().contains('data4impact.et')) {
                             return 'Please enter a valid Data4Impact link';
                           }
-                          // Check for the expected path format
-                          if (!value.toLowerCase().contains('/imf/') ||
-                              !value.toLowerCase().contains('/segments/')) {
-                            return 'Link should follow format: .../imf/{project}/segments/{id}';
+
+                          // Updated path validation to accept both /imf/ and /contributor/
+                          final path = uri.path.toLowerCase();
+                          if (!path.contains('/segments/')) {
+                            return 'Link must contain a segments path';
                           }
+                          if (!(path.contains('/imf/') || path.contains('/contributor/'))) {
+                            return 'Link should follow format: .../{imf or contributor}/{project}/segments/{id}';
+                          }
+
+                          // Check for minimum path segments
+                          final segments = uri.pathSegments;
+                          if (segments.length < 4) {
+                            return 'Invalid invitation link format';
+                          }
+
                           return null;
-                        },
+                        },*/
                         keyboardType: TextInputType.url,
                       ),
                       const SizedBox(height: 32),

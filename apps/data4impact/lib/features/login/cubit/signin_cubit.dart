@@ -33,6 +33,9 @@ class SigninCubit extends Cubit<SigninState> {
 
       await _storeSessionCookie(response.headers);
 
+      // Fetch and store user data including role - AuthService now handles storage
+      final currentUser = await authService.getCurrentUser();
+
       emit(state.copyWith(
         isLoading: false,
         isSuccess: true,

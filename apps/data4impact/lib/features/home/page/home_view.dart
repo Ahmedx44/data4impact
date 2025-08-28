@@ -30,60 +30,63 @@ class _HomeViewState extends State<HomeView> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       drawer: const ProjectDrawer(),
+      appBar: AppBar(
+        forceMaterialTransparency: true,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () {
+                context.read<HomeCubit>().logout(context);
+              },
+              child: const Text(
+                'Dashboard',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Text(
+              'Your assignments, progress, and upcoming deadlines',
+              style: GoogleFonts.lexendDeca(
+                fontSize: 8,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                elevation: 0,
+              ),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute<Widget>(
+                    builder: (context) => const JoinWithLinkPage(),
+                  ),
+                );
+              },
+              child: const Text("Join"),
+            ),
+          )
+        ],
+      ),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverAppBar(
-            pinned: true,
-            floating: true,
-            collapsedHeight: kToolbarHeight,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Dashboard',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Your assignments, progress, and upcoming deadlines',
-                  style: GoogleFonts.lexendDeca(
-                    fontSize: 8,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    textStyle: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute<Widget>(
-                        builder: (context) => const JoinWithLinkPage(),
-                      ),
-                    );
-                  },
-                  child: const Text("Join"),
-                ),
-              )
-            ],
-          ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             sliver: SliverList(
@@ -97,7 +100,7 @@ class _HomeViewState extends State<HomeView> {
                         physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           mainAxisSpacing: 10,
                           crossAxisSpacing: 5,

@@ -1,550 +1,285 @@
-import 'package:data4impact/features/study_detail/pages/study_detail_page.dart';
+import 'package:data4impact/core/service/api_service/Model/api_question.dart';
+import 'package:data4impact/core/service/api_service/Model/study.dart';
+import 'package:data4impact/features/data_collect/cubit/data_collet_state.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum QuestionType {
-  singleChoice,
-  multipleChoice,
-  textInput,
-  rating,
-  yesNo,
-}
-
-class Question {
-  final String id;
-  final String title;
-  final String subtitle;
-  final QuestionType type;
-  final List<String>? options;
-  final int? maxRating;
-  final String? placeholder;
-  final bool isRequired;
-
-  const Question({
-    required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.type,
-    this.options,
-    this.maxRating,
-    this.placeholder,
-    this.isRequired = true,
-  });
-}
+import '../cubit/data_collect_cubit.dart';
 
 class DataCollectionView extends StatefulWidget {
-  const DataCollectionView({super.key});
+  const DataCollectionView({super.key, required this.studyId});
+
+  final String studyId;
 
   @override
   State<DataCollectionView> createState() => _DataCollectionViewState();
 }
 
 class _DataCollectionViewState extends State<DataCollectionView> {
-  int currentQuestionIndex = 0;
-  Map<String, dynamic> answers = {};
-
-  // Sample questions
-  final List<Question> questions = [
-    Question(
-      id: 'age',
-      title: 'Your age',
-      subtitle: 'Select your age category',
-      type: QuestionType.singleChoice,
-      options: [
-        '15-24 years',
-        '25-34 years',
-        '35-44 years',
-        '45-54 years',
-        '55+ years'
-      ],
-    ),
-    Question(
-      id: 'gender',
-      title: 'Gender',
-      subtitle: 'Please select your gender',
-      type: QuestionType.singleChoice,
-      options: ['Male', 'Female'],
-    ),
-    Question(
-      id: 'education',
-      title: 'Education Level',
-      subtitle: 'What is your highest level of education?',
-      type: QuestionType.singleChoice,
-      options: [
-        'High school or below',
-        'Some college',
-        'Bachelor\'s degree',
-        'Master\'s degree',
-        'PhD or higher'
-      ],
-    ),
-    Question(
-      id: 'interests',
-      title: 'Your interests',
-      subtitle: 'Select all that apply to you',
-      type: QuestionType.multipleChoice,
-      options: [
-        'Technology',
-        'Sports',
-        'Music',
-        'Reading',
-        'Travel',
-        'Cooking',
-        'Art',
-        'Gaming'
-      ],
-    ),
-    Question(
-      id: 'experience',
-      title: 'Tell us about yourself',
-      subtitle: 'Describe your professional background or main activities',
-      type: QuestionType.textInput,
-      placeholder: 'Type your answer here...',
-    ),
-    Question(
-      id: 'satisfaction',
-      title: 'Overall satisfaction',
-      subtitle: 'Rate your satisfaction with our service',
-      type: QuestionType.rating,
-      maxRating: 5,
-    ),
-    Question(
-      id: 'recommend',
-      title: 'Would you recommend us?',
-      subtitle: 'Would you recommend our service to friends or family?',
-      type: QuestionType.yesNo,
-    ),
-    Question(
-      id: 'feedback',
-      title: 'Additional feedback',
-      subtitle: 'Any additional comments or suggestions?',
-      type: QuestionType.textInput,
-      placeholder: 'Share your thoughts...',
-      isRequired: false,
-    ),
-  ];
-
-  Question get currentQuestion => questions[currentQuestionIndex];
-  bool get isFirstQuestion => currentQuestionIndex == 0;
-  bool get isLastQuestion => currentQuestionIndex == questions.length - 1;
-
-  bool get canProceed {
-    final answer = answers[currentQuestion.id];
-    if (!currentQuestion.isRequired) return true;
-
-    switch (currentQuestion.type) {
-      case QuestionType.singleChoice:
-      case QuestionType.yesNo:
-        return answer != null;
-      case QuestionType.multipleChoice:
-        return answer != null && (answer as List).isNotEmpty;
-      case QuestionType.textInput:
-        return answer != null && (answer as String).trim().isNotEmpty;
-      case QuestionType.rating:
-        return answer != null && (answer as int) > 0;
-    }
-  }
-
-  void _updateAnswer(String questionId, dynamic value) {
-    setState(() {
-      answers[questionId] = value;
-    });
-  }
-
-  void _nextQuestion() {
-    if (isLastQuestion) {
-      _submitSurvey();
-    } else {
-      setState(() {
-        currentQuestionIndex++;
-      });
-    }
-  }
-
-  void _previousQuestion() {
-    if (!isFirstQuestion) {
-      setState(() {
-        currentQuestionIndex--;
-      });
-    }
-  }
-
-  void _submitSurvey() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          'Survey Completed',
-          style: GoogleFonts.lexendDeca(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'Thank you for your responses!',
-          style: GoogleFonts.lexendDeca(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
-              setState(() {
-                currentQuestionIndex = 0;
-                answers.clear();
-              });
-            },
-            child: Text(
-              'OK',
-              style: GoogleFonts.lexendDeca(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    final cubit = context.read<DataCollectCubit>();
+    cubit.getStudyQuestions(widget.studyId);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    return BlocBuilder<DataCollectCubit, DataCollectState>(
+      builder: (context, state) {
+        if (state.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          'Survey ${currentQuestionIndex + 1}/${questions.length}',
-          style: GoogleFonts.lexendDeca(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
+        if (state.error != null) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: Center(
+              child: Text('Error: ${state.error}'),
+            ),
+          );
+        }
+
+        if (state.study == null) {
+          return const Scaffold(
+            body: Center(child: Text('No study data found')),
+          );
+        }
+
+        final study = state.study!;
+        final currentQuestionIndex = state.currentQuestionIndex;
+
+        if (currentQuestionIndex >= study.questions.length) {
+          return _buildCompletionScreen(study);
+        }
+
+        final question = study.questions[currentQuestionIndex];
+
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: AppBar(
+            title: Text(
+              'Question ${currentQuestionIndex + 1}/${study.questions.length}',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 0,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
           ),
-        ),
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
-        foregroundColor: colorScheme.onSurface,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Progress indicator
-            LinearProgressIndicator(
-              value: (currentQuestionIndex + 1) / questions.length,
-              backgroundColor: colorScheme.surfaceVariant,
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            const SizedBox(height: 32),
-
-            // Question content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    currentQuestion.title,
-                    style: GoogleFonts.lexendDeca(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    currentQuestion.subtitle,
-                    style: GoogleFonts.lexendDeca(
-                      fontSize: 14,
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Question input based on type
-                  Expanded(child: _buildQuestionInput()),
-                ],
-              ),
-            ),
-
-            // Navigation buttons
-            Row(
+          body: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               children: [
-                if (!isFirstQuestion)
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _previousQuestion,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.surfaceVariant,
-                        foregroundColor: colorScheme.onSurface,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Back',
-                        style: GoogleFonts.lexendDeca(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (!isFirstQuestion) const SizedBox(width: 16),
+                // Progress indicator
+                LinearProgressIndicator(
+                  value: (currentQuestionIndex + 1) / study.questions.length,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary),
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                const SizedBox(height: 32),
+
+                // Question content
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: canProceed ? _nextQuestion : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: canProceed
-                          ? colorScheme.primary
-                          : colorScheme.surfaceVariant,
-                      foregroundColor: canProceed
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurface.withOpacity(0.6),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        question.getTitle('default') as String,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      isLastQuestion ? 'Submit' : 'Next',
-                      style: GoogleFonts.lexendDeca(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                      const SizedBox(height: 8),
+                      // Add subtitle if available
+                      const SizedBox(height: 24),
+
+                      // Question input based on type
+                      Expanded(child: _buildQuestionInput(question, state)),
+                    ],
                   ),
+                ),
+
+                // Navigation buttons
+                Row(
+                  children: [
+                    if (currentQuestionIndex > 0)
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => context
+                              .read<DataCollectCubit>()
+                              .previousQuestion(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.surfaceVariant,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onSurface,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Back'),
+                        ),
+                      ),
+                    if (currentQuestionIndex > 0) const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: context
+                                .read<DataCollectCubit>()
+                                .canProceed(question)
+                            ? () =>
+                                context.read<DataCollectCubit>().nextQuestion()
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context
+                                  .read<DataCollectCubit>()
+                                  .canProceed(question)
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.surfaceVariant,
+                          foregroundColor: context
+                                  .read<DataCollectCubit>()
+                                  .canProceed(question)
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          currentQuestionIndex == study.questions.length - 1
+                              ? 'Submit'
+                              : 'Next',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildQuestionInput() {
-    switch (currentQuestion.type) {
-      case QuestionType.singleChoice:
-        return _buildSingleChoice();
-      case QuestionType.multipleChoice:
-        return _buildMultipleChoice();
-      case QuestionType.textInput:
-        return _buildTextInput();
-      case QuestionType.rating:
-        return _buildRating();
-      case QuestionType.yesNo:
-        return _buildYesNo();
+  Widget _buildQuestionInput(ApiQuestion question, DataCollectState state) {
+    final cubit = context.read<DataCollectCubit>();
+    final answer = state.answers[question.id];
+
+    switch (question.type) {
+      case ApiQuestionType.openText:
+        return _buildOpenTextInput(question, answer, cubit);
+      case ApiQuestionType.multipleChoiceSingle:
+        return _buildSingleChoice(question, answer, cubit);
+      case ApiQuestionType.multipleChoiceMulti:
+        return _buildMultipleChoice(question, answer, cubit);
+      case ApiQuestionType.rating:
+        return _buildRating(question, answer, cubit);
+      case ApiQuestionType.matrix:
+        return _buildMatrix(question, answer, cubit);
+      case ApiQuestionType.ranking:
+        return _buildRanking(question, answer, cubit);
+      case ApiQuestionType.date:
+        return _buildDateInput(question, answer, cubit);
+      case ApiQuestionType.cascade:
+        return _buildCascade(question, answer, cubit);
+      default:
+        return Center(
+            child: Text('Unsupported question type: ${question.type}'));
     }
   }
 
-  Widget _buildSingleChoice() {
-    final theme = Theme.of(context);
-    final selectedValue = answers[currentQuestion.id];
-
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: currentQuestion.options?.length ?? 0,
-      itemBuilder: (context, index) {
-        final option = currentQuestion.options![index];
-        final isSelected = selectedValue == option;
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => _updateAnswer(currentQuestion.id, option),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? theme.colorScheme.primary.withOpacity(0.1)
-                    : theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outline.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : Colors.transparent,
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outline.withOpacity(0.6),
-                        width: 2,
-                      ),
-                    ),
-                    child: isSelected
-                        ? Icon(
-                            Icons.check,
-                            size: 14,
-                            color: theme.colorScheme.onPrimary,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      option,
-                      style: GoogleFonts.lexendDeca(
-                        fontSize: 14,
-                        color: theme.colorScheme.onSurface,
-                        fontWeight:
-                            isSelected ? FontWeight.w500 : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMultipleChoice() {
-    final theme = Theme.of(context);
-    final selectedValues = (answers[currentQuestion.id] as List<String>?) ?? [];
-
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: currentQuestion.options?.length ?? 0,
-      itemBuilder: (context, index) {
-        final option = currentQuestion.options![index];
-        final isSelected = selectedValues.contains(option);
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () {
-              final updatedList = List<String>.from(selectedValues);
-              if (isSelected) {
-                updatedList.remove(option);
-              } else {
-                updatedList.add(option);
-              }
-              _updateAnswer(currentQuestion.id, updatedList);
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? theme.colorScheme.primary.withOpacity(0.1)
-                    : theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outline.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : Colors.transparent,
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outline.withOpacity(0.6),
-                        width: 2,
-                      ),
-                    ),
-                    child: isSelected
-                        ? Icon(
-                            Icons.check,
-                            size: 14,
-                            color: theme.colorScheme.onPrimary,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      option,
-                      style: GoogleFonts.lexendDeca(
-                        fontSize: 14,
-                        color: theme.colorScheme.onSurface,
-                        fontWeight:
-                            isSelected ? FontWeight.w500 : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTextInput() {
-    final theme = Theme.of(context);
-
+  Widget _buildOpenTextInput(
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit) {
     return TextField(
-      onChanged: (value) => _updateAnswer(currentQuestion.id, value),
+      onChanged: (value) => cubit.updateAnswer(question.id, value),
       decoration: InputDecoration(
-        hintText: currentQuestion.placeholder,
-        hintStyle: GoogleFonts.lexendDeca(
-          color: theme.colorScheme.onSurface.withOpacity(0.4),
-        ),
+        hintText: question.placeholder?['default'] != null
+            ? question.placeholder!['default'].toString()
+            : 'Type your answer here...',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.3),
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.3),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
         ),
         filled: true,
-        fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-        contentPadding: const EdgeInsets.all(16),
-      ),
-      style: GoogleFonts.lexendDeca(
-        color: theme.colorScheme.onSurface,
+        fillColor:
+            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
       ),
       maxLines: 5,
       minLines: 3,
-      textInputAction: TextInputAction.newline,
     );
   }
 
-  Widget _buildRating() {
-    final theme = Theme.of(context);
-    final rating = answers[currentQuestion.id] as int? ?? 0;
+  Widget _buildSingleChoice(
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit) {
+    final choices = question.choices ?? [];
+
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: choices.length,
+      itemBuilder: (context, index) {
+        final choice = choices[index];
+        final isSelected = answer == choice['id'];
+
+        return ListTile(
+          title: Text(choice['label']['default'] != null
+              ? choice['label']['default'].toString()
+              : 'Option ${index + 1}'),
+          leading: Radio(
+            value: choice['id'],
+            groupValue: answer,
+            onChanged: (value) => cubit.updateAnswer(question.id, value),
+          ),
+          onTap: () => cubit.updateAnswer(question.id, choice['id']),
+        );
+      },
+    );
+  }
+
+  Widget _buildMultipleChoice(
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit) {
+    final choices = question.choices ?? [];
+    final selectedIds = (answer is List ? answer : []).toSet();
+
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: choices.length,
+      itemBuilder: (context, index) {
+        final choice = choices[index];
+        final isSelected = selectedIds.contains(choice['id']);
+
+        return CheckboxListTile(
+          title: Text(choice['label']['default'] != null
+              ? choice['label']['default'].toString()
+              : 'Option ${index + 1}'),
+          value: isSelected,
+          onChanged: (value) {
+            final newSelectedIds = Set.from(selectedIds);
+            if (value == true) {
+              newSelectedIds.add(choice['id']);
+            } else {
+              newSelectedIds.remove(choice['id']);
+            }
+            cubit.updateAnswer(question.id, newSelectedIds.toList());
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRating(
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit) {
+    final maxRating = question.range ?? 5;
 
     return Center(
       child: Column(
@@ -552,27 +287,25 @@ class _DataCollectionViewState extends State<DataCollectionView> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(currentQuestion.maxRating!, (index) {
-              final starValue = index + 1;
-              return GestureDetector(
-                onTap: () => _updateAnswer(currentQuestion.id, starValue),
-                child: Icon(
-                  starValue <= rating ? Icons.star : Icons.star_border,
+            children: List.generate(maxRating, (index) {
+              final ratingValue = index + 1;
+              return IconButton(
+                icon: Icon(
+                  ratingValue <= (answer != null ? answer as num : 0)
+                      ? Icons.star
+                      : Icons.star_border,
                   size: 40,
-                  color: starValue <= rating
-                      ? Colors.amber
-                      : theme.colorScheme.outline.withOpacity(0.4),
+                  color: Colors.amber,
                 ),
+                onPressed: () => cubit.updateAnswer(question.id, ratingValue),
               );
             }),
           ),
           const SizedBox(height: 16),
           Text(
-            rating == 0
-                ? 'Tap to rate'
-                : 'You rated: $rating/${currentQuestion.maxRating}',
-            style: GoogleFonts.lexendDeca(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            answer == null ? 'Tap to rate' : 'You rated: $answer/$maxRating',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
         ],
@@ -580,78 +313,483 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildYesNo() {
-    final theme = Theme.of(context);
-    final selectedValue = answers[currentQuestion.id];
+  Widget _buildMatrix(
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit) {
+    final rows = question.rows ?? [];
+    final columns = question.columns ?? [];
+    final matrixAnswers = (answer is Map ? answer : {});
 
-    return Row(
-      children: [
-        Expanded(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => _updateAnswer(currentQuestion.id, true),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: selectedValue == true
-                    ? theme.colorScheme.primary.withOpacity(0.1)
-                    : theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: selectedValue == true
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outline.withOpacity(0.2),
-                  width: 1,
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: rows.length,
+      itemBuilder: (context, rowIndex) {
+        final row = rows[rowIndex];
+        final rowId = row['id'];
+        final selectedColumnId = matrixAnswers[rowId];
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  row['label']['default'] != null
+                      ? row['label']['default'].toString()
+                      : 'Row ${rowIndex + 1}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: columns.map((column) {
+                    final columnId = column['id'];
+                    return ChoiceChip(
+                      label: Text(column['label']['default'] !=null  ? column['label']['default'].toString() : 'Option'),
+                      selected: selectedColumnId == columnId,
+                      onSelected: (selected) {
+                        final newAnswers =
+                            Map<String, dynamic>.from(matrixAnswers);
+                        if (selected) {
+                          newAnswers[rowId as String] = columnId;
+                        } else if (newAnswers[rowId] == columnId) {
+                          newAnswers.remove(rowId);
+                        }
+                        cubit.updateAnswer(question.id, newAnswers);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRanking(
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit) {
+    final choices = question.choices ?? [];
+    List<dynamic> currentRanking = (answer is List ? List.from(answer) : []);
+
+    // Initialize ranking if empty
+    if (currentRanking.isEmpty) {
+      currentRanking = List.from(choices.map((choice) => choice['id']));
+    }
+
+    return ReorderableListView(
+      shrinkWrap: true,
+      onReorder: (oldIndex, newIndex) {
+        // Adjust index for the removed item
+        if (oldIndex < newIndex) newIndex--;
+
+        setState(() {
+          final item = currentRanking.removeAt(oldIndex);
+          currentRanking.insert(newIndex, item);
+          cubit.updateAnswer(question.id, List.from(currentRanking));
+        });
+      },
+      children: currentRanking.asMap().entries.map((entry) {
+        final index = entry.key;
+        final choiceId = entry.value;
+        final choice = choices.firstWhere(
+              (c) => c['id'] == choiceId,
+          orElse: () => {'label': {'default': 'Unknown'}},
+        );
+
+        return ListTile(
+          key: Key('$choiceId'),
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
               child: Text(
-                'Yes',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.lexendDeca(
+                '${index + 1}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: selectedValue == true
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurface,
                 ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => _updateAnswer(currentQuestion.id, false),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: selectedValue == false
-                    ? theme.colorScheme.error.withOpacity(0.1)
-                    : theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: selectedValue == false
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.outline.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
+          title: Text(
+            choice['label']['default']?.toString() ?? 'Option ${index + 1}',
+            style: const TextStyle(fontSize: 16),
+          ),
+          trailing: ReorderableDragStartListener(
+            index: index,
+            child: Icon(
+              Icons.drag_handle,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDateInput(
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit) {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () async {
+          final selectedDate = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+          );
+
+          if (selectedDate != null) {
+            cubit.updateAnswer(question.id, selectedDate.toIso8601String());
+          }
+        },
+        child: Text(answer == null
+            ? 'Select Date'
+            : 'Selected: ${answer.toString().substring(0, 10)}'),
+      ),
+    );
+  }
+
+  Widget _buildCascade(
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit) {
+    final cascades = question.cascades ?? [];
+    List<dynamic> currentSelection = (answer is List ? List.from(answer) : []);
+
+    // State to track expanded items
+    final Map<String, bool> expandedStates = {};
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with instructions
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
               child: Text(
-                'No',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.lexendDeca(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: selectedValue == false
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.onSurface,
+                'Expand and select one option from each branch:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
+
+            // Display current selection
+            if (currentSelection.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Selected:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...currentSelection.map((selectedId) {
+                      final item = _findCascadeItem(selectedId as String, cascades);
+                      return Text(
+                        '• ${item?['name']?['default']?.toString() ?? 'Unknown'}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+
+            // Expandable tree view
+            Expanded(
+              child: ListView(
+                children: [
+                  _buildCascadeTree(
+                    cascades,
+                    currentSelection,
+                    cubit,
+                    question.id,
+                    0, // Initial indentation level
+                    expandedStates,
+                    setState,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCascadeTree(
+      List<dynamic> items,
+      List<dynamic> currentSelection,
+      DataCollectCubit cubit,
+      String questionId,
+      int indentationLevel,
+      Map<String, bool> expandedStates,
+      StateSetter setState,
+      ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: items.map((item) {
+        final itemId = item['id'];
+        final itemName = item['name']?['default']?.toString() ?? 'Unknown';
+        final itemLabel = item['label']?['default']?.toString() ?? '';
+        final hasChildren = item['children'] is List && (item['children'] as List).isNotEmpty;
+        final isSelected = currentSelection.contains(itemId);
+        final isExpanded = expandedStates[itemId] ?? false;
+
+        // Check if any sibling is selected
+        final bool hasSiblingSelected = items.any((sibling) =>
+        sibling['id'] != itemId && currentSelection.contains(sibling['id']));
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Parent item
+            InkWell(
+              onTap: () {
+                if (hasChildren) {
+                  // Toggle expansion
+                  setState(() {
+                    expandedStates[itemId as String] = !isExpanded;
+                  });
+                } else {
+                  // For leaf nodes, handle selection
+                  _handleCascadeSelection(
+                      itemId as String,
+                      items,
+                      currentSelection,
+                      cubit,
+                      questionId
+                  );
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.only(
+                  left: 16.0 + (indentationLevel * 24.0),
+                  right: 16.0,
+                  top: 12.0,
+                  bottom: 12.0,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                      : (hasSiblingSelected
+                      ? Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3)
+                      : Colors.transparent),
+                ),
+                child: Row(
+                  children: [
+                    // Expand/collapse icon for items with children
+                    if (hasChildren)
+                      Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      )
+                    else
+                      const SizedBox(width: 20),
+
+                    const SizedBox(width: 8),
+
+                    // Selection indicator (only for leaf nodes)
+                    if (!hasChildren)
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                            width: 2,
+                          ),
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                        ),
+                        child: isSelected
+                            ? Icon(
+                          Icons.check,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        )
+                            : null,
+                      )
+                    else
+                      const SizedBox(width: 20),
+
+                    const SizedBox(width: 12),
+
+                    // Item content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            itemName,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: hasChildren ? FontWeight.w600 : FontWeight.normal,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          if (itemLabel.isNotEmpty)
+                            Text(
+                              itemLabel,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    // Show if a selection has been made in this branch
+                    if (hasChildren && _hasSelectionInBranch(item, currentSelection))
+                      Icon(
+                        Icons.check_circle,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Child items (if expanded) with animation
+            if (hasChildren && isExpanded)
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: _buildCascadeTree(
+                  item['children'] as List<dynamic>,
+                  currentSelection,
+                  cubit,
+                  questionId,
+                  indentationLevel + 1,
+                  expandedStates,
+                  setState,
+                ),
+              ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  void _handleCascadeSelection(
+      String selectedId,
+      List<dynamic> siblings,
+      List<dynamic> currentSelection,
+      DataCollectCubit cubit,
+      String questionId,
+      ) {
+    final newSelection = List<dynamic>.from(currentSelection);
+
+    // Remove any siblings from the same level
+    for (final sibling in siblings) {
+      if (sibling['id'] != selectedId && newSelection.contains(sibling['id'])) {
+        newSelection.remove(sibling['id']);
+      }
+    }
+
+    // Add the new selection if not already selected
+    if (!newSelection.contains(selectedId)) {
+      newSelection.add(selectedId);
+    } else {
+      // If already selected, deselect it (toggle behavior)
+      newSelection.remove(selectedId);
+    }
+
+    cubit.updateAnswer(questionId, newSelection);
+  }
+
+  bool _hasSelectionInBranch(dynamic item, List<dynamic> selection) {
+    if (selection.contains(item['id'])) {
+      return true;
+    }
+
+    if (item['children'] is List) {
+      for (final child in item['children'] as List<dynamic>) {
+        if (_hasSelectionInBranch(child, selection)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+// Helper function to find an item by ID in the cascade structure
+  dynamic _findCascadeItem(String itemId, List<dynamic> items) {
+    for (final item in items) {
+      if (item['id'] == itemId) {
+        return item;
+      }
+      if (item['children'] is List) {
+        final found = _findCascadeItem(itemId, item['children'] as List<dynamic>);
+        if (found != null) {
+          return found;
+        }
+      }
+    }
+    return null;
+  }
+
+  Widget _buildCompletionScreen(Study study) {
+    final ending = study.ending;
+
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                ending['headline']?['default']?.toString() ?? 'Thank you!',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                ending['subheader']?['default']?.toString() ?? 'Your response has been recorded.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Finish'),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
