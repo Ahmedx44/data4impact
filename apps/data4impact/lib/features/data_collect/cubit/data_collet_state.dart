@@ -6,6 +6,8 @@ class DataCollectState {
   final String? error;
   final int currentQuestionIndex;
   final Map<String, dynamic> answers;
+  final Set<String> requiredQuestions; // Track required questions from logic
+  final String? jumpTarget; // Track where to jump next
 
   const DataCollectState({
     this.study,
@@ -13,6 +15,8 @@ class DataCollectState {
     this.error,
     this.currentQuestionIndex = 0,
     this.answers = const {},
+    this.requiredQuestions = const {},
+    this.jumpTarget,
   });
 
   DataCollectState copyWith({
@@ -21,6 +25,8 @@ class DataCollectState {
     String? error,
     int? currentQuestionIndex,
     Map<String, dynamic>? answers,
+    Set<String>? requiredQuestions,
+    String? jumpTarget,
   }) {
     return DataCollectState(
       study: study ?? this.study,
@@ -28,6 +34,8 @@ class DataCollectState {
       error: error ?? this.error,
       currentQuestionIndex: currentQuestionIndex ?? this.currentQuestionIndex,
       answers: answers ?? this.answers,
+      requiredQuestions: requiredQuestions ?? this.requiredQuestions,
+      jumpTarget: jumpTarget ?? this.jumpTarget,
     );
   }
 }

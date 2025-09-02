@@ -18,17 +18,22 @@ class Study {
   });
 
   factory Study.fromJson(Map<String, dynamic> json) {
+    // Check if this is an error response and throw exception
+    if (json['error'] == true) {
+      throw FormatException(json['message'] as String ?? 'Study is not available');
+    }
+
     final questions = (json['questions'] as List<dynamic>?)
         ?.map((q) => ApiQuestion.fromJson(q as Map<String,dynamic>))
         .toList() ?? [];
 
     return Study(
-      id: json['_id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String,
+      id: json['_id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
       questions: questions,
-      welcomeCard: json['welcomeCard'] as Map<String,dynamic> ?? {},
-      ending: json['ending'] as Map<String,dynamic> ?? {},
+      welcomeCard: json['welcomeCard'] as Map<String,dynamic>? ?? {},
+      ending: json['ending'] as Map<String,dynamic>? ?? {},
     );
   }
 }
