@@ -154,7 +154,12 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: context.read<DataCollectCubit>().canProceed(question)
-                            ? () => context.read<DataCollectCubit>().nextQuestion()
+                            ? () {
+                          print('DEBUG: Next/Submit button pressed');
+                          print('DEBUG: Current index: $currentQuestionIndex, Total questions: ${study.questions.length}');
+                          print('DEBUG: Is last question: ${currentQuestionIndex == study.questions.length - 1}');
+                          context.read<DataCollectCubit>().nextQuestion();
+                        }
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: context.read<DataCollectCubit>().canProceed(question)

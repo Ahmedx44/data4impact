@@ -10,7 +10,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   final StudyService studyService;
   bool _isNavigating = false;
 
-  DataCollectCubit({required this.studyService}) : super(const DataCollectState());
+  DataCollectCubit({required this.studyService})
+      : super(const DataCollectState());
 
   Future<void> getStudyQuestions(String studyId) async {
     emit(state.copyWith(isLoading: true, error: null));
@@ -93,7 +94,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
               final conditionResult = _evaluateConditionGroup(
                 study,
                 answers,
-                conditions as Map<String,dynamic>,
+                conditions as Map<String, dynamic>,
               );
 
               if (conditionResult) {
@@ -103,10 +104,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
                 if (result.jumpTarget != null) {
                   final targetIndex = study.questions.indexWhere(
-                        (q) => q.id == result.jumpTarget,
+                    (q) => q.id == result.jumpTarget,
                   );
 
-                  if (targetIndex != -1 && targetIndex != currentState.currentQuestionIndex) {
+                  if (targetIndex != -1 &&
+                      targetIndex != currentState.currentQuestionIndex) {
                     jumpTarget ??= result.jumpTarget;
                   }
                 }
@@ -125,10 +127,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool _evaluateConditionGroup(
-      Study study,
-      Map<String, dynamic> answers,
-      Map<String, dynamic> conditionGroup,
-      ) {
+    Study study,
+    Map<String, dynamic> answers,
+    Map<String, dynamic> conditionGroup,
+  ) {
     final connector = conditionGroup['connector'] ?? 'and';
     final conditions = conditionGroup['conditions'] as List<dynamic>? ?? [];
 
@@ -152,10 +154,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool _evaluateSingleCondition(
-      Study study,
-      Map<String, dynamic> answers,
-      Map<String, dynamic> condition,
-      ) {
+    Study study,
+    Map<String, dynamic> answers,
+    Map<String, dynamic> condition,
+  ) {
     try {
       final leftOperand = condition['leftOperand'];
       final operator = condition['operator'];
@@ -163,9 +165,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
       if (leftOperand == null || operator == null) return false;
 
-      final leftValue = _getLeftOperandValue(study, answers, leftOperand as Map<String,dynamic>);
+      final leftValue = _getLeftOperandValue(
+          study, answers, leftOperand as Map<String, dynamic>);
       final rightValue = rightOperand != null
-          ? _getRightOperandValue(answers, rightOperand as Map<String,dynamic>)
+          ? _getRightOperandValue(answers, rightOperand as Map<String, dynamic>)
           : null;
 
       switch (operator) {
@@ -197,12 +200,14 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           return false;
         case 'isAfter':
           if (leftValue is String && rightValue is String) {
-            return DateTime.parse(leftValue).isAfter(DateTime.parse(rightValue));
+            return DateTime.parse(leftValue)
+                .isAfter(DateTime.parse(rightValue));
           }
           return false;
         case 'isBefore':
           if (leftValue is String && rightValue is String) {
-            return DateTime.parse(leftValue).isBefore(DateTime.parse(rightValue));
+            return DateTime.parse(leftValue)
+                .isBefore(DateTime.parse(rightValue));
           }
           return false;
         default:
@@ -214,16 +219,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   dynamic _getLeftOperandValue(
-      Study study,
-      Map<String, dynamic> answers,
-      Map<String, dynamic> leftOperand,
-      ) {
+    Study study,
+    Map<String, dynamic> answers,
+    Map<String, dynamic> leftOperand,
+  ) {
     final type = leftOperand['type'];
     final value = leftOperand['value'];
 
     if (type == 'question') {
       final question = study.questions.firstWhere(
-            (q) => q.id == value,
+        (q) => q.id == value,
       );
 
       if (question.id.isNotEmpty) {
@@ -234,9 +239,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   dynamic _getRightOperandValue(
-      Map<String, dynamic> answers,
-      Map<String, dynamic> rightOperand,
-      ) {
+    Map<String, dynamic> answers,
+    Map<String, dynamic> rightOperand,
+  ) {
     final type = rightOperand['type'];
     final value = rightOperand['value'];
 
@@ -248,9 +253,13 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     return null;
   }
 
-  ({Set<String> requiredQuestionIds, String? jumpTarget, Set<String> skipQuestionIds}) _performActions(
-      List<dynamic> actions,
-      ) {
+  ({
+    Set<String> requiredQuestionIds,
+    String? jumpTarget,
+    Set<String> skipQuestionIds
+  }) _performActions(
+    List<dynamic> actions,
+  ) {
     Set<String> requiredQuestionIds = {};
     String? jumpTarget;
     Set<String> skipQuestionIds = {};
@@ -276,9 +285,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
 
     return (
-    requiredQuestionIds: requiredQuestionIds,
-    jumpTarget: jumpTarget,
-    skipQuestionIds: skipQuestionIds,
+      requiredQuestionIds: requiredQuestionIds,
+      jumpTarget: jumpTarget,
+      skipQuestionIds: skipQuestionIds,
     );
   }
 
@@ -286,24 +295,37 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final currentIndex = state.currentQuestionIndex;
     final study = state.study;
 
-    if (study == null) return;
+    if (study == null) {
+      return;
+    }
 
+    // Check if we're at the last question and should submit
+    if (currentIndex >= study.questions.length - 1) {
+      submitSurvey();
+      return;
+    }
+
+    // Check if we're at a jump target and need to process it
     if (state.jumpTarget != null) {
       if (state.jumpTarget == 'end') {
         submitSurvey();
         return;
       } else {
         final targetIndex = study.questions.indexWhere(
-              (q) => q.id == state.jumpTarget,
+          (q) => q.id == state.jumpTarget,
         );
 
-        if (targetIndex != -1 && targetIndex != currentIndex) {
+        if (targetIndex == currentIndex) {
+          emit(state.copyWith(jumpTarget: null));
+          // Continue with normal flow below
+        } else if (targetIndex != -1) {
           _isNavigating = true;
 
           final newLogicJumps = Map<int, int>.from(state.logicJumps);
           newLogicJumps[currentIndex] = targetIndex;
 
-          final newHistory = List<int>.from(state.navigationHistory)..add(currentIndex);
+          final newHistory = List<int>.from(state.navigationHistory)
+            ..add(currentIndex);
 
           emit(state.copyWith(
             currentQuestionIndex: targetIndex,
@@ -316,14 +338,13 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             _isNavigating = false;
           });
           return;
-        } else if (targetIndex == currentIndex) {
+        } else {
           emit(state.copyWith(jumpTarget: null));
-          return;
+          // Continue with normal flow below
         }
       }
     }
 
-    // Dynamic skip logic based on skipQuestions from evaluated conditions
     int nextIndex = currentIndex + 1;
 
     while (nextIndex < study.questions.length) {
@@ -331,7 +352,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
       // Skip questions that are in the skipQuestions set
       if (state.skipQuestions.contains(nextQuestion.id)) {
-        print('Skipping question: ${nextQuestion.getTitle('default')}');
         nextIndex++;
       } else {
         break;
@@ -340,11 +360,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     if (nextIndex < study.questions.length) {
       _isNavigating = true;
-      final newHistory = List<int>.from(state.navigationHistory)..add(currentIndex);
+      final newHistory = List<int>.from(state.navigationHistory)
+        ..add(currentIndex);
 
       emit(state.copyWith(
         currentQuestionIndex: nextIndex,
-        jumpTarget: null,
+        jumpTarget: null, // Ensure jumpTarget is cleared
         navigationHistory: newHistory,
       ));
       Future.delayed(const Duration(milliseconds: 100), () {
@@ -398,9 +419,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void jumpToQuestion(int index) {
-    if (state.study != null && index >= 0 && index < state.study!.questions.length) {
+    if (state.study != null &&
+        index >= 0 &&
+        index < state.study!.questions.length) {
       _isNavigating = true;
-      final newHistory = List<int>.from(state.navigationHistory)..add(state.currentQuestionIndex);
+      final newHistory = List<int>.from(state.navigationHistory)
+        ..add(state.currentQuestionIndex);
 
       emit(state.copyWith(
         currentQuestionIndex: index,
@@ -428,7 +452,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         case ApiQuestionType.openText:
           return answer != null && (answer as String).trim().isNotEmpty;
         case ApiQuestionType.ranking:
-          return answer != null && (answer as List).length == (question.choices?.length ?? 0);
+          return answer != null &&
+              (answer as List).length == (question.choices?.length ?? 0);
         case ApiQuestionType.matrix:
           if (answer == null || answer is! Map) return false;
           final rowIds = question.rows?.map((row) => row['id']).toList() ?? [];
@@ -455,7 +480,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       case ApiQuestionType.openText:
         return answer != null && (answer as String).trim().isNotEmpty;
       case ApiQuestionType.ranking:
-        return answer != null && (answer as List).length == (question.choices?.length ?? 0);
+        return answer != null &&
+            (answer as List).length == (question.choices?.length ?? 0);
       case ApiQuestionType.matrix:
         if (answer == null || answer is! Map) return false;
         final rowIds = question.rows?.map((row) => row['id']).toList() ?? [];
