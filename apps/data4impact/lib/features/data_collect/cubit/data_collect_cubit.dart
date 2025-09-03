@@ -8,7 +8,7 @@ import 'package:meta/meta.dart';
 
 class DataCollectCubit extends Cubit<DataCollectState> {
   final StudyService studyService;
-  bool _isNavigating = false; // Add navigation flag
+  bool _isNavigating = false;
 
   DataCollectCubit({required this.studyService}) : super(const DataCollectState());
 
@@ -21,7 +21,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       print('API Response type: ${data.runtimeType}');
       print('API Response data: $data');
 
-      // Check if the response is an error FIRST
       if (data is Map<String, dynamic> && data['error'] == true) {
         final errorMessage = data['message'] ?? 'Study is not in progress';
         print('Error response detected: $errorMessage');
@@ -42,7 +41,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         currentQuestionIndex: 0,
         answers: {},
         requiredQuestions: {},
+        skipQuestions: {},
         jumpTarget: null,
+        navigationHistory: [],
+        logicJumps: {},
       ));
     } on FormatException catch (e) {
       print('FormatException caught: ${e.message}');
@@ -60,7 +62,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void updateAnswer(String questionId, dynamic value) {
-    if (_isNavigating) return; // Don't evaluate logic during navigation
+    if (_isNavigating) return;
 
     final newAnswers = Map<String, dynamic>.from(state.answers);
     newAnswers[questionId] = value;
@@ -78,8 +80,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final answers = currentState.answers;
     Set<String> requiredQuestions = {};
     String? jumpTarget;
+    Set<String> skipQuestions = {};
 
-    // Evaluate logic for all questions
     for (final question in study.questions) {
       if (question.logic != null && question.logic!.isNotEmpty) {
         for (final logicItem in question.logic!) {
@@ -97,7 +99,17 @@ class DataCollectCubit extends Cubit<DataCollectState> {
               if (conditionResult) {
                 final result = _performActions(actions as List);
                 requiredQuestions.addAll(result.requiredQuestionIds);
-                jumpTarget ??= result.jumpTarget;
+                skipQuestions.addAll(result.skipQuestionIds);
+
+                if (result.jumpTarget != null) {
+                  final targetIndex = study.questions.indexWhere(
+                        (q) => q.id == result.jumpTarget,
+                  );
+
+                  if (targetIndex != -1 && targetIndex != currentState.currentQuestionIndex) {
+                    jumpTarget ??= result.jumpTarget;
+                  }
+                }
               }
             }
           }
@@ -108,6 +120,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     return currentState.copyWith(
       requiredQuestions: requiredQuestions,
       jumpTarget: jumpTarget,
+      skipQuestions: skipQuestions,
     );
   }
 
@@ -124,14 +137,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     for (final condition in conditions) {
       if (condition is Map<String, dynamic>) {
         if (condition['connector'] != null) {
-          // This is a nested condition group
           results.add(_evaluateConditionGroup(study, answers, condition));
         } else {
-          // This is a single condition
           results.add(_evaluateSingleCondition(study, answers, condition));
         }
       } else {
-        results.add(false); // Invalid condition format
+        results.add(false);
       }
     }
 
@@ -211,12 +222,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final value = leftOperand['value'];
 
     if (type == 'question') {
-      // Find the question by ID and get its answer
       final question = study.questions.firstWhere(
             (q) => q.id == value,
       );
 
-      if (question != null) {
+      if (question.id.isNotEmpty) {
         return answers[question.id];
       }
     }
@@ -238,11 +248,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     return null;
   }
 
-  ({Set<String> requiredQuestionIds, String? jumpTarget}) _performActions(
+  ({Set<String> requiredQuestionIds, String? jumpTarget, Set<String> skipQuestionIds}) _performActions(
       List<dynamic> actions,
       ) {
     Set<String> requiredQuestionIds = {};
     String? jumpTarget;
+    Set<String> skipQuestionIds = {};
 
     for (final action in actions) {
       final objective = action['objective'];
@@ -258,12 +269,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         case 'jumpToEnd':
           jumpTarget ??= 'end';
           break;
+        case 'skipQuestion':
+          skipQuestionIds.add(target as String);
+          break;
       }
     }
 
     return (
     requiredQuestionIds: requiredQuestionIds,
     jumpTarget: jumpTarget,
+    skipQuestionIds: skipQuestionIds,
     );
   }
 
@@ -273,41 +288,65 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     if (study == null) return;
 
-    // Handle jump logic
     if (state.jumpTarget != null) {
       if (state.jumpTarget == 'end') {
         submitSurvey();
         return;
       } else {
-        // Find the index of the target question
         final targetIndex = study.questions.indexWhere(
               (q) => q.id == state.jumpTarget,
         );
 
-        if (targetIndex != -1) {
-          _isNavigating = true; // Set navigation flag
+        if (targetIndex != -1 && targetIndex != currentIndex) {
+          _isNavigating = true;
+
+          final newLogicJumps = Map<int, int>.from(state.logicJumps);
+          newLogicJumps[currentIndex] = targetIndex;
+
+          final newHistory = List<int>.from(state.navigationHistory)..add(currentIndex);
+
           emit(state.copyWith(
             currentQuestionIndex: targetIndex,
             jumpTarget: null,
+            navigationHistory: newHistory,
+            logicJumps: newLogicJumps,
           ));
-          // Reset flag after navigation
+
           Future.delayed(const Duration(milliseconds: 100), () {
             _isNavigating = false;
           });
+          return;
+        } else if (targetIndex == currentIndex) {
+          emit(state.copyWith(jumpTarget: null));
           return;
         }
       }
     }
 
-    // Normal progression
-    final nextIndex = currentIndex + 1;
+    // Dynamic skip logic based on skipQuestions from evaluated conditions
+    int nextIndex = currentIndex + 1;
+
+    while (nextIndex < study.questions.length) {
+      final nextQuestion = study.questions[nextIndex];
+
+      // Skip questions that are in the skipQuestions set
+      if (state.skipQuestions.contains(nextQuestion.id)) {
+        print('Skipping question: ${nextQuestion.getTitle('default')}');
+        nextIndex++;
+      } else {
+        break;
+      }
+    }
+
     if (nextIndex < study.questions.length) {
-      _isNavigating = true; // Set navigation flag
+      _isNavigating = true;
+      final newHistory = List<int>.from(state.navigationHistory)..add(currentIndex);
+
       emit(state.copyWith(
         currentQuestionIndex: nextIndex,
         jumpTarget: null,
+        navigationHistory: newHistory,
       ));
-      // Reset flag after navigation
       Future.delayed(const Duration(milliseconds: 100), () {
         _isNavigating = false;
       });
@@ -317,13 +356,41 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void previousQuestion() {
-    if (state.currentQuestionIndex > 0) {
-      _isNavigating = true; // Set navigation flag
+    if (state.navigationHistory.isNotEmpty) {
+      final newHistory = List<int>.from(state.navigationHistory);
+      final previousIndex = newHistory.removeLast();
+
+      _isNavigating = true;
       emit(state.copyWith(
-        currentQuestionIndex: state.currentQuestionIndex - 1,
-        jumpTarget: null, // Clear any jump targets
+        currentQuestionIndex: previousIndex,
+        jumpTarget: null,
+        navigationHistory: newHistory,
       ));
-      // Reset flag after navigation
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _isNavigating = false;
+      });
+    } else if (state.currentQuestionIndex > 0) {
+      int? sourceIndex;
+
+      for (final entry in state.logicJumps.entries) {
+        if (entry.value == state.currentQuestionIndex) {
+          sourceIndex = entry.key;
+          break;
+        }
+      }
+
+      _isNavigating = true;
+      if (sourceIndex != null) {
+        emit(state.copyWith(
+          currentQuestionIndex: sourceIndex,
+          jumpTarget: null,
+        ));
+      } else {
+        emit(state.copyWith(
+          currentQuestionIndex: state.currentQuestionIndex - 1,
+          jumpTarget: null,
+        ));
+      }
       Future.delayed(const Duration(milliseconds: 100), () {
         _isNavigating = false;
       });
@@ -332,12 +399,14 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
   void jumpToQuestion(int index) {
     if (state.study != null && index >= 0 && index < state.study!.questions.length) {
-      _isNavigating = true; // Set navigation flag
+      _isNavigating = true;
+      final newHistory = List<int>.from(state.navigationHistory)..add(state.currentQuestionIndex);
+
       emit(state.copyWith(
         currentQuestionIndex: index,
-        jumpTarget: null, // Clear any jump targets
+        jumpTarget: null,
+        navigationHistory: newHistory,
       ));
-      // Reset flag after navigation
       Future.delayed(const Duration(milliseconds: 100), () {
         _isNavigating = false;
       });
@@ -348,7 +417,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final answer = state.answers[question.id];
     final isRequiredByLogic = state.requiredQuestions.contains(question.id);
 
-    // If question is required by logic, use stricter validation
     if (isRequiredByLogic) {
       switch (question.type) {
         case ApiQuestionType.multipleChoiceSingle:
@@ -375,7 +443,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
-    // Original validation for non-logic-required questions
     if (!question.required) return true;
 
     switch (question.type) {
@@ -405,8 +472,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void submitSurvey() {
-    // Handle survey submission
     print('Survey answers: ${state.answers}');
-    // Here you would typically send the answers to your API
+    // Here you would typically send the answers to your backend
+    // For now, we'll just print them
   }
 }

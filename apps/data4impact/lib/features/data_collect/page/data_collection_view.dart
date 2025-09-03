@@ -387,21 +387,20 @@ class _DataCollectionViewState extends State<DataCollectionView> {
           ),
         Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisSize: MainAxisSize.min,
                 children: List.generate(maxRating, (index) {
                   final ratingValue = index + 1;
-                  return IconButton(
-                    icon: Icon(
+                  return GestureDetector(
+                    onTap: () => cubit.updateAnswer(question.id, ratingValue),
+                    child: Icon(
                       ratingValue <= (answer != null ? answer as num : 0)
                           ? Icons.star
                           : Icons.star_border,
-                      size: 40,
+                      size: 30,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    onPressed: () => cubit.updateAnswer(question.id, ratingValue),
                   );
                 }),
               ),
