@@ -78,4 +78,37 @@ class StudyService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> submitSurveyResponse({
+    required String studyId,
+    required Map<String, dynamic> responseData,
+  }) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) throw Exception('No authentication cookie found');
+
+      final response = await apiClient.post(
+        '/responses?studyId=$studyId',
+        data: responseData,
+        options: Options(
+          headers: {
+            'Cookie': cookie,
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      throw Exception('Unexpected response format');
+    } on DioException catch (e) {
+      print('Error submitting survey response: ${e.message}');
+      if (e.response != null) {
+        print('Response status: ${e.response!.statusCode}');
+        print('Response data: ${e.response!.data}');
+      }
+      rethrow;
+    }
+  }
 }

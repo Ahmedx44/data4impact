@@ -36,6 +36,10 @@ class DataCollectState {
   // Welcome screen state
   final bool hasSeenWelcome;
 
+  // Submission properties
+  final bool isSubmitting;
+  final Map<String, dynamic>? submissionResult;
+
   const DataCollectState({
     this.study,
     this.isLoading = false,
@@ -71,6 +75,10 @@ class DataCollectState {
 
     // Welcome screen default
     this.hasSeenWelcome = false,
+
+    // Submission defaults
+    this.isSubmitting = false,
+    this.submissionResult,
   });
 
   DataCollectState copyWith({
@@ -108,6 +116,10 @@ class DataCollectState {
 
     // Welcome screen copyWith parameter
     bool? hasSeenWelcome,
+
+    // Submission copyWith parameters
+    bool? isSubmitting,
+    Map<String, dynamic>? submissionResult,
   }) {
     return DataCollectState(
       study: study ?? this.study,
@@ -144,6 +156,10 @@ class DataCollectState {
 
       // Welcome screen copyWith
       hasSeenWelcome: hasSeenWelcome ?? this.hasSeenWelcome,
+
+      // Submission copyWith
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      submissionResult: submissionResult ?? this.submissionResult,
     );
   }
 }

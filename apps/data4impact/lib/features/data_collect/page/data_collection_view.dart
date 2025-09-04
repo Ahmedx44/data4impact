@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:data4impact/core/service/api_service/Model/api_question.dart';
 import 'package:data4impact/core/service/api_service/Model/study.dart';
+import 'package:data4impact/core/service/dialog_loading.dart';
 import 'package:data4impact/features/data_collect/cubit/data_collet_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,6 +47,18 @@ class _DataCollectionViewState extends State<DataCollectionView> {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (state.isSubmitting) {
+            DialogLoading.show(context);
+          } else {
+            DialogLoading.hide(context);
+          }
+        });
+
+
+        if(state.submissionResult!=null){
+          Navigator.canPop(context);
         }
 
         if (state.error != null) {
@@ -218,7 +231,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                       child: ElevatedButton(
                         onPressed: context.read<DataCollectCubit>().canProceed(question)
                             ? () {
-                          context.read<DataCollectCubit>().nextQuestion();
+                          context.read<DataCollectCubit>().nextQuestion(studyId: widget.studyId);
                         }
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -276,7 +289,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () => context.read<DataCollectCubit>().nextQuestion(),
+              onPressed: () => context.read<DataCollectCubit>().nextQuestion(studyId: widget.studyId),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -469,33 +482,6 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                     ],
                   ),
                 ),
-
-              // Upload button
-              ElevatedButton(
-                onPressed: () => cubit.uploadAudioFile(widget.studyId),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                child: state.isUploadingAudio
-                    ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(Colors.white),
-                  ),
-                )
-                    : const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.cloud_upload, size: 16),
-                    SizedBox(width: 4),
-                    Text('Upload Audio'),
-                  ],
-                ),
-              ),
             ],
           ),
 
@@ -507,7 +493,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
 
         if (state.audioUploadResult != null)
           Text(
-            'Upload successful!',
+            'Audio uploaded successfully!',
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,
