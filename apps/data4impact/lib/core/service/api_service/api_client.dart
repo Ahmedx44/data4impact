@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:data4impact/core/service/app_logger.dart';
 import 'package:dio/dio.dart';
 
@@ -8,8 +10,8 @@ class ApiClient {
       : dio = Dio(
           BaseOptions(
             baseUrl: baseUrl ?? "",
-            connectTimeout: const Duration(seconds: 30),
-            receiveTimeout: const Duration(seconds: 30),
+            connectTimeout: const Duration(seconds: 60),
+            receiveTimeout: const Duration(seconds: 60),
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
@@ -32,6 +34,8 @@ Body: ${options.data}
           return handler.next(options);
         },
         onResponse: (response, handler) {
+          final prettyBody = const JsonEncoder.withIndent('  ')
+              .convert(response.data);
           // Check for redirect
           if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
             AppLogger.logWarning(
@@ -44,7 +48,7 @@ Body: ${options.data}
 Status: ${response.statusCode} ${response.statusMessage}
 URL: ${response.requestOptions.uri}
 Headers: ${response.headers}
-Body: ${response.data}
+Body: $prettyBody
 ''');
 
           return handler.next(response);

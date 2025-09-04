@@ -116,10 +116,104 @@ class ApiQuestion {
     );
   }
 
+  // Get title in the specified language, fallback to default
   String getTitle(String languageCode) {
     if (headline.containsKey(languageCode)) {
-      return headline[languageCode] as String? ?? 'Question';
+      return headline[languageCode] as String? ?? headline['default'] as String? ?? 'Question';
     }
     return headline['default'] as String? ?? 'Question';
+  }
+
+  // Get subtitle in the specified language, fallback to default
+  String? getSubtitle(String languageCode) {
+    final subtitle = headline['subtitle'];
+    if (subtitle is Map<String, dynamic>) {
+      if (subtitle.containsKey(languageCode)) {
+        return subtitle[languageCode] as String?;
+      }
+      return subtitle['default'] as String?;
+    }
+    return null;
+  }
+
+  // Get placeholder text in the specified language, fallback to default
+  String? getPlaceholder(String languageCode) {
+    if (placeholder != null) {
+      if (placeholder!.containsKey(languageCode)) {
+        return placeholder![languageCode] as String?;
+      }
+      return placeholder!['default'] as String?;
+    }
+    return null;
+  }
+
+  // Get choice label in the specified language, fallback to default
+  String getChoiceLabel(Map<String, dynamic> choice, String languageCode) {
+    final label = choice['label'];
+    if (label is Map<String, dynamic>) {
+      if (label.containsKey(languageCode)) {
+        return label[languageCode] as String? ?? label['default'] as String? ?? 'Option';
+      }
+      return label['default'] as String? ?? 'Option';
+    }
+    return 'Option';
+  }
+
+  // Get lower label text for rating questions
+  String? getLowerLabel(String languageCode) {
+    if (lowerLabel != null) {
+      if (lowerLabel!.containsKey(languageCode)) {
+        return lowerLabel![languageCode] as String?;
+      }
+      return lowerLabel!['default'] as String?;
+    }
+    return null;
+  }
+
+  // Get upper label text for rating questions
+  String? getUpperLabel(String languageCode) {
+    if (upperLabel != null) {
+      if (upperLabel!.containsKey(languageCode)) {
+        return upperLabel![languageCode] as String?;
+      }
+      return upperLabel!['default'] as String?;
+    }
+    return null;
+  }
+
+  // Get row label for matrix questions
+  String getRowLabel(Map<String, dynamic> row, String languageCode) {
+    final label = row['label'];
+    if (label is Map<String, dynamic>) {
+      if (label.containsKey(languageCode)) {
+        return label[languageCode] as String? ?? label['default'] as String? ?? 'Row';
+      }
+      return label['default'] as String? ?? 'Row';
+    }
+    return 'Row';
+  }
+
+  // Get column label for matrix questions
+  String getColumnLabel(Map<String, dynamic> column, String languageCode) {
+    final label = column['label'];
+    if (label is Map<String, dynamic>) {
+      if (label.containsKey(languageCode)) {
+        return label[languageCode] as String? ?? label['default'] as String? ?? 'Column';
+      }
+      return label['default'] as String? ?? 'Column';
+    }
+    return 'Column';
+  }
+
+  // Get cascade item name
+  String getCascadeName(Map<String, dynamic> cascadeItem, String languageCode) {
+    final name = cascadeItem['name'];
+    if (name is Map<String, dynamic>) {
+      if (name.containsKey(languageCode)) {
+        return name[languageCode] as String? ?? name['default'] as String? ?? 'Item';
+      }
+      return name['default'] as String? ?? 'Item';
+    }
+    return 'Item';
   }
 }

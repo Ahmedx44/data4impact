@@ -1,5 +1,6 @@
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
+import 'package:data4impact/core/service/api_service/file_upload_service.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/api_service/segment_service.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
@@ -25,12 +26,16 @@ class App extends StatelessWidget {
       apiClient: apiClient,
       secureStorage: secureStorage,
     );
-    final segmentSerive =
-        SegmentService(apiClient: apiClient, secureStorage: secureStorage);
+    final segmentService =
+    SegmentService(apiClient: apiClient, secureStorage: secureStorage);
     final studyService =
-        StudyService(apiClient: apiClient, secureStorage: secureStorage);
+    StudyService(apiClient: apiClient, secureStorage: secureStorage);
     final projectService =
-        ProjectService(apiClient: apiClient, secureStorage: secureStorage);
+    ProjectService(apiClient: apiClient, secureStorage: secureStorage);
+    final fileUploadService = FileUploadService(
+      dio: apiClient.dio,
+      secureStorage: secureStorage,
+    );
 
     AppGlobalContext.setContext(context);
 
@@ -40,8 +45,9 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: authService),
         RepositoryProvider.value(value: secureStorage),
         RepositoryProvider.value(value: projectService),
-        RepositoryProvider.value(value: segmentSerive),
+        RepositoryProvider.value(value: segmentService),
         RepositoryProvider.value(value: studyService),
+        RepositoryProvider.value(value: fileUploadService), // Add FileUploadService
       ],
       child: MultiBlocProvider(
         providers: [

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:data4impact/core/service/api_service/Model/api_question.dart';
 import 'package:data4impact/core/service/api_service/Model/study.dart';
 import 'package:data4impact/features/data_collect/cubit/data_collet_state.dart';
@@ -30,6 +32,12 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     super.dispose();
   }
 
+  String _formatDuration(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final remainingSeconds = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$remainingSeconds';
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DataCollectCubit, DataCollectState>(
@@ -44,7 +52,14 @@ class _DataCollectionViewState extends State<DataCollectionView> {
           return Scaffold(
             appBar: AppBar(),
             body: Center(
-              child: Text('Error: ${state.error}'),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  'Error: ${state.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16, color: Colors.red),
+                ),
+              ),
             ),
           );
         }
@@ -58,12 +73,14 @@ class _DataCollectionViewState extends State<DataCollectionView> {
         final study = state.study!;
         final currentQuestionIndex = state.currentQuestionIndex;
 
+
+
         if (state.jumpTarget == 'end') {
-          return _buildCompletionScreen(study);
+          return _buildCompletionScreen(study, state);
         }
 
         if (currentQuestionIndex >= study.questions.length) {
-          return _buildCompletionScreen(study);
+          return _buildCompletionScreen(study, state);
         }
 
         final question = study.questions[currentQuestionIndex];
@@ -78,6 +95,38 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: 0,
             foregroundColor: Theme.of(context).colorScheme.onSurface,
+            actions: [
+              // Language selector dropdown
+              if (study.languages.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: DropdownButton<String>(
+                    value: state.selectedLanguage,
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        context.read<DataCollectCubit>().changeLanguage(newValue);
+                      }
+                    },
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: 'default',
+                        child: Text('Default'),
+                      ),
+                      ...study.languages.map<DropdownMenuItem<String>>((language) {
+                        return DropdownMenuItem<String>(
+                          value: language['code'] as String,
+                          child: Text(language['name'] as String? ?? 'Unknown'),
+                        );
+                      }).toList(),
+                    ],
+                    underline: const SizedBox(),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+            ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(20),
@@ -91,7 +140,17 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                   minHeight: 8,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                const SizedBox(height: 32),
+
+                const SizedBox(height: 16),
+
+
+                if (study.responseValidation?.requiredVoice ?? false)
+                  _buildAudioRecordingUI(state),
+
+                if (study.responseValidation?.requiredLocation ?? false)
+                  _buildLocationStatus(state),
+
+                const SizedBox(height: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,7 +159,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                         children: [
                           Expanded(
                             child: Text(
-                              question.getTitle('default') as String,
+                              question.getTitle(state.selectedLanguage),
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w600,
@@ -120,9 +179,9 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      if (question.headline['subtitle'] != null)
+                      if (question.getSubtitle(state.selectedLanguage) != null)
                         Text(
-                          question.headline['subtitle'].toString(),
+                          question.getSubtitle(state.selectedLanguage)!,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                             fontSize: 16,
@@ -133,9 +192,12 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
                 Row(
                   children: [
-                    if (currentQuestionIndex > 0)
+                    // FIXED: Only show back button if we can go back
+                    // For welcome screen, we need special handling
+                    if (currentQuestionIndex > 0 || (currentQuestionIndex == 0 && study.isWelcomeCardEnabled && state.answers.isNotEmpty))
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () => context.read<DataCollectCubit>().previousQuestion(),
@@ -150,14 +212,12 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                           child: const Text('Back'),
                         ),
                       ),
-                    if (currentQuestionIndex > 0) const SizedBox(width: 16),
+                    if (currentQuestionIndex > 0 || (currentQuestionIndex == 0 && study.isWelcomeCardEnabled && state.answers.isNotEmpty))
+                      const SizedBox(width: 16),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: context.read<DataCollectCubit>().canProceed(question)
                             ? () {
-                          print('DEBUG: Next/Submit button pressed');
-                          print('DEBUG: Current index: $currentQuestionIndex, Total questions: ${study.questions.length}');
-                          print('DEBUG: Is last question: ${currentQuestionIndex == study.questions.length - 1}');
                           context.read<DataCollectCubit>().nextQuestion();
                         }
                             : null,
@@ -190,6 +250,303 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
+  Widget _buildWelcomeScreen(Study study, DataCollectState state) {
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.emoji_events,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 32),
+            Text(
+              study.getWelcomeHeadline(state.selectedLanguage),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              study.getWelcomeHtml(state.selectedLanguage),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => context.read<DataCollectCubit>().nextQuestion(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text('Start Survey'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAudioRecordingUI(DataCollectState state) {
+    final cubit = context.read<DataCollectCubit>();
+    final remainingSeconds = 180 - state.recordingDuration;
+    final minutes = (remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
+
+    // Check if we have a valid audio file that actually exists
+    bool hasAudioFile = false;
+    if (state.audioFilePath != null) {
+      final file = File(state.audioFilePath!);
+      hasAudioFile = file.existsSync();
+    }
+
+    return Column(
+      children: [
+        // Recording status and timer
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              state.isRecording ? Icons.mic : Icons.mic_none,
+              color: state.isRecording ? Colors.red : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              state.isRecording
+                  ? 'Recording: $minutes:$seconds remaining'
+                  : hasAudioFile ? 'Audio recorded' : 'Audio recording ready',
+              style: TextStyle(
+                color: state.isRecording ? Colors.red : Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        // Recording controls - Show only when not recording AND no audio file exists
+        if (!state.isRecording && !hasAudioFile)
+          ElevatedButton(
+            onPressed: () => cubit.startRecording(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.mic, size: 16),
+                SizedBox(width: 4),
+                Text('Start Recording'),
+              ],
+            ),
+          ),
+
+        // Stop recording button - Show only when recording
+        if (state.isRecording)
+          ElevatedButton(
+            onPressed: () => cubit.stopRecording(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.stop, size: 16),
+                SizedBox(width: 4),
+                Text('Stop Recording'),
+              ],
+            ),
+          ),
+
+        // Audio playback controls (shown when audio is recorded but not uploading)
+        if (hasAudioFile && !state.isRecording && !state.isUploadingAudio)
+          Column(
+            children: [
+              const SizedBox(height: 16),
+              Text(
+                'Audio recorded: ${state.audioFilePath!.split('/').last}',
+                style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+              ),
+
+              // Audio player controls
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      state.isPlayingAudio ? Icons.pause : Icons.play_arrow,
+                      size: 30,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () {
+                      if (state.isPlayingAudio) {
+                        cubit.pauseAudio();
+                      } else {
+                        cubit.playAudio();
+                      }
+                    },
+                  ),
+
+                  IconButton(
+                    icon: Icon(
+                      Icons.stop,
+                      size: 30,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () => cubit.stopAudio(),
+                  ),
+
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      size: 30,
+                      color: Colors.red,
+                    ),
+                    onPressed: () async {
+                      final shouldDelete = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Delete Recording'),
+                          content: const Text('Are you sure you want to delete this recording?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (shouldDelete == true && mounted) {
+                        cubit.deleteRecording();
+                      }
+                    },
+                  ),
+                ],
+              ),
+
+              // Audio progress bar
+              if (state.audioDuration.inSeconds > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      Slider(
+                        value: state.audioPosition.inSeconds.toDouble(),
+                        min: 0,
+                        max: state.audioDuration.inSeconds.toDouble(),
+                        onChanged: (value) {
+                          cubit.seekAudio(Duration(seconds: value.toInt()));
+                        },
+                        activeColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formatDuration(state.audioPosition.inSeconds),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            _formatDuration(state.audioDuration.inSeconds),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Upload button
+              ElevatedButton(
+                onPressed: () => cubit.uploadAudioFile(widget.studyId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: state.isUploadingAudio
+                    ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                  ),
+                )
+                    : const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_upload, size: 16),
+                    SizedBox(width: 4),
+                    Text('Upload Audio'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+        if (state.isUploadingAudio)
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: CircularProgressIndicator(),
+          ),
+
+        if (state.audioUploadResult != null)
+          Text(
+            'Upload successful!',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildLocationStatus(DataCollectState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (state.isLocationLoading)
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if (state.locationData != null)
+            Icon(Icons.location_on, color: Colors.green, size: 16)
+          else
+            Icon(Icons.location_off, color: Colors.red, size: 16),
+
+          const SizedBox(width: 8),
+
+          if (state.isLocationLoading)
+            const Text('Getting location...', style: TextStyle(fontSize: 14))
+          else if (state.locationData != null)
+            const Text('Location captured', style: TextStyle(fontSize: 14))
+          else
+            const Text('Location required', style: TextStyle(fontSize: 14)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuestionInput(ApiQuestion question, DataCollectState state) {
     final cubit = context.read<DataCollectCubit>();
     final answer = state.answers[question.id];
@@ -198,28 +555,28 @@ class _DataCollectionViewState extends State<DataCollectionView> {
 
     switch (question.type) {
       case ApiQuestionType.openText:
-        return _buildOpenTextInput(question, answer, cubit, isActuallyRequired);
+        return _buildOpenTextInput(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
       case ApiQuestionType.multipleChoiceSingle:
-        return _buildSingleChoice(question, answer, cubit, isActuallyRequired);
+        return _buildSingleChoice(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
       case ApiQuestionType.multipleChoiceMulti:
-        return _buildMultipleChoice(question, answer, cubit, isActuallyRequired);
+        return _buildMultipleChoice(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
       case ApiQuestionType.rating:
-        return _buildRating(question, answer, cubit, isActuallyRequired);
+        return _buildRating(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
       case ApiQuestionType.matrix:
-        return _buildMatrix(question, answer, cubit, isActuallyRequired);
+        return _buildMatrix(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
       case ApiQuestionType.ranking:
-        return _buildRanking(question, answer, cubit, isActuallyRequired);
+        return _buildRanking(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
       case ApiQuestionType.date:
         return _buildDateInput(question, answer, cubit, isActuallyRequired);
       case ApiQuestionType.cascade:
-        return _buildCascade(question, answer, cubit, isActuallyRequired);
+        return _buildCascade(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
       default:
         return Center(child: Text('Unsupported question type: ${question.type}'));
     }
   }
 
   Widget _buildOpenTextInput(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
     final controller = _textControllers.putIfAbsent(question.id, () {
       return TextEditingController(text: answer?.toString() ?? '');
     });
@@ -232,9 +589,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
       controller: controller,
       onChanged: (value) => cubit.updateAnswer(question.id, value),
       decoration: InputDecoration(
-        hintText: question.placeholder?['default'] != null
-            ? question.placeholder!['default'].toString()
-            : 'Type your answer here...',
+        hintText: question.getPlaceholder(languageCode) ?? 'Type your answer here...',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -261,7 +616,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
   }
 
   Widget _buildSingleChoice(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
     final choices = question.choices ?? [];
 
     return Column(
@@ -293,7 +648,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                 ),
                 child: ListTile(
                   title: Text(
-                    choice['label']['default'] != null ? choice['label']['default'].toString() : 'Option ${index + 1}',
+                    question.getChoiceLabel(choice as Map<String,dynamic>, languageCode),
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
@@ -316,7 +671,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
   }
 
   Widget _buildMultipleChoice(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
     final choices = question.choices ?? [];
     final selectedIds = (answer is List ? answer : []).toSet();
 
@@ -349,7 +704,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                 ),
                 child: CheckboxListTile(
                   title: Text(
-                    choice['label']['default'] != null ? choice['label']['default'].toString() : 'Option ${index + 1}',
+                    question.getChoiceLabel(choice as Map<String,dynamic>, languageCode),
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
@@ -377,7 +732,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
   }
 
   Widget _buildRating(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
     final maxRating = question.range ?? 5;
 
     return Column(
@@ -416,6 +771,25 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
+              if (question.lowerLabel != null || question.upperLabel != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (question.lowerLabel != null)
+                        Text(
+                          question.getLowerLabel(languageCode) ?? '',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      if (question.upperLabel != null)
+                        Text(
+                          question.getUpperLabel(languageCode) ?? '',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -424,7 +798,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
   }
 
   Widget _buildMatrix(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
     final rows = question.rows ?? [];
     final columns = question.columns ?? [];
     final matrixAnswers = (answer is Map ? answer : {});
@@ -455,8 +829,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        row['label']['default'] != null ? row['label']['default'].toString() : 'Row ${rowIndex + 1}',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        question.getRowLabel(row as Map<String,dynamic>, languageCode),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -468,7 +842,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
 
                           return FilterChip(
                             label: Text(
-                              column['label']['default'] != null ? column['label']['default'].toString() : 'Option',
+                              question.getColumnLabel(column as Map<String,dynamic>, languageCode),
                               style: TextStyle(
                                 color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface,
                               ),
@@ -507,7 +881,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
   }
 
   Widget _buildRanking(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
     final choices = question.choices ?? [];
     List<dynamic> currentRanking = (answer is List ? List.from(answer) : []);
 
@@ -565,7 +939,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                   ),
                 ),
                 title: Text(
-                  choice['label']['default']?.toString() ?? 'Option ${index + 1}',
+                  question.getChoiceLabel(choice as Map<String,dynamic>, languageCode),
                   style: const TextStyle(fontSize: 16),
                 ),
                 trailing: ReorderableDragStartListener(
@@ -622,7 +996,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
   }
 
   Widget _buildCascade(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
     final cascades = question.cascades ?? [];
     List<dynamic> currentSelection = (answer is List ? List.from(answer) : []);
 
@@ -637,20 +1011,20 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             ),
           ),
         Expanded(
-          child: _buildCascadeTree(cascades, currentSelection, cubit, question.id),
+          child: _buildCascadeTree(cascades, currentSelection, cubit, question.id, languageCode, question),
         ),
       ],
     );
   }
 
   Widget _buildCascadeTree(
-      List<dynamic> items, List<dynamic> currentSelection, DataCollectCubit cubit, String questionId) {
+      List<dynamic> items, List<dynamic> currentSelection, DataCollectCubit cubit, String questionId, String languageCode, ApiQuestion question)  {
     return ListView.builder(
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
         final itemId = item['id'];
-        final itemName = item['name']?['default']?.toString() ?? 'Unknown';
+        final itemName = question.getCascadeName(item as Map<String,dynamic>, languageCode);
         final hasChildren = item['children'] is List && (item['children'] as List).isNotEmpty;
         final isSelected = currentSelection.contains(itemId);
 
@@ -678,7 +1052,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
           children: hasChildren ? [
             Padding(
               padding: const EdgeInsets.only(left: 24.0),
-              child: _buildCascadeTree(item['children'] as List<dynamic>, currentSelection, cubit, questionId),
+              child: _buildCascadeTree(item['children'] as List<dynamic>, currentSelection, cubit, questionId, languageCode,question),
             )
           ] : [],
           onExpansionChanged: (expanded) {
@@ -691,9 +1065,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildCompletionScreen(Study study) {
-    final ending = study.ending;
-
+  Widget _buildCompletionScreen(Study study, DataCollectState state) {
     return Scaffold(
       body: Center(
         child: Padding(
@@ -701,29 +1073,34 @@ class _DataCollectionViewState extends State<DataCollectionView> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check_circle, size: 64, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                Icons.check_circle,
+                size: 64,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(height: 24),
               Text(
-                ending['headline']?['default']?.toString() ?? 'Thank you!',
+                study.getEndingHeadline(state.selectedLanguage),
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
-                ending['subheader']?['default']?.toString() ?? 'Your response has been recorded.',
+                study.getEndingSubheader(state.selectedLanguage),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              if (study.showEndingButton)
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  ),
+                  child: const Text('Finish'),
                 ),
-                child: const Text('Finish'),
-              ),
             ],
           ),
         ),

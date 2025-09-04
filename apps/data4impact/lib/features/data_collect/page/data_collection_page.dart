@@ -1,3 +1,4 @@
+import 'package:data4impact/core/service/api_service/file_upload_service.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
 import 'package:data4impact/features/data_collect/cubit/data_collect_cubit.dart';
 import 'package:data4impact/features/data_collect/page/data_collection_view.dart';
@@ -11,8 +12,10 @@ class DataCollectionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<DataCollectCubit>(
-      create: (context) =>
-          DataCollectCubit(studyService: context.read<StudyService>()),
+      create: (context) => DataCollectCubit(
+        studyService: context.read<StudyService>(),
+        fileUploadService: context.read<FileUploadService>(),
+      ),
       child: DataCollectionView(
         studyId: studyId,
       ),

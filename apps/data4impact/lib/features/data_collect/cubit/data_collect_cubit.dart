@@ -1,17 +1,236 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:bloc/bloc.dart';
 import 'package:data4impact/core/service/api_service/Model/api_question.dart';
 import 'package:data4impact/core/service/api_service/Model/study.dart';
+import 'package:data4impact/core/service/api_service/file_upload_service.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
+import 'package:data4impact/core/service/audio_service.dart';
 import 'package:data4impact/features/data_collect/cubit/data_collet_state.dart';
-import 'package:dio/dio.dart';
-import 'package:meta/meta.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class DataCollectCubit extends Cubit<DataCollectState> {
   final StudyService studyService;
+  final AudioRecordingService audioRecordingService = AudioRecordingService();
+  final FileUploadService fileUploadService;
+  final AudioPlayer audioPlayer = AudioPlayer();
   bool _isNavigating = false;
+  Timer? _recordingTimer;
+  StreamSubscription? _audioPositionSubscription;
+  StreamSubscription? _audioDurationSubscription;
 
-  DataCollectCubit({required this.studyService})
-      : super(const DataCollectState());
+  DataCollectCubit({required this.studyService, required this.fileUploadService})
+      : super(const DataCollectState()) {
+    _setupAudioPlayerListeners();
+  }
+
+  void _setupAudioPlayerListeners() {
+    _audioPositionSubscription = audioPlayer.onPositionChanged.listen((position) {
+      emit(state.copyWith(audioPosition: position));
+    });
+
+    _audioDurationSubscription = audioPlayer.onDurationChanged.listen((duration) {
+      emit(state.copyWith(audioDuration: duration));
+    });
+
+    audioPlayer.onPlayerComplete.listen((event) {
+      emit(state.copyWith(isPlayingAudio: false));
+    });
+  }
+
+  // Language methods
+  void changeLanguage(String languageCode) {
+    emit(state.copyWith(selectedLanguage: languageCode));
+  }
+
+  // Location methods
+  Future<void> getCurrentLocation() async {
+    emit(state.copyWith(isLocationLoading: true));
+
+    try {
+      // Check permissions
+      final permissionStatus = await Permission.location.request();
+
+      if (permissionStatus.isGranted) {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.best,
+        );
+
+        emit(state.copyWith(
+          locationData: LocationData(
+            lat: position.latitude.toString(),
+            lng: position.longitude.toString(),
+          ),
+          isLocationLoading: false,
+        ));
+      } else {
+        emit(state.copyWith(
+          error: 'Location permission denied',
+          isLocationLoading: false,
+        ));
+      }
+    } catch (e) {
+      emit(state.copyWith(
+        error: 'Failed to get location: $e',
+        isLocationLoading: false,
+      ));
+    }
+  }
+
+  // Audio playback methods
+  Future<void> playAudio() async {
+    if (state.audioFilePath == null) return;
+
+    try {
+      await audioPlayer.play(DeviceFileSource(state.audioFilePath!));
+      emit(state.copyWith(isPlayingAudio: true));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to play audio: $e'));
+    }
+  }
+
+  Future<void> pauseAudio() async {
+    try {
+      await audioPlayer.pause();
+      emit(state.copyWith(isPlayingAudio: false));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to pause audio: $e'));
+    }
+  }
+
+  Future<void> stopAudio() async {
+    try {
+      await audioPlayer.stop();
+      emit(state.copyWith(
+        isPlayingAudio: false,
+        audioPosition: Duration.zero,
+      ));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to stop audio: $e'));
+    }
+  }
+
+  Future<void> seekAudio(Duration position) async {
+    try {
+      await audioPlayer.seek(position);
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to seek audio: $e'));
+    }
+  }
+
+  Future<void> startRecording() async {
+    try {
+      await audioRecordingService.startRecording();
+      emit(state.copyWith(
+        isRecording: true,
+        recordingDuration: 0,
+      ));
+
+      // Update recording duration every second
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!audioRecordingService.isRecording) {
+          timer.cancel();
+          return;
+        }
+        emit(state.copyWith(
+          recordingDuration: audioRecordingService.recordingDuration,
+        ));
+      });
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to start recording: $e'));
+    }
+  }
+
+  Future<void> stopRecording() async {
+    try {
+      final path = await audioRecordingService.stopRecording();
+      emit(state.copyWith(
+        isRecording: false,
+        audioFilePath: path,
+      ));
+      _recordingTimer?.cancel();
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to stop recording: $e'));
+    }
+  }
+
+  Future<void> uploadAudioFile(String studyId) async {
+    if (state.audioFilePath == null) {
+      emit(state.copyWith(error: 'No audio file to upload'));
+      return;
+    }
+
+    emit(state.copyWith(isUploadingAudio: true, error: null));
+
+    try {
+      final result = await fileUploadService!.uploadAudioFile(
+        studyId,
+        state.audioFilePath!,
+      );
+
+      emit(state.copyWith(
+        isUploadingAudio: false,
+        audioUploadResult: result,
+      ));
+
+      // Clean up local file after successful upload
+      final file = File(state.audioFilePath!);
+      if (await file.exists()) {
+        await file.delete();
+      }
+      emit(state.copyWith(audioFilePath: null));
+    } catch (e) {
+      emit(state.copyWith(
+        isUploadingAudio: false,
+        error: 'Failed to upload audio: $e',
+      ));
+    }
+  }
+
+  Future<void> deleteRecording() async {
+    try {
+      // Stop any ongoing playback
+      await stopAudio();
+
+      // Delete the audio file if it exists
+      if (state.audioFilePath != null) {
+        final file = File(state.audioFilePath!);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+
+      // Also delete from audio recording service
+      await audioRecordingService.deleteRecording();
+
+      // Reset all audio-related state
+      emit(state.copyWith(
+        audioFilePath: null,
+        recordingDuration: 0,
+        isRecording: false,
+        audioUploadResult: null,
+        isUploadingAudio: false,
+        isPlayingAudio: false,
+        audioPosition: Duration.zero,
+        audioDuration: Duration.zero,
+      ));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to delete recording: $e'));
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _recordingTimer?.cancel();
+    _audioPositionSubscription?.cancel();
+    _audioDurationSubscription?.cancel();
+    audioPlayer.dispose();
+    audioRecordingService.dispose();
+    return super.close();
+  }
 
   Future<void> getStudyQuestions(String studyId) async {
     emit(state.copyWith(isLoading: true, error: null));
@@ -19,12 +238,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     try {
       final data = await studyService.getStudyQuestions(studyId);
 
-      print('API Response type: ${data.runtimeType}');
-      print('API Response data: $data');
-
       if (data is Map<String, dynamic> && data['error'] == true) {
         final errorMessage = data['message'] ?? 'Study is not in progress';
-        print('Error response detected: $errorMessage');
         emit(state.copyWith(
           isLoading: false,
           error: errorMessage as String,
@@ -32,10 +247,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         return;
       }
 
-      print('Parsing as Study object...');
       final study = Study.fromJson(data);
-      print('Study parsed successfully: ${study.name}');
 
+      final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
+      final isLocationRequired = study.responseValidation?.requiredLocation ?? false;
+
+      // FIX: Reset all state including hasSeenWelcome
       emit(state.copyWith(
         study: study,
         isLoading: false,
@@ -46,15 +263,25 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         jumpTarget: null,
         navigationHistory: [],
         logicJumps: {},
+        availableLanguages: study.languages ?? [],
+        isLocationRequired: isLocationRequired,
+        hasSeenWelcome: false, // Reset welcome screen state
       ));
+
+      if (isLocationRequired) {
+        await getCurrentLocation();
+      }
+
+      if (isVoiceRequired) {
+        await startRecording();
+      }
+
     } on FormatException catch (e) {
-      print('FormatException caught: ${e.message}');
       emit(state.copyWith(
         isLoading: false,
         error: e.message,
       ));
     } catch (e) {
-      print('General exception caught: $e');
       emit(state.copyWith(
         isLoading: false,
         error: 'Failed to load study: ${e.toString()}',
@@ -104,7 +331,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
                 if (result.jumpTarget != null) {
                   final targetIndex = study.questions.indexWhere(
-                    (q) => q.id == result.jumpTarget,
+                        (q) => q.id == result.jumpTarget,
                   );
 
                   if (targetIndex != -1 &&
@@ -127,10 +354,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool _evaluateConditionGroup(
-    Study study,
-    Map<String, dynamic> answers,
-    Map<String, dynamic> conditionGroup,
-  ) {
+      Study study,
+      Map<String, dynamic> answers,
+      Map<String, dynamic> conditionGroup,
+      ) {
     final connector = conditionGroup['connector'] ?? 'and';
     final conditions = conditionGroup['conditions'] as List<dynamic>? ?? [];
 
@@ -154,10 +381,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool _evaluateSingleCondition(
-    Study study,
-    Map<String, dynamic> answers,
-    Map<String, dynamic> condition,
-  ) {
+      Study study,
+      Map<String, dynamic> answers,
+      Map<String, dynamic> condition,
+      ) {
     try {
       final leftOperand = condition['leftOperand'];
       final operator = condition['operator'];
@@ -219,16 +446,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   dynamic _getLeftOperandValue(
-    Study study,
-    Map<String, dynamic> answers,
-    Map<String, dynamic> leftOperand,
-  ) {
+      Study study,
+      Map<String, dynamic> answers,
+      Map<String, dynamic> leftOperand,
+      ) {
     final type = leftOperand['type'];
     final value = leftOperand['value'];
 
     if (type == 'question') {
       final question = study.questions.firstWhere(
-        (q) => q.id == value,
+            (q) => q.id == value,
       );
 
       if (question.id.isNotEmpty) {
@@ -239,9 +466,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   dynamic _getRightOperandValue(
-    Map<String, dynamic> answers,
-    Map<String, dynamic> rightOperand,
-  ) {
+      Map<String, dynamic> answers,
+      Map<String, dynamic> rightOperand,
+      ) {
     final type = rightOperand['type'];
     final value = rightOperand['value'];
 
@@ -254,12 +481,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   ({
-    Set<String> requiredQuestionIds,
-    String? jumpTarget,
-    Set<String> skipQuestionIds
+  Set<String> requiredQuestionIds,
+  String? jumpTarget,
+  Set<String> skipQuestionIds
   }) _performActions(
-    List<dynamic> actions,
-  ) {
+      List<dynamic> actions,
+      ) {
     Set<String> requiredQuestionIds = {};
     String? jumpTarget;
     Set<String> skipQuestionIds = {};
@@ -285,9 +512,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
 
     return (
-      requiredQuestionIds: requiredQuestionIds,
-      jumpTarget: jumpTarget,
-      skipQuestionIds: skipQuestionIds,
+    requiredQuestionIds: requiredQuestionIds,
+    jumpTarget: jumpTarget,
+    skipQuestionIds: skipQuestionIds,
     );
   }
 
@@ -312,7 +539,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         return;
       } else {
         final targetIndex = study.questions.indexWhere(
-          (q) => q.id == state.jumpTarget,
+              (q) => q.id == state.jumpTarget,
         );
 
         if (targetIndex == currentIndex) {
@@ -350,7 +577,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     while (nextIndex < study.questions.length) {
       final nextQuestion = study.questions[nextIndex];
 
-      // Skip questions that are in the skipQuestions set
       if (state.skipQuestions.contains(nextQuestion.id)) {
         nextIndex++;
       } else {
@@ -497,9 +723,48 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
+  Map<String, dynamic> _formatAnswersForSubmission() {
+    final Map<String, dynamic> formattedData = {};
+    final study = state.study;
+
+    if (study == null) return formattedData;
+
+    for (final question in study.questions) {
+      final answer = state.answers[question.id];
+      if (answer != null) {
+        // For multiple choice questions, we need to handle the answer format
+        if (question.type == ApiQuestionType.multipleChoiceSingle) {
+          // Single choice - store the selected choice ID
+          formattedData[question.variable] = answer;
+        } else if (question.type == ApiQuestionType.multipleChoiceMulti) {
+          // Multiple choice - store list of selected choice IDs
+          formattedData[question.variable] = answer;
+        } else if (question.type == ApiQuestionType.ranking) {
+          // Ranking - store the ordered list of choice IDs
+          formattedData[question.variable] = answer;
+        } else {
+          // For open text, rating, date, etc. - store the value directly
+          formattedData[question.variable] = answer;
+        }
+      }
+    }
+
+    return formattedData;
+  }
+
   void submitSurvey() {
-    print('Survey answers: ${state.answers}');
-    // Here you would typically send the answers to your backend
-    // For now, we'll just print them
+    final formattedAnswers = _formatAnswersForSubmission();
+    final recordingDuration = state.recordingDuration;
+
+    final submissionData = {
+      "finished": true,
+      "data": formattedAnswers,
+      "respondent": null,
+      "geolocation": state.locationData?.toJson() ?? {},
+      "duration": recordingDuration,
+    };
+
+    print('Survey submission: $submissionData');
+
   }
 }
