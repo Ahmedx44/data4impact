@@ -47,7 +47,7 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: projectService),
         RepositoryProvider.value(value: segmentService),
         RepositoryProvider.value(value: studyService),
-        RepositoryProvider.value(value: fileUploadService), // Add FileUploadService
+        RepositoryProvider.value(value: fileUploadService),
       ],
       child: MultiBlocProvider(
         providers: [

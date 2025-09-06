@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:data4impact/core/service/api_service/Model/api_question.dart';
 import 'package:data4impact/core/service/api_service/Model/study.dart';
 import 'package:data4impact/core/service/dialog_loading.dart';
+import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/data_collect/cubit/data_collet_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,6 +20,7 @@ class DataCollectionView extends StatefulWidget {
 
 class _DataCollectionViewState extends State<DataCollectionView> {
   final Map<String, TextEditingController> _textControllers = {};
+  String? _previousError;
 
   @override
   void initState() {
@@ -41,13 +43,21 @@ class _DataCollectionViewState extends State<DataCollectionView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DataCollectCubit, DataCollectState>(
-      builder: (context, state) {
-        if (state.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+    return BlocConsumer<DataCollectCubit, DataCollectState>(
+      listener: (context, state) {
+        // Show toast for errors instead of changing screen
+        if (state.error != null && state.error != _previousError) {
+          ToastService.showErrorToast(message: state.error!);
+          _previousError = state.error;
+          context.read<DataCollectCubit>().clearError();
         }
+
+        // Handle submission result
+        if (state.submissionResult != null) {
+          Navigator.pop(context); // Return to previous screen
+        }
+
+        // Handle loading dialogs
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (state.isSubmitting) {
             DialogLoading.show(context);
@@ -55,38 +65,25 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             DialogLoading.hide(context);
           }
         });
-
-
-        if(state.submissionResult!=null){
-          Navigator.canPop(context);
+      },
+      builder: (context, state) {
+        // Initial loading error screen
+        if (state.isLoading && state.error != null) {
+          return _buildErrorScreen(state.error!);
         }
 
-        if (state.error != null) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  'Error: ${state.error}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, color: Colors.red),
-                ),
-              ),
-            ),
+        if (state.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (state.study == null) {
-          return const Scaffold(
-            body: Center(child: Text('No study data found')),
-          );
+          return _buildErrorScreen('No study data found');
         }
 
         final study = state.study!;
         final currentQuestionIndex = state.currentQuestionIndex;
-
-
 
         if (state.jumpTarget == 'end') {
           return _buildCompletionScreen(study, state);
@@ -117,7 +114,9 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                     value: state.selectedLanguage,
                     onChanged: (String? newValue) {
                       if (newValue != null) {
-                        context.read<DataCollectCubit>().changeLanguage(newValue);
+                        context
+                            .read<DataCollectCubit>()
+                            .changeLanguage(newValue);
                       }
                     },
                     items: [
@@ -125,7 +124,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                         value: 'default',
                         child: Text('Default'),
                       ),
-                      ...study.languages.map<DropdownMenuItem<String>>((language) {
+                      ...study.languages
+                          .map<DropdownMenuItem<String>>((language) {
                         return DropdownMenuItem<String>(
                           value: language['code'] as String,
                           child: Text(language['name'] as String? ?? 'Unknown'),
@@ -153,16 +153,24 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                   minHeight: 8,
                   borderRadius: BorderRadius.circular(4),
                 ),
-
                 const SizedBox(height: 16),
-
-
                 if (study.responseValidation?.requiredVoice ?? false)
                   _buildAudioRecordingUI(state),
-
                 if (study.responseValidation?.requiredLocation ?? false)
-                  _buildLocationStatus(state),
-
+                  Column(
+                    children: [
+                      _buildLocationStatus(state),
+                      if (state.isLocationLoading)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Please wait while we get your location...',
+                            style: TextStyle(
+                                fontSize: 12, fontStyle: FontStyle.italic),
+                          ),
+                        ),
+                    ],
+                  ),
                 const SizedBox(height: 16),
                 Expanded(
                   child: Column(
@@ -196,7 +204,10 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                         Text(
                           question.getSubtitle(state.selectedLanguage)!,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.7),
                             fontSize: 16,
                           ),
                         ),
@@ -208,15 +219,23 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    // FIXED: Only show back button if we can go back
-                    // For welcome screen, we need special handling
-                    if (currentQuestionIndex > 0 || (currentQuestionIndex == 0 && study.isWelcomeCardEnabled && state.answers.isNotEmpty))
+                    // Only show back button if we can go back
+                    if (currentQuestionIndex > 0 ||
+                        (currentQuestionIndex == 0 &&
+                            study.isWelcomeCardEnabled &&
+                            state.answers.isNotEmpty))
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => context.read<DataCollectCubit>().previousQuestion(),
+                          onPressed: state.isLocationLoading
+                              ? null
+                              : () => context
+                                  .read<DataCollectCubit>()
+                                  .previousQuestion(),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                            foregroundColor: Theme.of(context).colorScheme.onSurface,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.surfaceVariant,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onSurface,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -225,32 +244,58 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                           child: const Text('Back'),
                         ),
                       ),
-                    if (currentQuestionIndex > 0 || (currentQuestionIndex == 0 && study.isWelcomeCardEnabled && state.answers.isNotEmpty))
+                    if (currentQuestionIndex > 0 ||
+                        (currentQuestionIndex == 0 &&
+                            study.isWelcomeCardEnabled &&
+                            state.answers.isNotEmpty))
                       const SizedBox(width: 16),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: context.read<DataCollectCubit>().canProceed(question)
-                            ? () {
-                          context.read<DataCollectCubit>().nextQuestion(studyId: widget.studyId);
-                        }
-                            : null,
+                        onPressed: state.isLocationLoading
+                            ? null
+                            : context
+                                    .read<DataCollectCubit>()
+                                    .canProceed(question)
+                                ? () {
+                                    context
+                                        .read<DataCollectCubit>()
+                                        .nextQuestion(studyId: widget.studyId);
+                                  }
+                                : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: context.read<DataCollectCubit>().canProceed(question)
+                          backgroundColor: !state.isLocationLoading &&
+                                  context
+                                      .read<DataCollectCubit>()
+                                      .canProceed(question)
                               ? Theme.of(context).colorScheme.primary
                               : Theme.of(context).colorScheme.surfaceVariant,
-                          foregroundColor: context.read<DataCollectCubit>().canProceed(question)
+                          foregroundColor: !state.isLocationLoading &&
+                                  context
+                                      .read<DataCollectCubit>()
+                                      .canProceed(question)
                               ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text(
-                          currentQuestionIndex == study.questions.length - 1
-                              ? 'Submit'
-                              : 'Next',
-                        ),
+                        child: state.isLocationLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(
+                                currentQuestionIndex ==
+                                        study.questions.length - 1
+                                    ? 'Submit'
+                                    : 'Next',
+                              ),
                       ),
                     ),
                   ],
@@ -260,6 +305,67 @@ class _DataCollectionViewState extends State<DataCollectionView> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildErrorScreen(String errorMessage) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Oops! Something went wrong',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                errorMessage,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  // Retry loading the study
+                  context
+                      .read<DataCollectCubit>()
+                      .getStudyQuestions(widget.studyId);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+                child: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -289,11 +395,14 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () => context.read<DataCollectCubit>().nextQuestion(studyId: widget.studyId),
+              onPressed: () => context
+                  .read<DataCollectCubit>()
+                  .nextQuestion(studyId: widget.studyId),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
               child: const Text('Start Survey'),
             ),
@@ -331,7 +440,9 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             Text(
               state.isRecording
                   ? 'Recording: $minutes:$seconds remaining'
-                  : hasAudioFile ? 'Audio recorded' : 'Audio recording ready',
+                  : hasAudioFile
+                      ? 'Audio recorded'
+                      : 'Audio recording ready',
               style: TextStyle(
                 color: state.isRecording ? Colors.red : Colors.grey,
                 fontSize: 14,
@@ -387,7 +498,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
               const SizedBox(height: 16),
               Text(
                 'Audio recorded: ${state.audioFilePath!.split('/').last}',
-                style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                style:
+                    const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
               ),
 
               // Audio player controls
@@ -408,7 +520,6 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                       }
                     },
                   ),
-
                   IconButton(
                     icon: Icon(
                       Icons.stop,
@@ -417,7 +528,6 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                     ),
                     onPressed: () => cubit.stopAudio(),
                   ),
-
                   IconButton(
                     icon: Icon(
                       Icons.delete,
@@ -429,7 +539,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: const Text('Delete Recording'),
-                          content: const Text('Are you sure you want to delete this recording?'),
+                          content: const Text(
+                              'Are you sure you want to delete this recording?'),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(false),
@@ -437,7 +548,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                             ),
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(true),
-                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                              child: const Text('Delete',
+                                  style: TextStyle(color: Colors.red)),
                             ),
                           ],
                         ),
@@ -519,9 +631,7 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             Icon(Icons.location_on, color: Colors.green, size: 16)
           else
             Icon(Icons.location_off, color: Colors.red, size: 16),
-
           const SizedBox(width: 8),
-
           if (state.isLocationLoading)
             const Text('Getting location...', style: TextStyle(fontSize: 14))
           else if (state.locationData != null)
@@ -539,30 +649,52 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     final isRequiredByLogic = state.requiredQuestions.contains(question.id);
     final isActuallyRequired = question.required || isRequiredByLogic;
 
+    // Disable input if location is loading
+    if (state.isLocationLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Please wait while we get your location...'),
+          ],
+        ),
+      );
+    }
+
     switch (question.type) {
       case ApiQuestionType.openText:
-        return _buildOpenTextInput(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
+        return _buildOpenTextInput(question, answer, cubit, isActuallyRequired,
+            state.selectedLanguage);
       case ApiQuestionType.multipleChoiceSingle:
-        return _buildSingleChoice(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
+        return _buildSingleChoice(question, answer, cubit, isActuallyRequired,
+            state.selectedLanguage);
       case ApiQuestionType.multipleChoiceMulti:
-        return _buildMultipleChoice(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
+        return _buildMultipleChoice(question, answer, cubit, isActuallyRequired,
+            state.selectedLanguage);
       case ApiQuestionType.rating:
-        return _buildRating(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
+        return _buildRating(question, answer, cubit, isActuallyRequired,
+            state.selectedLanguage);
       case ApiQuestionType.matrix:
-        return _buildMatrix(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
+        return _buildMatrix(question, answer, cubit, isActuallyRequired,
+            state.selectedLanguage);
       case ApiQuestionType.ranking:
-        return _buildRanking(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
+        return _buildRanking(question, answer, cubit, isActuallyRequired,
+            state.selectedLanguage);
       case ApiQuestionType.date:
         return _buildDateInput(question, answer, cubit, isActuallyRequired);
       case ApiQuestionType.cascade:
-        return _buildCascade(question, answer, cubit, isActuallyRequired, state.selectedLanguage);
+        return _buildCascade(question, answer, cubit, isActuallyRequired,
+            state.selectedLanguage);
       default:
-        return Center(child: Text('Unsupported question type: ${question.type}'));
+        return Center(
+            child: Text('Unsupported question type: ${question.type}'));
     }
   }
 
-  Widget _buildOpenTextInput(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
+  Widget _buildOpenTextInput(ApiQuestion question, dynamic answer,
+      DataCollectCubit cubit, bool isRequired, String languageCode) {
     final controller = _textControllers.putIfAbsent(question.id, () {
       return TextEditingController(text: answer?.toString() ?? '');
     });
@@ -575,7 +707,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
       controller: controller,
       onChanged: (value) => cubit.updateAnswer(question.id, value),
       decoration: InputDecoration(
-        hintText: question.getPlaceholder(languageCode) ?? 'Type your answer here...',
+        hintText:
+            question.getPlaceholder(languageCode) ?? 'Type your answer here...',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -583,14 +716,16 @@ class _DataCollectionViewState extends State<DataCollectionView> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+          borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
         ),
         filled: true,
-        fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor:
+            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
         errorText: isRequired && (answer == null || (answer as String).isEmpty)
             ? 'This field is required'
             : null,
@@ -601,8 +736,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildSingleChoice(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
+  Widget _buildSingleChoice(ApiQuestion question, dynamic answer,
+      DataCollectCubit cubit, bool isRequired, String languageCode) {
     final choices = question.choices ?? [];
 
     return Column(
@@ -612,7 +747,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
               'Please select an option',
-              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 14),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 14),
             ),
           ),
         Expanded(
@@ -624,26 +760,35 @@ class _DataCollectionViewState extends State<DataCollectionView> {
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
-                color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                    : null,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side: BorderSide(
-                    color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
                 child: ListTile(
                   title: Text(
-                    question.getChoiceLabel(choice as Map<String,dynamic>, languageCode),
+                    question.getChoiceLabel(
+                        choice as Map<String, dynamic>, languageCode),
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   leading: Radio(
                     value: choice['id'],
                     groupValue: answer,
-                    onChanged: (value) => cubit.updateAnswer(question.id, value),
+                    onChanged: (value) =>
+                        cubit.updateAnswer(question.id, value),
                     activeColor: Theme.of(context).colorScheme.primary,
                   ),
                   onTap: () => cubit.updateAnswer(question.id, choice['id']),
@@ -656,8 +801,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildMultipleChoice(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
+  Widget _buildMultipleChoice(ApiQuestion question, dynamic answer,
+      DataCollectCubit cubit, bool isRequired, String languageCode) {
     final choices = question.choices ?? [];
     final selectedIds = (answer is List ? answer : []).toSet();
 
@@ -668,7 +813,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
               'Please select at least one option',
-              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 14),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 14),
             ),
           ),
         Expanded(
@@ -680,20 +826,28 @@ class _DataCollectionViewState extends State<DataCollectionView> {
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
-                color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                    : null,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side: BorderSide(
-                    color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
                 child: CheckboxListTile(
                   title: Text(
-                    question.getChoiceLabel(choice as Map<String,dynamic>, languageCode),
+                    question.getChoiceLabel(
+                        choice as Map<String, dynamic>, languageCode),
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   value: isSelected,
@@ -717,8 +871,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildRating(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
+  Widget _buildRating(ApiQuestion question, dynamic answer,
+      DataCollectCubit cubit, bool isRequired, String languageCode) {
     final maxRating = question.range ?? 5;
 
     return Column(
@@ -728,7 +882,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text(
               'Please provide a rating',
-              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 14),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 14),
             ),
           ),
         Center(
@@ -752,9 +907,12 @@ class _DataCollectionViewState extends State<DataCollectionView> {
               ),
               const SizedBox(height: 16),
               Text(
-                answer == null ? 'Tap to rate' : 'You rated: $answer/$maxRating',
+                answer == null
+                    ? 'Tap to rate'
+                    : 'You rated: $answer/$maxRating',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
               if (question.lowerLabel != null || question.upperLabel != null)
@@ -783,8 +941,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildMatrix(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
+  Widget _buildMatrix(ApiQuestion question, dynamic answer,
+      DataCollectCubit cubit, bool isRequired, String languageCode) {
     final rows = question.rows ?? [];
     final columns = question.columns ?? [];
     final matrixAnswers = (answer is Map ? answer : {});
@@ -796,7 +954,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
               'Please answer all rows',
-              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 14),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 14),
             ),
           ),
         Expanded(
@@ -815,8 +974,10 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        question.getRowLabel(row as Map<String,dynamic>, languageCode),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        question.getRowLabel(
+                            row as Map<String, dynamic>, languageCode),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -828,14 +989,18 @@ class _DataCollectionViewState extends State<DataCollectionView> {
 
                           return FilterChip(
                             label: Text(
-                              question.getColumnLabel(column as Map<String,dynamic>, languageCode),
+                              question.getColumnLabel(
+                                  column as Map<String, dynamic>, languageCode),
                               style: TextStyle(
-                                color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.onPrimary
+                                    : Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             selected: isSelected,
                             onSelected: (selected) {
-                              final newAnswers = Map<String, dynamic>.from(matrixAnswers);
+                              final newAnswers =
+                                  Map<String, dynamic>.from(matrixAnswers);
                               if (selected) {
                                 newAnswers[rowId as String] = columnId;
                               } else if (newAnswers[rowId] == columnId) {
@@ -843,13 +1008,19 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                               }
                               cubit.updateAnswer(question.id, newAnswers);
                             },
-                            backgroundColor: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceVariant,
-                            selectedColor: Theme.of(context).colorScheme.primary,
-                            checkmarkColor: Theme.of(context).colorScheme.onPrimary,
+                            backgroundColor: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.surfaceVariant,
+                            selectedColor:
+                                Theme.of(context).colorScheme.primary,
+                            checkmarkColor:
+                                Theme.of(context).colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                               side: BorderSide(
-                                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.outline,
                               ),
                             ),
                           );
@@ -866,8 +1037,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildRanking(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
+  Widget _buildRanking(ApiQuestion question, dynamic answer,
+      DataCollectCubit cubit, bool isRequired, String languageCode) {
     final choices = question.choices ?? [];
     List<dynamic> currentRanking = (answer is List ? List.from(answer) : []);
 
@@ -882,7 +1053,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
               'Please rank all options',
-              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 14),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 14),
             ),
           ),
         Expanded(
@@ -899,8 +1071,10 @@ class _DataCollectionViewState extends State<DataCollectionView> {
               final index = entry.key;
               final choiceId = entry.value;
               final choice = choices.firstWhere(
-                    (c) => c['id'] == choiceId,
-                orElse: () => {'label': {'default': 'Unknown'}},
+                (c) => c['id'] == choiceId,
+                orElse: () => {
+                  'label': {'default': 'Unknown'}
+                },
               );
 
               return ListTile(
@@ -909,9 +1083,11 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                    border: Border.all(
+                        color: Theme.of(context).colorScheme.primary, width: 2),
                   ),
                   child: Center(
                     child: Text(
@@ -925,14 +1101,17 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                   ),
                 ),
                 title: Text(
-                  question.getChoiceLabel(choice as Map<String,dynamic>, languageCode),
+                  question.getChoiceLabel(
+                      choice as Map<String, dynamic>, languageCode),
                   style: const TextStyle(fontSize: 16),
                 ),
                 trailing: ReorderableDragStartListener(
                   index: index,
-                  child: Icon(Icons.drag_handle, color: Theme.of(context).colorScheme.primary),
+                  child: Icon(Icons.drag_handle,
+                      color: Theme.of(context).colorScheme.primary),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               );
             }).toList(),
           ),
@@ -941,8 +1120,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildDateInput(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+  Widget _buildDateInput(ApiQuestion question, dynamic answer,
+      DataCollectCubit cubit, bool isRequired) {
     return Column(
       children: [
         if (isRequired && answer == null)
@@ -950,7 +1129,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text(
               'Please select a date',
-              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 14),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 14),
             ),
           ),
         Center(
@@ -958,7 +1138,9 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             onPressed: () async {
               final selectedDate = await showDatePicker(
                 context: context,
-                initialDate: answer != null ? DateTime.parse(answer as String) : DateTime.now(),
+                initialDate: answer != null
+                    ? DateTime.parse(answer as String)
+                    : DateTime.now(),
                 firstDate: DateTime(1900),
                 lastDate: DateTime.now(),
               );
@@ -973,7 +1155,9 @@ class _DataCollectionViewState extends State<DataCollectionView> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             ),
             child: Text(
-              answer == null ? 'Select Date' : 'Selected: ${answer.toString().substring(0, 10)}',
+              answer == null
+                  ? 'Select Date'
+                  : 'Selected: ${answer.toString().substring(0, 10)}',
             ),
           ),
         ),
@@ -981,8 +1165,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
     );
   }
 
-  Widget _buildCascade(
-      ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired, String languageCode) {
+  Widget _buildCascade(ApiQuestion question, dynamic answer,
+      DataCollectCubit cubit, bool isRequired, String languageCode) {
     final cascades = question.cascades ?? [];
     List<dynamic> currentSelection = (answer is List ? List.from(answer) : []);
 
@@ -993,54 +1177,83 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text(
               'Please make a selection',
-              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 14),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 14),
             ),
           ),
         Expanded(
-          child: _buildCascadeTree(cascades, currentSelection, cubit, question.id, languageCode, question),
+          child: _buildCascadeTree(cascades, currentSelection, cubit,
+              question.id, languageCode, question),
         ),
       ],
     );
   }
 
   Widget _buildCascadeTree(
-      List<dynamic> items, List<dynamic> currentSelection, DataCollectCubit cubit, String questionId, String languageCode, ApiQuestion question)  {
+      List<dynamic> items,
+      List<dynamic> currentSelection,
+      DataCollectCubit cubit,
+      String questionId,
+      String languageCode,
+      ApiQuestion question) {
     return ListView.builder(
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
         final itemId = item['id'];
-        final itemName = question.getCascadeName(item as Map<String,dynamic>, languageCode);
-        final hasChildren = item['children'] is List && (item['children'] as List).isNotEmpty;
+        final itemName =
+            question.getCascadeName(item as Map<String, dynamic>, languageCode);
+        final hasChildren =
+            item['children'] is List && (item['children'] as List).isNotEmpty;
         final isSelected = currentSelection.contains(itemId);
 
         return ExpansionTile(
           title: Text(
             itemName,
             style: TextStyle(
-              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          leading: !hasChildren ? Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
-                width: 2,
-              ),
-              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
-            ),
-            child: isSelected ? Icon(Icons.check, size: 14, color: Theme.of(context).colorScheme.onPrimary) : null,
-          ) : null,
-          children: hasChildren ? [
-            Padding(
-              padding: const EdgeInsets.only(left: 24.0),
-              child: _buildCascadeTree(item['children'] as List<dynamic>, currentSelection, cubit, questionId, languageCode,question),
-            )
-          ] : [],
+          leading: !hasChildren
+              ? Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
+                      width: 2,
+                    ),
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.transparent,
+                  ),
+                  child: isSelected
+                      ? Icon(Icons.check,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onPrimary)
+                      : null,
+                )
+              : null,
+          children: hasChildren
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 24.0),
+                    child: _buildCascadeTree(
+                        item['children'] as List<dynamic>,
+                        currentSelection,
+                        cubit,
+                        questionId,
+                        languageCode,
+                        question),
+                  )
+                ]
+              : [],
           onExpansionChanged: (expanded) {
             if (!hasChildren && !expanded) {
               cubit.updateAnswer(questionId, [itemId]);
@@ -1067,7 +1280,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
               const SizedBox(height: 24),
               Text(
                 study.getEndingHeadline(state.selectedLanguage),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -1083,7 +1297,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 16),
                   ),
                   child: const Text('Finish'),
                 ),

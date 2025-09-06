@@ -32,13 +32,13 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   void _setupAudioPlayerListeners() {
     _audioPositionSubscription =
         audioPlayer.onPositionChanged.listen((position) {
-      emit(state.copyWith(audioPosition: position));
-    });
+          emit(state.copyWith(audioPosition: position));
+        });
 
     _audioDurationSubscription =
         audioPlayer.onDurationChanged.listen((duration) {
-      emit(state.copyWith(audioDuration: duration));
-    });
+          emit(state.copyWith(audioDuration: duration));
+        });
 
     audioPlayer.onPlayerComplete.listen((event) {
       emit(state.copyWith(isPlayingAudio: false));
@@ -48,6 +48,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   // Language methods
   void changeLanguage(String languageCode) {
     emit(state.copyWith(selectedLanguage: languageCode));
+  }
+
+  // Clear error method
+  void clearError() {
+    emit(state.copyWith(error: null));
   }
 
   // Location methods
@@ -71,14 +76,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           isLocationLoading: false,
         ));
       } else {
+        ToastService.showErrorToast(message: 'Location permission denied');
         emit(state.copyWith(
-          error: 'Location permission denied',
+          error: null,
           isLocationLoading: false,
         ));
       }
     } catch (e) {
+      ToastService.showErrorToast(message: 'Failed to get location: $e');
       emit(state.copyWith(
-        error: 'Failed to get location: $e',
+        error: null,
         isLocationLoading: false,
       ));
     }
@@ -92,7 +99,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       await audioPlayer.play(DeviceFileSource(state.audioFilePath!));
       emit(state.copyWith(isPlayingAudio: true));
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to play audio: $e'));
+      ToastService.showErrorToast(message: 'Failed to play audio: $e');
+      emit(state.copyWith(error: null));
     }
   }
 
@@ -101,7 +109,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       await audioPlayer.pause();
       emit(state.copyWith(isPlayingAudio: false));
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to pause audio: $e'));
+      ToastService.showErrorToast(message: 'Failed to pause audio: $e');
+      emit(state.copyWith(error: null));
     }
   }
 
@@ -113,7 +122,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         audioPosition: Duration.zero,
       ));
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to stop audio: $e'));
+      ToastService.showErrorToast(message: 'Failed to stop audio: $e');
+      emit(state.copyWith(error: null));
     }
   }
 
@@ -121,7 +131,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     try {
       await audioPlayer.seek(position);
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to seek audio: $e'));
+      ToastService.showErrorToast(message: 'Failed to seek audio: $e');
+      emit(state.copyWith(error: null));
     }
   }
 
@@ -144,7 +155,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         ));
       });
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to start recording: $e'));
+      ToastService.showErrorToast(message: 'Failed to start recording: $e');
+      emit(state.copyWith(error: null));
     }
   }
 
@@ -157,13 +169,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       ));
       _recordingTimer?.cancel();
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to stop recording: $e'));
+      ToastService.showErrorToast(message: 'Failed to stop recording: $e');
+      emit(state.copyWith(error: null));
     }
   }
 
   Future<void> uploadAudioFile(String studyId) async {
     if (state.audioFilePath == null) {
-      emit(state.copyWith(error: 'No audio file to upload'));
+      ToastService.showErrorToast(message: 'No audio file to upload');
+      emit(state.copyWith(error: null));
       return;
     }
 
@@ -187,9 +201,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
       emit(state.copyWith(audioFilePath: null));
     } catch (e) {
+      ToastService.showErrorToast(message: 'Failed to upload audio: $e');
       emit(state.copyWith(
         isUploadingAudio: false,
-        error: 'Failed to upload audio: $e',
+        error: null,
       ));
     }
   }
@@ -222,7 +237,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         audioDuration: Duration.zero,
       ));
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to delete recording: $e'));
+      ToastService.showErrorToast(message: 'Failed to delete recording: $e');
+      emit(state.copyWith(error: null));
     }
   }
 
@@ -257,7 +273,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       final isLocationRequired =
           study.responseValidation?.requiredLocation ?? false;
 
-      // FIX: Reset all state including hasSeenWelcome
+      // Reset all state including hasSeenWelcome
       emit(state.copyWith(
         study: study,
         isLoading: false,
@@ -335,7 +351,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
                 if (result.jumpTarget != null) {
                   final targetIndex = study.questions.indexWhere(
-                    (q) => q.id == result.jumpTarget,
+                        (q) => q.id == result.jumpTarget,
                   );
 
                   if (targetIndex != -1 &&
@@ -358,10 +374,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool _evaluateConditionGroup(
-    Study study,
-    Map<String, dynamic> answers,
-    Map<String, dynamic> conditionGroup,
-  ) {
+      Study study,
+      Map<String, dynamic> answers,
+      Map<String, dynamic> conditionGroup,
+      ) {
     final connector = conditionGroup['connector'] ?? 'and';
     final conditions = conditionGroup['conditions'] as List<dynamic>? ?? [];
 
@@ -385,10 +401,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool _evaluateSingleCondition(
-    Study study,
-    Map<String, dynamic> answers,
-    Map<String, dynamic> condition,
-  ) {
+      Study study,
+      Map<String, dynamic> answers,
+      Map<String, dynamic> condition,
+      ) {
     try {
       final leftOperand = condition['leftOperand'];
       final operator = condition['operator'];
@@ -450,16 +466,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   dynamic _getLeftOperandValue(
-    Study study,
-    Map<String, dynamic> answers,
-    Map<String, dynamic> leftOperand,
-  ) {
+      Study study,
+      Map<String, dynamic> answers,
+      Map<String, dynamic> leftOperand,
+      ) {
     final type = leftOperand['type'];
     final value = leftOperand['value'];
 
     if (type == 'question') {
       final question = study.questions.firstWhere(
-        (q) => q.id == value,
+            (q) => q.id == value,
       );
 
       if (question.id.isNotEmpty) {
@@ -470,9 +486,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   dynamic _getRightOperandValue(
-    Map<String, dynamic> answers,
-    Map<String, dynamic> rightOperand,
-  ) {
+      Map<String, dynamic> answers,
+      Map<String, dynamic> rightOperand,
+      ) {
     final type = rightOperand['type'];
     final value = rightOperand['value'];
 
@@ -485,12 +501,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   ({
-    Set<String> requiredQuestionIds,
-    String? jumpTarget,
-    Set<String> skipQuestionIds
+  Set<String> requiredQuestionIds,
+  String? jumpTarget,
+  Set<String> skipQuestionIds
   }) _performActions(
-    List<dynamic> actions,
-  ) {
+      List<dynamic> actions,
+      ) {
     Set<String> requiredQuestionIds = {};
     String? jumpTarget;
     Set<String> skipQuestionIds = {};
@@ -516,9 +532,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
 
     return (
-      requiredQuestionIds: requiredQuestionIds,
-      jumpTarget: jumpTarget,
-      skipQuestionIds: skipQuestionIds,
+    requiredQuestionIds: requiredQuestionIds,
+    jumpTarget: jumpTarget,
+    skipQuestionIds: skipQuestionIds,
     );
   }
 
@@ -543,7 +559,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         return;
       } else {
         final targetIndex = study.questions.indexWhere(
-          (q) => q.id == state.jumpTarget,
+              (q) => q.id == state.jumpTarget,
         );
 
         if (targetIndex == currentIndex) {
@@ -668,6 +684,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool canProceed(ApiQuestion question) {
+    // Don't allow proceeding if location is still loading
+    if (state.isLocationLoading) {
+      return false;
+    }
+
     final answer = state.answers[question.id];
     final isRequiredByLogic = state.requiredQuestions.contains(question.id);
 
@@ -757,7 +778,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   Future<void> submitSurvey({required String studyId}) async {
-    // First upload audio if there's a recording
+    // Stop recording if it's active
+    if (state.isRecording) {
+      await stopRecording();
+    }
+
     String? audioUrl;
     if (state.audioFilePath != null && fileUploadService != null) {
       emit(state.copyWith(isSubmitting: true));
@@ -779,9 +804,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           await file.delete();
         }
       } catch (e) {
+        ToastService.showErrorToast(message: 'Failed to upload audio: $e');
         emit(state.copyWith(
-          isSubmitting: true,
-          error: 'Failed to upload audio: $e',
+          isSubmitting: false,
         ));
         return;
       }
@@ -804,6 +829,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     print('Survey submission: $submissionData');
 
     try {
+
       final response = await studyService.submitSurveyResponse(
         studyId: studyId,
         responseData: submissionData,
@@ -820,9 +846,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         ),
       );
     } catch (e) {
+      ToastService.showErrorToast(message: 'Failed to submit survey: $e');
       emit(state.copyWith(
         isSubmitting: false,
-        error: 'Failed to submit survey: $e',
       ));
     }
   }
