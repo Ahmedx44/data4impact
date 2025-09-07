@@ -19,7 +19,7 @@ class ActivityCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      elevation: 0,
+      elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(

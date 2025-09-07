@@ -32,7 +32,6 @@ class _HomeViewState extends State<HomeView> {
       drawer: const ProjectDrawer(),
       appBar: AppBar(
         forceMaterialTransparency: true,
-        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

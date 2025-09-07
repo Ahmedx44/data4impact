@@ -86,8 +86,8 @@ class _NavigationViewState extends State<NavigationView> {
       bottomNavigationBar: BottomBarDefault(
         items: items,
         backgroundColor: theme.surface,
-        color: theme.onPrimary,
-        colorSelected: AppColors.primary,
+        color: theme.onSurface,
+        colorSelected: theme.primary,
         indexSelected: visit,
         paddingVertical: 15,
         onTap: (int index) {
