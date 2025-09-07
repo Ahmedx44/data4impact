@@ -21,7 +21,6 @@ class _ProfilePageState extends State<ProfileView> {
   @override
   void initState() {
     super.initState();
-    // Fetch user data when the profile view is opened
     context.read<ProfileCubit>().fetchCurrentUser();
   }
 
@@ -42,54 +41,25 @@ class _ProfilePageState extends State<ProfileView> {
     return BlocBuilder<ProfileCubit, ProfileState>(
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.1),
+          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.05),
           body: state.isLoading
               ? const Center(child: CircularProgressIndicator())
-              : CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 220,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: _buildProfileHeader(context, state.user),
-                ),
-                pinned: true,
-                actions: [
-                  // Dark mode toggle button
-                  IconButton(
-                    icon: Icon(
-                      state.isDarkMode
-                          ? Icons.light_mode
-                          : Icons.dark_mode,
-                      color: colorScheme.onPrimary,
-                    ),
-                    onPressed: () {
-                      context.read<ProfileCubit>().toggleDarkMode();
-                      // Also update the global theme
-                      context.read<ThemeCubit>().toggleTheme();
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.edit, color: colorScheme.onPrimary),
-                    onPressed: () {
-                      // Handle edit profile
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.refresh, color: colorScheme.onPrimary),
-                    onPressed: () {
-                      context.read<ProfileCubit>().refreshUserData();
-                    },
-                  ),
-                ],
-              ),
-              SliverList(
-                delegate: SliverChildListDelegate([
-                  if (state.user != null) _buildPersonalInfoSection(context, state.user!),
+              : RefreshIndicator(
+            onRefresh: () async {
+              context.read<ProfileCubit>().refreshUserData();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildProfileHeader(context, state.user),
+                  if (state.user != null)
+                    _buildPersonalInfoSection(context, state.user!),
                   _buildExperienceSection(context),
                   const SizedBox(height: 20),
-                ]),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -106,118 +76,158 @@ class _ProfilePageState extends State<ProfileView> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            colorScheme.primary.withOpacity(0.8),
-            colorScheme.primary.withOpacity(0.4),
+            colorScheme.primary.withOpacity(0.9),
+            colorScheme.primary.withOpacity(0.5),
           ],
         ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: colorScheme.surface,
-                    width: 4,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(),
+                  Row(
+                    children: [
+                      BlocBuilder<ProfileCubit,ProfileState>(
+                        builder: (context,state) {
+                          return IconButton(
+                            icon: Icon(
+                              state.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                              color: colorScheme.onPrimary,
+                            ),
+                            onPressed: () {
+                              context.read<ProfileCubit>().toggleDarkMode();
+                              context.read<ThemeCubit>().toggleTheme();
+                            },
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                ],
+              ),
+            ),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colorScheme.surface,
+                          width: 4,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: _profileImage != null
+                            ? Image.file(
+                          _profileImage!,
+                          fit: BoxFit.cover,
+                        )
+                            : user?.imageUrl != null
+                            ? Image.network(
+                          user!.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: colorScheme.primaryContainer,
+                              child: Icon(
+                                Icons.person,
+                                size: 50,
+                                color: colorScheme.onPrimaryContainer,
+                              ),
+                            );
+                          },
+                        )
+                            : Container(
+                          color: colorScheme.primaryContainer,
+                          child: Icon(
+                            Icons.person,
+                            size: 50,
+                            color: colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          Text(
+                            user?.fullName ?? 'Loading...',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            user?.role.toUpperCase() ?? 'Loading role...',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onPrimary.withOpacity(0.9),
+                              letterSpacing: 1.2,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                child: ClipOval(
-                  child: _profileImage != null
-                      ? Image.file(
-                    _profileImage!,
-                    fit: BoxFit.cover,
-                  )
-                      : user?.imageUrl != null
-                      ? Image.network(
-                    user!.imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: colorScheme.primaryContainer,
-                        child: Icon(
-                          Icons.person,
-                          size: 50,
-                          color: colorScheme.onPrimaryContainer,
-                        ),
-                      );
-                    },
-                  )
-                      : Container(
-                    color: colorScheme.primaryContainer,
-                    child: Icon(
-                      Icons.person,
-                      size: 50,
-                      color: colorScheme.onPrimaryContainer,
+                Positioned(
+                  top: 110,
+                  right: MediaQuery.of(context).size.width / 2 - 80,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.camera_alt,
+                        size: 20,
+                        color: colorScheme.primary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 15,
-                child: GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      size: 20,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                Text(
-                  user?.fullName ?? 'Loading...',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  user?.role.toUpperCase() ?? 'Loading role...',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onPrimary.withOpacity(0.9),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -229,17 +239,14 @@ class _ProfilePageState extends State<ProfileView> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
-        elevation: 0,
+        elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: colorScheme.outline.withOpacity(0.1),
-          ),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -250,8 +257,7 @@ class _ProfilePageState extends State<ProfileView> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
-                    color: colorScheme.primary,
+                    icon: Icon(Icons.edit, color: colorScheme.primary),
                     onPressed: () {
                       // Handle edit personal info
                     },
@@ -277,6 +283,7 @@ class _ProfilePageState extends State<ProfileView> {
               icon: Icons.verified_user,
               title: 'Email Verified',
               value: user.emailVerified ? 'Verified' : 'Not Verified',
+              status: user.emailVerified,
             ),
             _buildInfoTile(
               context,
@@ -297,6 +304,7 @@ class _ProfilePageState extends State<ProfileView> {
         required String title,
         required String value,
         bool isLast = false,
+        bool? status,
       }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -304,14 +312,22 @@ class _ProfilePageState extends State<ProfileView> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                icon,
-                size: 24,
-                color: colorScheme.primary,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -322,12 +338,29 @@ class _ProfilePageState extends State<ProfileView> {
                       title,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurface.withOpacity(0.6),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      value,
-                      style: theme.textTheme.bodyLarge,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            value,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (status != null)
+                          Icon(
+                            status ? Icons.check_circle : Icons.error,
+                            color: status
+                                ? Colors.green
+                                : colorScheme.error,
+                            size: 16,
+                          ),
+                      ],
                     ),
                   ],
                 ),
@@ -336,12 +369,11 @@ class _ProfilePageState extends State<ProfileView> {
           ),
         ),
         if (!isLast)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Divider(
-              height: 1,
-              color: colorScheme.outline.withOpacity(0.1),
-            ),
+          Divider(
+            height: 1,
+            color: colorScheme.outline.withOpacity(0.1),
+            indent: 20,
+            endIndent: 20,
           ),
       ],
     );
@@ -352,45 +384,30 @@ class _ProfilePageState extends State<ProfileView> {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Card(
-        elevation: 0,
+        elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: colorScheme.outline.withOpacity(0.1),
-          ),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Experience',
+                    'Work Experience',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.add, size: 20),
-                        color: colorScheme.primary,
-                        onPressed: () {
-                          // Handle add experience
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 20),
-                        color: colorScheme.primary,
-                        onPressed: () {
-                          // Handle edit experience
-                        },
-                      ),
-                    ],
+                  IconButton(
+                    icon: Icon(Icons.add, color: colorScheme.primary),
+                    onPressed: () {
+                      // Handle add experience
+                    },
                   ),
                 ],
               ),
@@ -401,6 +418,7 @@ class _ProfilePageState extends State<ProfileView> {
               company: 'Impact Makers',
               role: 'Lead Research Analyst',
               period: 'May 2016 - Present',
+              duration: '4 years 8 months',
               description:
               'Specializations: Survey Design, Consumer Research\nManaged team of 15 researchers',
             ),
@@ -409,17 +427,37 @@ class _ProfilePageState extends State<ProfileView> {
               company: 'Data Insights Co.',
               role: 'Senior Research Associate',
               period: 'Jan 2014 - Apr 2016',
+              duration: '2 years 4 months',
               description:
               'Specializations: Data Analysis, Market Research\nLed client presentations and reports',
               isLast: true,
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                '8 years of professional experience',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
-                  fontStyle: FontStyle.italic,
+              padding: const EdgeInsets.all(20),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.work_history,
+                      color: colorScheme.primary,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Total: 8 years of professional experience',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 12,
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -434,6 +472,7 @@ class _ProfilePageState extends State<ProfileView> {
         required String company,
         required String role,
         required String period,
+        required String duration,
         required String description,
         bool isLast = false,
       }) {
@@ -443,13 +482,13 @@ class _ProfilePageState extends State<ProfileView> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -464,30 +503,59 @@ class _ProfilePageState extends State<ProfileView> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      company,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          company,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.edit, size: 18, color: colorScheme.primary),
+                          onPressed: () {
+                            // Handle edit experience
+                          },
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       role,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurface.withOpacity(0.8),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      period,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today, size: 14, color: colorScheme.onSurface.withOpacity(0.6)),
+                        const SizedBox(width: 4),
+                        Text(
+                          period,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 10,
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.access_time, size: 14, color: colorScheme.onSurface.withOpacity(0.6)),
+                        const SizedBox(width: 4),
+                        Text(
+                          duration,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 10,
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -501,12 +569,11 @@ class _ProfilePageState extends State<ProfileView> {
           ),
         ),
         if (!isLast)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Divider(
-              height: 1,
-              color: colorScheme.outline.withOpacity(0.1),
-            ),
+          Divider(
+            height: 1,
+            color: colorScheme.outline.withOpacity(0.1),
+            indent: 20,
+            endIndent: 20,
           ),
       ],
     );
