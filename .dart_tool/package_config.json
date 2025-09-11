@@ -219,8 +219,8 @@
     }
   ],
   "generator": "pub",
-  "generatorVersion": "3.9.0",
+  "generatorVersion": "3.9.2",
   "flutterRoot": "file:///home/ax44/flutter",
-  "flutterVersion": "3.35.1",
+  "flutterVersion": "3.35.3",
   "pubCache": "file:///home/ax44/.pub-cache"
 }

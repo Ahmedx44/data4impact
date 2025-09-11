@@ -21,10 +21,14 @@ class StudyLoaded extends StudyState {
 }
 
 class StudyError extends StudyState {
-  final String message;
+  final String errorMessage;
+  final Exception errorDetails;
 
-  const StudyError(this.message);
+  const StudyError({
+    required this.errorMessage,
+    required this.errorDetails,
+  });
 
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [errorMessage, errorDetails];
 }

@@ -19,7 +19,6 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize your API client and auth service
     final apiClient = ApiClient(baseUrl: 'https://api.data4impact.et/');
     final secureStorage = FlutterSecureStorage();
     final authService = AuthService(
@@ -54,7 +53,6 @@ class App extends StatelessWidget {
           BlocProvider(
             create: (_) => ThemeCubit(),
           ),
-          // Add other BLoCs here as needed
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) {

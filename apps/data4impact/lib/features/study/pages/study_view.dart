@@ -1,11 +1,13 @@
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
+import 'package:data4impact/core/widget/api_error_widget.dart';
 import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:data4impact/features/study/cubit/study_state.dart';
 import 'package:data4impact/features/study/widget/study_card.dart';
 import 'package:data4impact/features/study_detail/pages/study_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StudyView extends StatefulWidget {
   final String projectSlug;
@@ -34,6 +36,10 @@ class _StudyViewState extends State<StudyView>
 
   @override
   Widget build(BuildContext context) {
+    return _buildStudyViewContent();
+  }
+
+  Widget _buildStudyViewContent() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -55,7 +61,7 @@ class _StudyViewState extends State<StudyView>
                   splashFactory: NoSplash.splashFactory,
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicatorPadding:
-                  const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                   labelColor: colorScheme.primary,
                   unselectedLabelColor: colorScheme.onSurface.withAlpha(255),
                   labelStyle: const TextStyle(
@@ -96,10 +102,18 @@ class _StudyViewState extends State<StudyView>
         if (state is StudyInitial || state is StudyLoading) {
           return const Center(child: CircularProgressIndicator());
         } else if (state is StudyError) {
-          return Center(child: Text(state.message));
+          return ApiErrorWidget(
+            errorMessage: _getUserFriendlyErrorMessage(state.errorMessage),
+            errorDetails: state.errorDetails,
+            onRetry: () => context.read<StudyCubit>().fetchStudies(),
+          );
         } else if (state is StudyLoaded) {
           final activeStudies = state.studies.where((study) =>
-          study['status'] == 'inProgress' || study['status'] == 'draft');
+              study['status'] == 'inProgress' || study['status'] == 'draft');
+
+          if (activeStudies.isEmpty) {
+            return _buildEmptyState('No active studies found');
+          }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -108,16 +122,20 @@ class _StudyViewState extends State<StudyView>
               final study = activeStudies.elementAt(index);
               return GestureDetector(
                 child: StudyCard(
-                  title: study['name']as String,
+                  title: study['name'] as String,
                   description: study['description'] as String,
-                  progress: (study['responseCount']!  / study['sampleSize']) as double ,
+                  progress:
+                      (study['responseCount']! / study['sampleSize']) as double,
                   status: study['status'] as String,
-                  dueDate: study['closeOnDate']!=null?study['closeOnDate'] as String:'',
+                  dueDate: study['closeOnDate'] != null
+                      ? study['closeOnDate'] as String
+                      : '',
                   callback: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute<Widget>(
-                        builder: (context) =>  StudyDetailPage(studyId: study['_id'] as String),
+                        builder: (context) =>
+                            StudyDetailPage(studyId: study['_id'] as String),
                       ),
                     );
                   },
@@ -137,10 +155,18 @@ class _StudyViewState extends State<StudyView>
         if (state is StudyInitial || state is StudyLoading) {
           return const Center(child: CircularProgressIndicator());
         } else if (state is StudyError) {
-          return Center(child: Text(state.message));
+          return ApiErrorWidget(
+            errorMessage: _getUserFriendlyErrorMessage(state.errorMessage),
+            errorDetails: state.errorDetails,
+            onRetry: () => context.read<StudyCubit>().fetchStudies(),
+          );
         } else if (state is StudyLoaded) {
           final oldStudies = state.studies.where((study) =>
-          study['status'] != 'inProgress' && study['status'] != 'draft');
+              study['status'] != 'inProgress' && study['status'] != 'draft');
+
+          if (oldStudies.isEmpty) {
+            return _buildEmptyState('No completed studies found');
+          }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -152,21 +178,24 @@ class _StudyViewState extends State<StudyView>
                   Navigator.push(
                     context,
                     MaterialPageRoute<Widget>(
-                      builder: (context) => StudyDetailPage(studyId: study['_id'] as String),
+                      builder: (context) =>
+                          StudyDetailPage(studyId: study['_id'] as String),
                     ),
                   );
                 },
                 child: StudyCard(
-                  title: study['name']as String,
+                  title: study['name'] as String,
                   description: study['description'] as String,
-                  progress: (study['responseCount']!  / study['sampleSize']) as double ,
+                  progress:
+                      (study['responseCount']! / study['sampleSize']) as double,
                   status: study['status'] as String,
                   dueDate: study['closeOnDate'] as String,
                   callback: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute<Widget>(
-                        builder: (context) =>  StudyDetailPage(studyId: study['_id'] as String),
+                        builder: (context) =>
+                            StudyDetailPage(studyId: study['_id'] as String),
                       ),
                     );
                   },
@@ -178,5 +207,46 @@ class _StudyViewState extends State<StudyView>
         return const SizedBox();
       },
     );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox_rounded, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getUserFriendlyErrorMessage(String technicalError) {
+    // Convert technical error messages to user-friendly ones
+    if (technicalError.contains('DioException') ||
+        technicalError.contains('SocketException') ||
+        technicalError.contains('Network is unreachable')) {
+      return 'Unable to connect to the server.';
+    } else if (technicalError.contains('404') ||
+        technicalError.contains('not found')) {
+      return 'The requested resource was not found.';
+    } else if (technicalError.contains('401') ||
+        technicalError.contains('403')) {
+      return 'You don\'t have permission to access this content.';
+    } else if (technicalError.contains('500') ||
+        technicalError.contains('server error')) {
+      return 'Server is temporarily unavailable. Please try again later.';
+    } else if (technicalError.contains('timeout')) {
+      return 'The request timed out. Please check your connection and try again.';
+    }
+
+    return 'An unexpected error occurred. Please try again.';
   }
 }

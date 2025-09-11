@@ -62,8 +62,8 @@ class _HomeViewState extends State<HomeView> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(100),
+                foregroundColor: Theme.of(context).colorScheme.primary,
                 textStyle: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -78,7 +78,9 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 );
               },
-              child: const Text("Join"),
+              child:  const Text("Join",style: TextStyle(
+                fontWeight: FontWeight.bold
+              ),),
             ),
           )
         ],

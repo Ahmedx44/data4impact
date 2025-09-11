@@ -8,7 +8,7 @@ class StudyCubit extends Cubit<StudyState> {
 
   StudyCubit({
     required this.studyService,
-     this.projectSlug,
+    this.projectSlug,
   }) : super(StudyInitial()) {
     fetchStudies();
   }
@@ -16,10 +16,14 @@ class StudyCubit extends Cubit<StudyState> {
   Future<void> fetchStudies() async {
     emit(StudyLoading());
     try {
-      final studies = await studyService.getStudies(projectSlug??'majlis-starategy');
+      final studies = await studyService.getStudies(projectSlug ?? 'majlis-starategy');
       emit(StudyLoaded(studies));
     } catch (e) {
-      emit(StudyError(e.toString()));
+      // Provide more structured error information
+      emit(StudyError(
+        errorMessage: e.toString(),
+        errorDetails: e is Exception ? e : Exception(e.toString()),
+      ));
     }
   }
 }

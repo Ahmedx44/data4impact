@@ -21,8 +21,6 @@ class _JoinWithLinkViewState extends State<JoinWithLinkView> {
   }
 
   Future<void> _validateAndJoin() async {
-  /*  if (!_formKey.currentState!.validate()) return;*/
-
     final cubit = context.read<HomeCubit>();
     try {
       await cubit.joinSegmentViaLink(_linkController.text,context);
@@ -31,12 +29,6 @@ class _JoinWithLinkViewState extends State<JoinWithLinkView> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
     }
   }
 
