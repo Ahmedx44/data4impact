@@ -778,13 +778,20 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   Future<void> submitSurvey({required String studyId}) async {
+    final study = state.study;
+    if (study == null) return;
+
     // Stop recording if it's active
     if (state.isRecording) {
       await stopRecording();
     }
 
     String? audioUrl;
-    if (state.audioFilePath != null && fileUploadService != null) {
+
+    // Only upload audio if the study requires it AND we have an audio file
+    final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
+
+    if (isVoiceRequired && state.audioFilePath != null && fileUploadService != null) {
       emit(state.copyWith(isSubmitting: true));
 
       try {
@@ -799,10 +806,14 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           audioUploadResult: result,
         ));
 
+        // Clean up local file after successful upload
         final file = File(state.audioFilePath!);
         if (await file.exists()) {
           await file.delete();
         }
+
+        // Reset audio file path after successful upload
+        emit(state.copyWith(audioFilePath: null));
       } catch (e) {
         ToastService.showErrorToast(message: 'Failed to upload audio: $e');
         emit(state.copyWith(
@@ -815,28 +826,31 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final formattedAnswers = _formatAnswersForSubmission();
     final recordingDuration = state.recordingDuration;
 
+    // Build base submission data
     final submissionData = {
       "study": studyId,
       "respondent": null,
       "duration": recordingDuration,
       "data": formattedAnswers,
       "finished": true,
-      "audioUrl": audioUrl,
       "deviceType": "mobile",
       "geolocation": state.locationData?.toJson() ?? {},
     };
 
+    // Only add audioUrl if we actually have a value
+    if (audioUrl != null) {
+      submissionData["audioUrl"] = audioUrl;
+    }
+
     print('Survey submission: $submissionData');
 
     try {
-
       final response = await studyService.submitSurveyResponse(
         studyId: studyId,
         responseData: submissionData,
       );
 
       ToastService.showSuccessToast(message: 'Response submitted successfully');
-
       print('Response submitted successfully: $response');
 
       emit(
