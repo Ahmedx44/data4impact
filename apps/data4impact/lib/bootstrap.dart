@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:developer';
-
 import 'package:bloc/bloc.dart';
+import 'package:data4impact/core/model/offline_models/project_hive.dart';
 import 'package:data4impact/core/service/app_logger.dart';
 import 'package:data4impact/core/widget/error_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -31,6 +32,7 @@ class AppBlocObserver extends BlocObserver {
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   // Initialize logger
   AppLogger.initialize();
 
@@ -51,6 +53,21 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
 
   // Initialize widget bindings
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive for offline storage
+  try {
+    await Hive.initFlutter();
+
+    // Register all Hive adapters here
+    Hive.registerAdapter(
+      ProjectHiveAdapter(),
+    );
+
+    AppLogger.logInfo('Hive initialized successfully with adapters');
+  } catch (e, stack) {
+    AppLogger.logError('Failed to initialize Hive', e, stack);
+    rethrow;
+  }
 
   // Set up HydratedBloc storage
   try {

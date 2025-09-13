@@ -16,7 +16,7 @@ class StudyCubit extends Cubit<StudyState> {
   Future<void> fetchStudies() async {
     emit(StudyLoading());
     try {
-      final studies = await studyService.getStudies(projectSlug ?? 'majlis-starategy');
+      final studies = await studyService.getStudies(projectSlug!);
       emit(StudyLoaded(studies));
     } catch (e) {
       // Provide more structured error information

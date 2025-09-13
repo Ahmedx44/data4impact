@@ -3,35 +3,46 @@ import 'package:equatable/equatable.dart';
 
 class HomeState extends Equatable {
   final bool isLoading;
-  final bool invitationLoading;
-  final String? message;
   final List<Project> projects;
   final Project? selectedProject;
+  final bool invitationLoading;
+  final bool isOffline;
+  final String? errorMessage;
 
   const HomeState({
     this.isLoading = false,
-    this.invitationLoading=false,
-    this.message,
     this.projects = const [],
     this.selectedProject,
+    this.invitationLoading = false,
+    this.isOffline = false,
+    this.errorMessage,
   });
+
+  @override
+  List<Object?> get props => [
+    isLoading,
+    projects,
+    selectedProject,
+    invitationLoading,
+    isOffline,
+    errorMessage,
+  ];
 
   HomeState copyWith({
     bool? isLoading,
-    bool? invitationLoading,
-    String? message,
     List<Project>? projects,
     Project? selectedProject,
+    bool? invitationLoading,
+    bool? isOffline,
+    String? errorMessage,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
-      invitationLoading:invitationLoading??this.invitationLoading,
-      message: message ?? this.message,
       projects: projects ?? this.projects,
       selectedProject: selectedProject ?? this.selectedProject,
+      invitationLoading: invitationLoading ?? this.invitationLoading,
+      isOffline: isOffline ?? this.isOffline,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
-
-  @override
-  List<Object?> get props => [isLoading,invitationLoading, message, projects];
 }

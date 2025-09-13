@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/api_service/segment_service.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
@@ -16,6 +17,7 @@ class HomePage extends StatelessWidget {
         segmentService: context.read<SegmentService>(),
         secureStorage: context.read<FlutterSecureStorage>(),
         projectService: context.read<ProjectService>(),
+        connectivity: context.read<Connectivity>(),
       ),
       child: const HomeView(),
     );

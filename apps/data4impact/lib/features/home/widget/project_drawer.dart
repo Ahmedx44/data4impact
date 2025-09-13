@@ -111,7 +111,7 @@ class _ProjectDrawerState extends State<ProjectDrawer> {
                         );
                       }
 
-                      if (state.message != null) {
+                      if (state.errorMessage != null) {
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.all(24),
@@ -123,7 +123,7 @@ class _ProjectDrawerState extends State<ProjectDrawer> {
                                     color: theme.colorScheme.error.withOpacity(0.6)),
                                 const SizedBox(height: 16),
                                 Text(
-                                  state.message!,
+                                  state.errorMessage!,
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.lexendDeca(
                                     color: theme.colorScheme.onSurface.withOpacity(0.8),

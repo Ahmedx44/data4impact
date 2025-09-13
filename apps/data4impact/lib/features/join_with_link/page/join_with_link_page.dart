@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/api_service/segment_service.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
@@ -13,10 +14,10 @@ class JoinWithLinkPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => HomeCubit(
-        segmentService: context.read<SegmentService>(),
-        secureStorage: context.read<FlutterSecureStorage>(),
-        projectService: context.read<ProjectService>(),
-      ),
+          segmentService: context.read<SegmentService>(),
+          secureStorage: context.read<FlutterSecureStorage>(),
+          projectService: context.read<ProjectService>(),
+          connectivity: context.read<Connectivity>()),
       child: const JoinWithLinkView(),
     );
   }
