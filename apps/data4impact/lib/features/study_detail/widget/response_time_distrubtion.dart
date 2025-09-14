@@ -3,12 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ResponseTimeDistributionChart extends StatelessWidget {
-  const ResponseTimeDistributionChart({super.key});
+  final Map<String, dynamic> studyData;
+
+  const ResponseTimeDistributionChart({
+    super.key,
+    required this.studyData,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // Extract response data or use default values
+    final responseCount = studyData['responseCount'] ?? 0;
+    final sampleSize = studyData['sampleSize'] ?? 100;
+    final progress = sampleSize as int > 0 ? responseCount / sampleSize : 0;
+
+    // Generate sample data based on actual progress
+    final dailyData = _generateWeeklyData(progress as double, sampleSize);
 
     return Card(
       elevation: 1,
@@ -26,7 +39,7 @@ class ResponseTimeDistributionChart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Response Time Distribution',
+              'Response Progress',
               style: GoogleFonts.lexendDeca(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -35,19 +48,41 @@ class ResponseTimeDistributionChart extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Daily progress vs target over the last 7 days',
+              'Daily progress vs target over time',
               style: GoogleFonts.lexendDeca(
                 fontSize: 10,
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 20),
+            // Progress summary
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Current Progress:',
+                  style: GoogleFonts.lexendDeca(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+                Text(
+                  '$responseCount/$sampleSize (${(progress * 100).toStringAsFixed(1)}%)',
+                  style: GoogleFonts.lexendDeca(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             AspectRatio(
               aspectRatio: 1.5,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  barTouchData:const  BarTouchData(enabled: false),
+                  barTouchData: const BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -109,15 +144,11 @@ class ResponseTimeDistributionChart extends StatelessWidget {
                       width: 1,
                     ),
                   ),
-                  barGroups: [
-                    _makeGroup(0, 80, colorScheme.primary),
-                    _makeGroup(1, 60, colorScheme.primary),
-                    _makeGroup(2, 30, colorScheme.primary),
-                    _makeGroup(3, 75, colorScheme.primary),
-                    _makeGroup(4, 65, colorScheme.primary),
-                    _makeGroup(5, 80, colorScheme.primary),
-                    _makeGroup(6, 100, colorScheme.primary),
-                  ],
+                  barGroups: dailyData.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final value = entry.value;
+                    return _makeGroup(index, value, colorScheme.primary);
+                  }).toList(),
                 ),
               ),
             ),
@@ -125,6 +156,20 @@ class ResponseTimeDistributionChart extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<double> _generateWeeklyData(double progress, int sampleSize) {
+    // Generate realistic weekly data based on overall progress
+    final weeklyData = List<double>.generate(7, (index) => 0.0);
+    final totalResponses = (progress * sampleSize).toInt();
+
+    // Distribute responses across the week (simplified)
+    for (int i = 0; i < totalResponses; i++) {
+      final day = i % 7;
+      weeklyData[day] += 1;
+    }
+
+    return weeklyData;
   }
 
   BarChartGroupData _makeGroup(int x, double y, Color color) {

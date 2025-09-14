@@ -10,8 +10,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 class StudyDetailView extends StatefulWidget {
   final String studyId;
+  final Map<String, dynamic> studyData;
 
-  const StudyDetailView({super.key, required this.studyId});
+  const StudyDetailView({
+    super.key,
+    required this.studyId,
+    required this.studyData,
+  });
 
   @override
   State<StudyDetailView> createState() => _StudyDetailViewState();
@@ -38,26 +43,31 @@ class _StudyDetailViewState extends State<StudyDetailView>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // In a real app, you would get this data from a Cubit/Bloc
-    final currentResponses = 385;
-    final totalResponses = 500;
-    final daysRemaining = 10;
-    final progress = currentResponses / totalResponses;
+    // Use actual study data instead of static values
+    final currentResponses = widget.studyData['responseCount'] ?? 0;
+    final totalResponses = widget.studyData['sampleSize'] ?? 0;
+    final progress = totalResponses as int > 0 ? currentResponses / totalResponses : 0;
+    final collectorCount = widget.studyData['collectorCount'] ?? 0;
+    final questionCount = widget.studyData['questionCount'] ?? 0;
+
+    // Calculate days remaining (you might need to adjust this based on your actual data structure)
+    final daysRemaining = _calculateDaysRemaining(widget.studyData);
 
     return Scaffold(
       appBar: AppBar(
+        forceMaterialTransparency: true,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Study Analytics Dashboard',
+              widget.studyData['name'].toString() ??'',
               style: GoogleFonts.lexendDeca(
                   fontSize: 14, fontWeight: FontWeight.w500),
             ),
             SizedBox(
               width: 200,
               child: Text(
-                'Comprehensive study performance and data quality insights',
+                widget.studyData['description'].toString() ?? '',
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.lexendDeca(fontSize: 10),
               ),
@@ -70,34 +80,34 @@ class _StudyDetailViewState extends State<StudyDetailView>
         slivers: [
           SliverToBoxAdapter(
             child: ProgressTimelineWidget(
-              currentResponses: currentResponses,
+              currentResponses: currentResponses as int,
               totalResponses: totalResponses,
               daysRemaining: daysRemaining,
-              progress: progress,
+              progress: progress as double,
             ),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 5),
             sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
-                (context, index) {
+                    (context, index) {
                   final titles = [
                     'Total Response',
                     'Response Rate',
                     'Data Collectors',
-                    'Cost Per Response',
+                    'Questions',
                   ];
                   final values = [
                     totalResponses,
                     (progress * 100).toStringAsFixed(1),
-                    20,
-                    12
+                    collectorCount,
+                    questionCount,
                   ];
                   final subtitles = [
                     '${totalResponses - currentResponses} Remaining',
                     '${(progress * 100).toStringAsFixed(1)}% completion',
                     'All active',
-                    "- \$1.20 from target",
+                    "Total questions",
                   ];
                   return AnimationConfiguration.staggeredGrid(
                     position: index,
@@ -134,7 +144,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                 splashFactory: NoSplash.splashFactory,
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicatorPadding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                 labelColor: colorScheme.primary,
                 unselectedLabelColor: colorScheme.onSurface.withAlpha(255),
                 labelStyle: const TextStyle(
@@ -160,10 +170,10 @@ class _StudyDetailViewState extends State<StudyDetailView>
               height: 400,
               child: TabBarView(
                 controller: _tabController,
-                children: const [
-                  ResponseTimeDistributionChart(),
-                  TopPerformersWidget(),
-                  MilestoneTrackingWidget()
+                children: [
+                  ResponseTimeDistributionChart(studyData: widget.studyData),
+                  TopPerformersWidget(studyData: widget.studyData),
+                  MilestoneTrackingWidget(studyData: widget.studyData),
                 ],
               ),
             ),
@@ -186,7 +196,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute<Widget>(
-                      builder: (context) =>  DataCollectionPage(studyId: widget.studyId),
+                      builder: (context) => DataCollectionPage(studyId: widget.studyId),
                     ),
                   );
                 },
@@ -201,6 +211,18 @@ class _StudyDetailViewState extends State<StudyDetailView>
         ],
       ),
     );
+  }
+
+  int _calculateDaysRemaining(Map<String, dynamic> studyData) {
+    // Implement your logic to calculate days remaining
+    // For example, if you have a closeOnDate field:
+    if (studyData['closeOnDate'] != null) {
+      final closeDate = DateTime.parse(studyData['closeOnDate'] as String);
+      final now = DateTime.now();
+      final difference = closeDate.difference(now).inDays;
+      return difference > 0 ? difference : 0;
+    }
+    return 10; // Default value if no close date
   }
 }
 

@@ -1,5 +1,3 @@
-import 'package:data4impact/core/service/api_service/api_client.dart';
-import 'package:data4impact/core/service/api_service/study_service.dart';
 import 'package:data4impact/core/widget/api_error_widget.dart';
 import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:data4impact/features/study/cubit/study_state.dart';
@@ -7,7 +5,6 @@ import 'package:data4impact/features/study/widget/study_card.dart';
 import 'package:data4impact/features/study_detail/pages/study_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StudyView extends StatefulWidget {
   final String projectSlug;
@@ -127,17 +124,21 @@ class _StudyViewState extends State<StudyView>
                   progress:
                       (study['responseCount']! / study['sampleSize']) as double,
                   status: study['status'] as String,
-                  dueDate: study['closeOnDate'] != null
-                      ? study['closeOnDate'] as String
-                      : '',
                   callback: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute<Widget>(
-                        builder: (context) =>
-                            StudyDetailPage(studyId: study['_id'] as String),
-                      ),
-                    );
+                    final studyCubit = context.read<StudyCubit>();
+                    final studyData = studyCubit.getStudyById(study['_id'] as String);
+
+                    if (studyData != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<Widget>(
+                          builder: (context) => StudyDetailPage(
+                            studyId: study['_id'] as String,
+                            studyData: studyData,
+                          ),
+                        ),
+                      );
+                    }
                   },
                 ),
               );
@@ -179,7 +180,7 @@ class _StudyViewState extends State<StudyView>
                     context,
                     MaterialPageRoute<Widget>(
                       builder: (context) =>
-                          StudyDetailPage(studyId: study['_id'] as String),
+                          StudyDetailPage(studyId: study['_id'] as String,studyData: study,),
                     ),
                   );
                 },
@@ -189,13 +190,13 @@ class _StudyViewState extends State<StudyView>
                   progress:
                       (study['responseCount']! / study['sampleSize']) as double,
                   status: study['status'] as String,
-                  dueDate: study['closeOnDate'] as String,
+
                   callback: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute<Widget>(
                         builder: (context) =>
-                            StudyDetailPage(studyId: study['_id'] as String),
+                            StudyDetailPage(studyId: study['_id'] as String,studyData: study,),
                       ),
                     );
                   },

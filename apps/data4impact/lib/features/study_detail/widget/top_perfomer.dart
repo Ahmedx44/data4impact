@@ -2,12 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class TopPerformersWidget extends StatelessWidget {
-  const TopPerformersWidget({super.key});
+  final Map<String, dynamic> studyData;
+
+  const TopPerformersWidget({
+    super.key,
+    required this.studyData,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // Extract collector data or use default values
+    final collectorCount = studyData['collectorCount'] ?? 0;
+    final responseCount = studyData['responseCount'] ?? 0;
+
+    // Generate sample performers based on collector count
+    final performers = _generatePerformers(collectorCount as int, responseCount as int);
 
     return Card(
       elevation: 1,
@@ -26,7 +38,7 @@ class TopPerformersWidget extends StatelessWidget {
           children: [
             // Header
             Text(
-              'Top Performers',
+              'Data Collectors',
               style: GoogleFonts.lexendDeca(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -35,7 +47,7 @@ class TopPerformersWidget extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Highest performing data collectors',
+              '${performers.length} active collectors',
               style: GoogleFonts.lexendDeca(
                 fontSize: 12,
                 color: colorScheme.onSurface.withOpacity(0.6),
@@ -45,36 +57,32 @@ class TopPerformersWidget extends StatelessWidget {
 
             SizedBox(
               height: 300,
-              child: ListView(
+              child: performers.isEmpty
+                  ? Center(
+                child: Text(
+                  'No collectors assigned yet',
+                  style: GoogleFonts.lexendDeca(
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              )
+                  : ListView(
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  _buildPerformerItem(
-                    rank: '#1',
-                    name: 'Hanan Jeylan Wako',
-                    responses: '247 responses',
-                    color: colorScheme,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildPerformerItem(
-                    rank: '#2',
-                    name: 'Ziyad Ahmed Ali',
-                    responses: '230 responses',
-                    color: colorScheme,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildPerformerItem(
-                    rank: '#3',
-                    name: 'Selahadin Hamid Abdellah',
-                    responses: '229 responses',
-                    color: colorScheme,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildPerformerItem(
-                    rank: '#4',
-                    name: 'Abdurahman Kasim Kalid',
-                    responses: '227 responses',
-                    color: colorScheme,
-                  ),
+                  ...performers.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final performer = entry.value;
+                    return Padding(
+                      padding: EdgeInsets.only(
+                          bottom: index == performers.length - 1 ? 0 : 8),
+                      child: _buildPerformerItem(
+                        rank: '#${index + 1}',
+                        name: performer['name'].toString()??'',
+                        responses: performer['responses'] as int,
+                        color: colorScheme,
+                      ),
+                    );
+                  }).toList(),
                 ],
               ),
             ),
@@ -84,10 +92,48 @@ class TopPerformersWidget extends StatelessWidget {
     );
   }
 
+  List<Map<String, dynamic>> _generatePerformers(int collectorCount, int totalResponses) {
+    if (collectorCount == 0) return [];
+
+    // Generate sample performer data
+    final performers = <Map<String, dynamic>>[];
+    final averageResponses = totalResponses ~/ collectorCount;
+
+    for (int i = 0; i < collectorCount; i++) {
+      final responseVariation = (i % 3) * 10; // Some variation
+      final responses = averageResponses + responseVariation;
+
+      performers.add({
+        'name': _generateCollectorName(i),
+        'responses': responses.clamp(0, totalResponses),
+      });
+    }
+
+    // Sort by responses descending
+    performers.sort((a, b) => (b['responses'] as int).compareTo(a['responses'] as int));
+
+    // Return top 4 performers
+    return performers.take(4).toList();
+  }
+
+  String _generateCollectorName(int index) {
+    final names = [
+      'Hanan Jeylan Wako',
+      'Ziyad Ahmed Ali',
+      'Selahadin Hamid Abdellah',
+      'Abdurahman Kasim Kalid',
+      'Mohammed Hassan',
+      'Amina Mohammed',
+      'Tesfaye Lemma',
+      'Eyerusalem Bekele'
+    ];
+    return names[index % names.length];
+  }
+
   Widget _buildPerformerItem({
     required String rank,
     required String name,
-    required String responses,
+    required int responses,
     required ColorScheme color,
   }) {
     return Container(
@@ -134,7 +180,7 @@ class TopPerformersWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  responses,
+                  '$responses responses',
                   style: GoogleFonts.lexendDeca(
                     fontSize: 12,
                     color: color.onSurface.withOpacity(0.6),
