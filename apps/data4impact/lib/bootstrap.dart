@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
+import 'package:data4impact/core/model/offline_models/current_user_hive.dart';
 import 'package:data4impact/core/model/offline_models/project_hive.dart';
 import 'package:data4impact/core/service/app_logger.dart';
 import 'package:data4impact/core/widget/error_screen.dart';
@@ -58,10 +59,8 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   try {
     await Hive.initFlutter();
 
-    // Register all Hive adapters here
-    Hive.registerAdapter(
-      ProjectHiveAdapter(),
-    );
+    Hive.registerAdapter(ProjectHiveAdapter());
+    Hive.registerAdapter(CurrentUserHiveAdapter());
 
     AppLogger.logInfo('Hive initialized successfully with adapters');
   } catch (e, stack) {

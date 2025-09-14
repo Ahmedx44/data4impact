@@ -1,6 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
+import 'package:data4impact/core/service/internt_connection_monitor.dart';
 import 'package:data4impact/features/profile/cubit/profile_state.dart';
+import 'package:data4impact/repository/offline_mode_repo.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
@@ -18,42 +20,41 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> fetchCurrentUser() async {
     emit(state.copyWith(isLoading: true));
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+    );
 
-    try {
-      // First try to get from secure storage (offline)
-      final storedUser = await authService.getStoredCurrentUser();
+    final isConnected = await connected.hasInternetConnection();
+    if (isConnected) {
+      try {
+        final currentUser = await authService.getCurrentUser();
 
-      if (storedUser != null) {
+        await OfflineModeDataRepo().saveCurrentUser(currentUser);
+
+        emit(
+          state.copyWith(
+            user: currentUser,
+            isLoading: false,
+          ),
+        );
+      } catch (e) {
+        final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
+
         emit(state.copyWith(
-          user: storedUser,
+          user: currentUser,
           isLoading: false,
         ));
       }
+    } else {
+      final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
 
-      // Then try to fetch from API (online - will update storage)
-      final currentUser = await authService.getCurrentUser();
-
-      emit(state.copyWith(
-        user: currentUser,
-        isLoading: false,
-      ));
-    } catch (e) {
-      // If API fails, use stored user if available
-      final storedUser = await authService.getStoredCurrentUser();
-
-      emit(state.copyWith(
-        user: storedUser,
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          user: currentUser,
+          isLoading: false,
+        ),
+      );
     }
-  }
-
-  Future<void> clearUserData() async {
-    await authService.clearStoredCurrentUser();
-    emit(ProfileState(
-      isDarkMode: state.isDarkMode,
-      isLoading: false,
-    ));
   }
 
   Future<void> refreshUserData() async {

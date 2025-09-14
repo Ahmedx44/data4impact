@@ -9,12 +9,23 @@ import 'study_state.dart';
 class StudyCubit extends Cubit<StudyState> {
   final StudyService studyService;
   final String? projectSlug;
+  List<Map<String, dynamic>> _studies = [];
 
   StudyCubit({
     required this.studyService,
     this.projectSlug,
   }) : super(StudyInitial()) {
     fetchStudies();
+  }
+
+  List<Map<String, dynamic>> get studies => _studies;
+
+  Map<String, dynamic>? getStudyById(String studyId) {
+    try {
+      return _studies.firstWhere((study) => study['_id'] == studyId);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> fetchStudies() async {
@@ -29,14 +40,10 @@ class StudyCubit extends Cubit<StudyState> {
 
     if (isConnected) {
       try {
-        final studies =
-            await studyService.getStudies(projectSlug ?? 'majlis-starategy');
-
-        final studiesJson = jsonEncode(studies);
-
+        _studies = await studyService.getStudies(projectSlug ?? 'majlis-starategy');
+        final studiesJson = jsonEncode(_studies);
         await OfflineModeDataRepo().saveAllStudys(studiesJson);
-
-        emit(StudyLoaded(studies));
+        emit(StudyLoaded(_studies));
       } catch (e) {
         emit(
           StudyError(
@@ -47,10 +54,12 @@ class StudyCubit extends Cubit<StudyState> {
       }
     } else {
       try {
-        final studys = await OfflineModeDataRepo().getSavedAllStudys();
-
-        emit(StudyLoaded(studys));
-      } catch (e) {}
+        final savedStudies = await OfflineModeDataRepo().getSavedAllStudys();
+        _studies = savedStudies;
+        emit(StudyLoaded(_studies));
+      } catch (e) {
+        emit(StudyError(errorMessage: 'Failed to load offline data', errorDetails: Exception(e.toString())));
+      }
     }
   }
 }

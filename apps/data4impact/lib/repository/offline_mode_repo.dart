@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:data4impact/core/model/offline_models/current_user_hive.dart';
 import 'package:data4impact/core/model/offline_models/project_hive.dart';
+import 'package:data4impact/core/service/api_service/Model/current_user.dart';
 import 'package:data4impact/core/service/api_service/Model/project.dart';
 import 'package:data4impact/core/service/app_logger.dart';
 import 'package:data4impact/core/utils.dart';
@@ -14,6 +16,7 @@ class OfflineModeDataRepo {
 
   static final OfflineModeDataRepo _instance = OfflineModeDataRepo._internal();
 
+  //Project
   Future<void> saveAllProjects(List<Project> value) async {
     Box<List<ProjectHive>> hiveBox =
         await Hive.openBox<List<ProjectHive>>(projectsBox);
@@ -42,6 +45,7 @@ class OfflineModeDataRepo {
     }
   }
 
+  //Study
   Future<void> saveAllStudys(String value) async {
     final hiveBox = await Hive.openBox(studysBox);
 
@@ -62,5 +66,21 @@ class OfflineModeDataRepo {
         .toList();
 
     return storedStudies;
+  }
+
+  // Current User
+  Future<void> saveCurrentUser(CurrentUser user) async {
+    final hiveBox = await Hive.openBox<CurrentUserHive>(currentUserBox);
+    final userHive = CurrentUserHive.fromCurrentUser(user);
+
+    await hiveBox.put(currentUserKey, userHive);
+
+    print('current user saved');
+  }
+
+  Future<CurrentUser> getSavedCurrentUser() async {
+    final hiveBox = await Hive.openBox<CurrentUserHive>(currentUserBox);
+
+    return hiveBox.get(currentUserKey)!.toCurrentUser();
   }
 }
