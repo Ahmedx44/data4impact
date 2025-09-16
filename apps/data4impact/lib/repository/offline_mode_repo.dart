@@ -83,4 +83,25 @@ class OfflineModeDataRepo {
 
     return hiveBox.get(currentUserKey)!.toCurrentUser();
   }
+
+  Future<void> saveStudyQuestions(String studyId, String questionsJson) async {
+    final hiveBox = await Hive.openBox(studyQuestionsBox);
+    await hiveBox.put('${studyQuestionsKey}_$studyId', questionsJson);
+  }
+
+  Future<Map<String, dynamic>?> getSavedStudyQuestions(String studyId) async {
+    try {
+      final hiveBox = await Hive.openBox(studyQuestionsBox);
+      final questionsJson = hiveBox.get('${studyQuestionsKey}_$studyId');
+
+      if (questionsJson == null) {
+        return null;
+      }
+
+      return jsonDecode(questionsJson.toString()) as Map<String, dynamic>;
+    } catch (e) {
+      AppLogger.logError('Error loading saved study questions: $e');
+      return null;
+    }
+  }
 }

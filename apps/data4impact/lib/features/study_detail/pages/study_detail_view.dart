@@ -74,7 +74,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
             )
           ],
         ),
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: CustomScrollView(
         slivers: [

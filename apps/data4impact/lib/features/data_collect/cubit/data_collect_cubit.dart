@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -8,8 +9,10 @@ import 'package:data4impact/core/service/api_service/Model/study.dart';
 import 'package:data4impact/core/service/api_service/file_upload_service.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
 import 'package:data4impact/core/service/audio_service.dart';
+import 'package:data4impact/core/service/internt_connection_monitor.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/data_collect/cubit/data_collet_state.dart';
+import 'package:data4impact/repository/offline_mode_repo.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -255,57 +258,97 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   Future<void> getStudyQuestions(String studyId) async {
     emit(state.copyWith(isLoading: true, error: null));
 
-    try {
-      final data = await studyService.getStudyQuestions(studyId);
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
 
-      if (data is Map<String, dynamic> && data['error'] == true) {
-        final errorMessage = data['message'] ?? 'Study is not in progress';
+    final isConnected = await connected.hasInternetConnection();
+
+    if (isConnected) {
+      try {
+        final data = await studyService.getStudyQuestions(studyId);
+
+        if (data is Map<String, dynamic> && data['error'] == true) {
+          final errorMessage = data['message'] ?? 'Study is not in progress';
+          emit(state.copyWith(
+            isLoading: false,
+            error: errorMessage as String,
+          ));
+          return;
+        }
+
+        final study = Study.fromJson(data);
+        final studyJson = jsonEncode(data);
+
+        // Save to offline storage
+        await OfflineModeDataRepo().saveStudyQuestions(studyId, studyJson);
+
+        await _processStudyData(study);
+
+      } on FormatException catch (e) {
         emit(state.copyWith(
           isLoading: false,
-          error: errorMessage as String,
+          error: e.message,
         ));
-        return;
+      } catch (e) {
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'Failed to load study: ${e.toString()}',
+        ));
       }
+    } else {
+      // Offline mode - try to load from local storage
+      try {
+        final savedData = await OfflineModeDataRepo().getSavedStudyQuestions(studyId);
 
-      final study = Study.fromJson(data);
+        if (savedData == null) {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'No offline data available for this study',
+          ));
+          return;
+        }
 
-      final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
-      final isLocationRequired =
-          study.responseValidation?.requiredLocation ?? false;
+        final study = Study.fromJson(savedData);
+        await _processStudyData(study);
 
-      // Reset all state including hasSeenWelcome
-      emit(state.copyWith(
-        study: study,
-        isLoading: false,
-        currentQuestionIndex: 0,
-        answers: {},
-        requiredQuestions: {},
-        skipQuestions: {},
-        jumpTarget: null,
-        navigationHistory: [],
-        logicJumps: {},
-        availableLanguages: study.languages ?? [],
-        isLocationRequired: isLocationRequired,
-        hasSeenWelcome: false, // Reset welcome screen state
-      ));
-
-      if (isLocationRequired) {
-        await getCurrentLocation();
+      } catch (e) {
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'Failed to load offline study data: ${e.toString()}',
+        ));
       }
+    }
+  }
 
-      if (isVoiceRequired) {
-        await startRecording();
-      }
-    } on FormatException catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.message,
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Failed to load study: ${e.toString()}',
-      ));
+// Helper method to process study data (extracted from both online and offline flows)
+  Future<void> _processStudyData(Study study) async {
+    final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
+    final isLocationRequired = study.responseValidation?.requiredLocation ?? false;
+
+    // Reset all state including hasSeenWelcome
+    emit(state.copyWith(
+      study: study,
+      isLoading: false,
+      currentQuestionIndex: 0,
+      answers: {},
+      requiredQuestions: {},
+      skipQuestions: {},
+      jumpTarget: null,
+      navigationHistory: [],
+      logicJumps: {},
+      availableLanguages: study.languages ?? [],
+      isLocationRequired: isLocationRequired,
+      hasSeenWelcome: false, // Reset welcome screen state
+    ));
+
+    if (isLocationRequired) {
+      await getCurrentLocation();
+    }
+
+    if (isVoiceRequired) {
+      await startRecording();
     }
   }
 
