@@ -1,10 +1,10 @@
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
+import 'package:data4impact/features/home/cubit/home_state.dart';
 import 'package:data4impact/features/home/widget/actitity_card.dart';
 import 'package:data4impact/features/home/widget/assignment_view.dart';
 import 'package:data4impact/features/home/widget/performance_view.dart';
 import 'package:data4impact/features/home/widget/project_drawer.dart';
 import 'package:data4impact/features/join_with_link/page/join_with_link_page.dart';
-import 'package:data4impact/features/join_with_link/page/join_with_link_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -53,12 +53,40 @@ class _HomeViewState extends State<HomeView> {
           ],
         ),
         actions: [
+          // Sync Status Indicator
+          BlocBuilder<HomeCubit, HomeState>(
+            builder: (context, state) {
+              if (state.isSyncing) {
+                return _buildSyncProgressIndicator(context, state);
+              }
+
+              if (state.pendingSyncCount > 0) {
+                return Badge(
+                  label: Text(state.pendingSyncCount.toString()),
+                  child: IconButton(
+                    icon: const Icon(Icons.sync_problem),
+                    onPressed: () {
+                      _showSyncStatusDialog(context, state);
+                    },
+                    tooltip: '${state.pendingSyncCount} pending sync',
+                  ),
+                );
+              }
+
+              return IconButton(
+                icon: const Icon(Icons.sync),
+                onPressed: () => context.read<HomeCubit>().manualSync(),
+                tooltip: 'Sync Now',
+              );
+            },
+          ),
+
+          // Join Button
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -78,131 +106,325 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 );
               },
-              child:  const Text("Join",style: TextStyle(
-                fontWeight: FontWeight.bold
-              ),),
+              child: const Text(
+                "Join",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           )
         ],
       ),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      // Grid Cards Section
-                      GridView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 5,
-                          childAspectRatio: 1.3,
-                        ),
-                        itemCount: 6,
-                        itemBuilder: (context, index) {
-                          final titles = [
-                            'Active Assignments',
-                            'Completed Assignments',
-                            'New Assignments',
-                            'Overdue Study',
-                            'Study Involved',
-                            'Pending Reviews',
-                          ];
-                          final values = [120, 5400, 2800, 4, 35, 89];
-                          final subtitles = [
-                            '2 Completed',
-                            'This month',
-                            'Across all projects',
-                            'All tracks',
-                            'Across all projects',
-                            'Needs attention',
-                          ];
-
-                          return AnimationConfiguration.staggeredGrid(
-                            position: index,
-                            duration: const Duration(milliseconds: 300),
-                            columnCount: 2,
-                            child: FadeInAnimation(
-                              child: ActivityCard(
-                                title: titles[index],
-                                value: values[index],
-                                subtitle: subtitles[index],
+      body: BlocConsumer<HomeCubit, HomeState>(
+        listener: (context, state) {
+        },
+        builder: (context, state) {
+          return Stack(
+            children: [
+              CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  // Offline Banner
+                  if (state.isOffline)
+                    SliverToBoxAdapter(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        color: Colors.orange[100],
+                        child: Row(
+                          children: [
+                            const Icon(Icons.wifi_off, size: 16, color: Colors.orange),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Offline Mode',
+                              style: TextStyle(
+                                color: Colors.orange[800],
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          );
-                        },
-                      ),
-
-                      // Tab Bar Section
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: TabBar(
-                          indicator: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.2),
-                          ),
-                          splashFactory: NoSplash.splashFactory,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          indicatorPadding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 6,
-                          ),
-                          labelColor: Theme.of(context).colorScheme.primary,
-                          unselectedLabelColor: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withAlpha(255),
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          unselectedLabelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                          ),
-                          dividerColor: Colors.transparent,
-                          dividerHeight: 0,
-                          tabs: const [
-                            Tab(text: 'Assignment'),
-                            Tab(text: 'Performance'),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Responses will be synced when online',
+                                style: TextStyle(
+                                  color: Colors.orange[700],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
+                    ),
 
-                      // Tab Content
-                      const SizedBox(
-                        height: 510,
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: TabBarView(
-                            children: [
-                              AssignmentView(),
-                              PerformanceView(),
-                            ],
-                          ),
+                  // Loading Indicator
+                  if (state.isLoading)
+                    const SliverFillRemaining(
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+
+                  // Error Message
+                  if (state.errorMessage != null && !state.isLoading)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          'Error: ${state.errorMessage}',
+                          style: const TextStyle(color: Colors.red),
                         ),
                       ),
-                    ],
+                    ),
+
+                  // Main Content
+                  if (!state.isLoading && state.errorMessage == null)
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          DefaultTabController(
+                            length: 2,
+                            child: Column(
+                              children: [
+                                // Grid Cards Section
+                                GridView.builder(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  shrinkWrap: true,
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 10,
+                                    crossAxisSpacing: 5,
+                                    childAspectRatio: 1.3,
+                                  ),
+                                  itemCount: 6,
+                                  itemBuilder: (context, index) {
+                                    final titles = [
+                                      'Active Assignments',
+                                      'Completed Assignments',
+                                      'New Assignments',
+                                      'Overdue Study',
+                                      'Study Involved',
+                                      'Pending Reviews',
+                                    ];
+                                    final values = [120, 5400, 2800, 4, 35, 89];
+                                    final subtitles = [
+                                      '2 Completed',
+                                      'This month',
+                                      'Across all projects',
+                                      'All tracks',
+                                      'Across all projects',
+                                      'Needs attention',
+                                    ];
+
+                                    return AnimationConfiguration.staggeredGrid(
+                                      position: index,
+                                      duration: const Duration(milliseconds: 300),
+                                      columnCount: 2,
+                                      child: FadeInAnimation(
+                                        child: ActivityCard(
+                                          title: titles[index],
+                                          value: values[index],
+                                          subtitle: subtitles[index],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+
+                                // Tab Bar Section
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  margin: const EdgeInsets.symmetric(vertical: 8),
+                                  child: TabBar(
+                                    indicator: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withOpacity(0.2),
+                                    ),
+                                    splashFactory: NoSplash.splashFactory,
+                                    indicatorSize: TabBarIndicatorSize.tab,
+                                    indicatorPadding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 6,
+                                    ),
+                                    labelColor: Theme.of(context).colorScheme.primary,
+                                    unselectedLabelColor: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withAlpha(255),
+                                    labelStyle: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    unselectedLabelStyle: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                    dividerColor: Colors.transparent,
+                                    dividerHeight: 0,
+                                    tabs: const [
+                                      Tab(text: 'Assignment'),
+                                      Tab(text: 'Performance'),
+                                    ],
+                                  ),
+                                ),
+
+                                // Tab Content
+                                const SizedBox(
+                                  height: 510,
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: TabBarView(
+                                      children: [
+                                        AssignmentView(),
+                                        PerformanceView(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ),
+                ],
+              ),
+
+              // Sync Progress Overlay
+              if (state.isSyncing)
+                Positioned(
+                  bottom: 20,
+                  right: 20,
+                  child: _buildSyncProgressCard(context, state),
+                ),
+            ],
+          );
+        },
+      ),
+
+      // Floating Sync Button for easy access
+      floatingActionButton: BlocBuilder<HomeCubit, HomeState>(
+        builder: (context, state) {
+          if (state.pendingSyncCount > 0 && !state.isSyncing) {
+            return FloatingActionButton(
+              onPressed: () => context.read<HomeCubit>().manualSync(),
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              child: Badge(
+                label: Text(state.pendingSyncCount.toString()),
+                child: const Icon(Icons.sync),
+              ),
+              tooltip: 'Sync ${state.pendingSyncCount} pending responses',
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  Widget _buildSyncProgressIndicator(BuildContext context, HomeState state) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            value: state.syncProgress,
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+        Text(
+          '${(state.syncProgress * 100).toInt()}%',
+          style: const TextStyle(
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSyncProgressCard(BuildContext context, HomeState state) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                value: state.syncProgress,
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Syncing...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-              ]),
+                Text(
+                  '${(state.syncProgress * 100).toInt()}% complete',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSyncStatusDialog(BuildContext context, HomeState state) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sync Status'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Pending sync: ${state.pendingSyncCount} response(s)'),
+            const SizedBox(height: 16),
+            if (state.pendingSyncCount > 0)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.read<HomeCubit>().manualSync();
+                },
+                child: const Text('Sync Now'),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
         ],
       ),

@@ -322,6 +322,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
+
+
+
 // Helper method to process study data (extracted from both online and offline flows)
   Future<void> _processStudyData(Study study) async {
     final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
@@ -830,39 +833,50 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
 
     String? audioUrl;
-
-    // Only upload audio if the study requires it AND we have an audio file
     final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
 
+    // Handle audio upload if online
     if (isVoiceRequired && state.audioFilePath != null && fileUploadService != null) {
-      emit(state.copyWith(isSubmitting: true));
+      final connected = InternetConnectionMonitor(
+        checkOnInterval: false,
+        checkInterval: const Duration(seconds: 5),
+      );
 
-      try {
-        final result = await fileUploadService!.uploadAudioFile(
-          studyId,
-          state.audioFilePath!,
-        );
+      final isConnected = await connected.hasInternetConnection();
 
-        audioUrl = result['filename'] as String?;
+      if (isConnected) {
+        emit(state.copyWith(isSubmitting: true));
 
-        emit(state.copyWith(
-          audioUploadResult: result,
-        ));
+        try {
+          final result = await fileUploadService!.uploadAudioFile(
+            studyId,
+            state.audioFilePath!,
+          );
 
-        // Clean up local file after successful upload
-        final file = File(state.audioFilePath!);
-        if (await file.exists()) {
-          await file.delete();
+          audioUrl = result['filename'] as String?;
+
+          emit(state.copyWith(
+            audioUploadResult: result,
+          ));
+
+          // Clean up local file after successful upload
+          final file = File(state.audioFilePath!);
+          if (await file.exists()) {
+            await file.delete();
+          }
+
+          // Reset audio file path after successful upload
+          emit(state.copyWith(audioFilePath: null));
+        } catch (e) {
+          ToastService.showErrorToast(message: 'Failed to upload audio: $e');
+          emit(state.copyWith(
+            isSubmitting: false,
+          ));
+          return;
         }
-
-        // Reset audio file path after successful upload
-        emit(state.copyWith(audioFilePath: null));
-      } catch (e) {
-        ToastService.showErrorToast(message: 'Failed to upload audio: $e');
-        emit(state.copyWith(
-          isSubmitting: false,
-        ));
-        return;
+      } else {
+        // In offline mode, we'll store the audio file path for later upload
+        audioUrl = state.audioFilePath; // Store the file path temporarily
       }
     }
 
@@ -878,35 +892,76 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       "finished": true,
       "deviceType": "mobile",
       "geolocation": state.locationData?.toJson() ?? {},
+      "submittedAt": DateTime.now().toIso8601String(),
     };
 
-    // Only add audioUrl if we actually have a value
+    // Add audio URL or file path
     if (audioUrl != null) {
-      submissionData["audioUrl"] = audioUrl;
+      if (audioUrl!.startsWith('/')) {
+        // This is a file path (offline mode)
+        submissionData["audioFilePath"] = audioUrl;
+      } else {
+        // This is a URL (online mode)
+        submissionData["audioUrl"] = audioUrl;
+      }
     }
 
-    print('Survey submission: $submissionData');
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
 
-    try {
-      final response = await studyService.submitSurveyResponse(
-        studyId: studyId,
-        responseData: submissionData,
-      );
+    final isConnected = await connected.hasInternetConnection();
 
-      ToastService.showSuccessToast(message: 'Response submitted successfully');
-      print('Response submitted successfully: $response');
+    if (isConnected) {
+      // Online mode - submit directly
+      print('Survey submission (online): $submissionData');
 
-      emit(
-        state.copyWith(
+      try {
+        final response = await studyService.submitSurveyResponse(
+          studyId: studyId,
+          responseData: submissionData,
+        );
+
+        ToastService.showSuccessToast(message: 'Response submitted successfully');
+        print('Response submitted successfully: $response');
+
+        emit(
+          state.copyWith(
+            isSubmitting: false,
+            submissionResult: response,
+          ),
+        );
+      } catch (e) {
+        ToastService.showErrorToast(message: 'Failed to submit survey: $e');
+        emit(state.copyWith(
           isSubmitting: false,
-          submissionResult: response,
-        ),
-      );
-    } catch (e) {
-      ToastService.showErrorToast(message: 'Failed to submit survey: $e');
-      emit(state.copyWith(
-        isSubmitting: false,
-      ));
+        ));
+      }
+    } else {
+      // Offline mode - store for later sync
+      try {
+        await OfflineModeDataRepo().saveOfflineAnswer(studyId, submissionData);
+
+        ToastService.showSuccessToast(
+            message: 'Response saved offline. Will sync when internet is available.'
+        );
+
+
+        emit(
+          state.copyWith(
+            isSubmitting: false,
+            submissionResult: {'status': 'saved_offline'},
+          ),
+        );
+
+
+      } catch (e) {
+        ToastService.showErrorToast(message: 'Failed to save offline: $e');
+        emit(state.copyWith(
+          isSubmitting: false,
+        ));
+      }
     }
   }
 }

@@ -104,4 +104,41 @@ class OfflineModeDataRepo {
       return null;
     }
   }
+
+  Future<void> saveOfflineAnswer(String studyId, Map<String, dynamic> answerData) async {
+    final hiveBox = await Hive.openBox(offlineAnswersBox);
+
+    // Get existing answers for this study
+    final existingAnswers = await getOfflineAnswers(studyId);
+    existingAnswers.add(answerData);
+
+    await hiveBox.put('${offlineAnswersKey}_$studyId', jsonEncode(existingAnswers));
+  }
+
+  Future<List<Map<String, dynamic>>> getOfflineAnswers(String studyId) async {
+    try {
+      final hiveBox = await Hive.openBox(offlineAnswersBox);
+      final answersJson = hiveBox.get('${offlineAnswersKey}_$studyId');
+
+      if (answersJson == null) {
+        return [];
+      }
+
+      final List<dynamic> decoded = jsonDecode(answersJson.toString()) as List<dynamic>;
+      return decoded.map((item) => item as Map<String, dynamic>).toList();
+    } catch (e) {
+      AppLogger.logError('Error loading offline answers: $e');
+      return [];
+    }
+  }
+
+  Future<void> removeOfflineAnswer(String studyId, int index) async {
+    final answers = await getOfflineAnswers(studyId);
+    if (index >= 0 && index < answers.length) {
+      answers.removeAt(index);
+      final hiveBox = await Hive.openBox(offlineAnswersBox);
+      await hiveBox.put('${offlineAnswersKey}_$studyId', jsonEncode(answers));
+    }
+  }
+
 }
