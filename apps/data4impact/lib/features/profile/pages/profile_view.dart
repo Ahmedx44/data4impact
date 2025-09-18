@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:skeletonizer/skeletonizer.dart'; // Import the package
 
 class ProfileView extends StatefulWidget {
   const ProfileView({Key? key}) : super(key: key);
@@ -42,27 +43,254 @@ class _ProfilePageState extends State<ProfileView> {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: colorScheme.surfaceVariant.withOpacity(0.05),
-          body: state.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-            onRefresh: () async {
-              context.read<ProfileCubit>().refreshUserData();
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                children: [
-                  _buildProfileHeader(context, state.user),
-                  if (state.user != null)
-                    _buildPersonalInfoSection(context, state.user!),
-                  _buildExperienceSection(context),
-                  const SizedBox(height: 20),
-                ],
+          body: Skeletonizer(
+            enabled: state.isLoading, // Enable skeleton when loading
+            child: state.isLoading
+                ? _buildSkeletonProfile(context)
+                : RefreshIndicator(
+              onRefresh: () async {
+                context.read<ProfileCubit>().refreshUserData();
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    _buildProfileHeader(context, state.user),
+                    if (state.user != null)
+                      _buildPersonalInfoSection(context, state.user!),
+                    _buildExperienceSection(context),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSkeletonProfile(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Column(
+        children: [
+          // Skeleton Header
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  colorScheme.primary.withOpacity(0.9),
+                  colorScheme.primary.withOpacity(0.5),
+                ],
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(),
+                        Row(
+                          children: [
+                            Bone.icon(), // Skeleton theme toggle icon
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          // Skeleton profile image
+                          Bone.circle(size: 120),
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              children: [
+                                Bone.text(words: 2), // Skeleton name
+                                const SizedBox(height: 8),
+                                Bone.text(words: 1), // Skeleton role
+                                const SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        top: 110,
+                        right: MediaQuery.of(context).size.width / 2 - 80,
+                        child: Bone.circle(size: 36), // Skeleton camera icon
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Skeleton Personal Info Section
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Bone.text(words: 2), // Skeleton section title
+                        Bone.icon(), // Skeleton edit icon
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ...List.generate(4, (index) => _buildSkeletonInfoTile(context)),
+                ],
+              ),
+            ),
+          ),
+
+          // Skeleton Experience Section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Bone.text(words: 2), // Skeleton section title
+                        Bone.icon(), // Skeleton add icon
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ...List.generate(2, (index) => _buildSkeletonExperienceItem(context)),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Bone.text(words: 3), // Skeleton total experience
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonInfoTile(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Bone.circle(size: 40), // Skeleton icon
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Bone.text(words: 1), // Skeleton title
+                    const SizedBox(height: 4),
+                    Bone.text(words: 2), // Skeleton value
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Divider(
+          height: 1,
+          color: colorScheme.outline.withOpacity(0.1),
+          indent: 20,
+          endIndent: 20,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSkeletonExperienceItem(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Bone.square(size: 40), // Skeleton company logo
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Bone.text(words: 2), // Skeleton company name
+                        Bone.icon(), // Skeleton edit icon
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Bone.text(words: 3), // Skeleton role
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Bone.text(words: 1), // Skeleton period
+                        const SizedBox(width: 8),
+                        Bone.text(words: 1), // Skeleton duration
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Bone.text(words: 4), // Skeleton description
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Divider(
+          height: 1,
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          indent: 20,
+          endIndent: 20,
+        ),
+      ],
     );
   }
 
@@ -97,8 +325,8 @@ class _ProfilePageState extends State<ProfileView> {
                   Container(),
                   Row(
                     children: [
-                      BlocBuilder<ProfileCubit,ProfileState>(
-                        builder: (context,state) {
+                      BlocBuilder<ProfileCubit, ProfileState>(
+                        builder: (context, state) {
                           return IconButton(
                             icon: Icon(
                               state.isDarkMode ? Icons.light_mode : Icons.dark_mode,
@@ -355,9 +583,7 @@ class _ProfilePageState extends State<ProfileView> {
                         if (status != null)
                           Icon(
                             status ? Icons.check_circle : Icons.error,
-                            color: status
-                                ? Colors.green
-                                : colorScheme.error,
+                            color: status ? Colors.green : colorScheme.error,
                             size: 16,
                           ),
                       ],

@@ -2,9 +2,11 @@ import 'package:data4impact/core/widget/api_error_widget.dart';
 import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:data4impact/features/study/cubit/study_state.dart';
 import 'package:data4impact/features/study/widget/study_card.dart';
+import 'package:data4impact/features/study/widget/study_sekeleton.dart';
 import 'package:data4impact/features/study_detail/pages/study_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:skeletonizer/skeletonizer.dart'; // Import the package
 
 class StudyView extends StatefulWidget {
   final String projectSlug;
@@ -23,6 +25,10 @@ class _StudyViewState extends State<StudyView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Fetch studies when the widget initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StudyCubit>().fetchStudies();
+    });
   }
 
   @override
@@ -58,7 +64,7 @@ class _StudyViewState extends State<StudyView>
                   splashFactory: NoSplash.splashFactory,
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicatorPadding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                   labelColor: colorScheme.primary,
                   unselectedLabelColor: colorScheme.onSurface.withAlpha(255),
                   labelStyle: const TextStyle(
@@ -97,7 +103,7 @@ class _StudyViewState extends State<StudyView>
     return BlocBuilder<StudyCubit, StudyState>(
       builder: (context, state) {
         if (state is StudyInitial || state is StudyLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return _buildSkeletonStudyList();
         } else if (state is StudyError) {
           return ApiErrorWidget(
             errorMessage: _getUserFriendlyErrorMessage(state.errorMessage),
@@ -106,7 +112,7 @@ class _StudyViewState extends State<StudyView>
           );
         } else if (state is StudyLoaded) {
           final activeStudies = state.studies.where((study) =>
-              study['status'] == 'inProgress' || study['status'] == 'draft');
+          study['status'] == 'inProgress' || study['status'] == 'draft');
 
           if (activeStudies.isEmpty) {
             return _buildEmptyState('No active studies found');
@@ -122,7 +128,7 @@ class _StudyViewState extends State<StudyView>
                   title: study['name'] as String,
                   description: study['description'] as String,
                   progress:
-                      (study['responseCount']! / study['sampleSize']) as double,
+                  (study['responseCount']! / study['sampleSize']) as double,
                   status: study['status'] as String,
                   callback: () {
                     final studyCubit = context.read<StudyCubit>();
@@ -154,7 +160,7 @@ class _StudyViewState extends State<StudyView>
     return BlocBuilder<StudyCubit, StudyState>(
       builder: (context, state) {
         if (state is StudyInitial || state is StudyLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return _buildSkeletonStudyList();
         } else if (state is StudyError) {
           return ApiErrorWidget(
             errorMessage: _getUserFriendlyErrorMessage(state.errorMessage),
@@ -163,7 +169,7 @@ class _StudyViewState extends State<StudyView>
           );
         } else if (state is StudyLoaded) {
           final oldStudies = state.studies.where((study) =>
-              study['status'] != 'inProgress' && study['status'] != 'draft');
+          study['status'] != 'inProgress' && study['status'] != 'draft');
 
           if (oldStudies.isEmpty) {
             return _buildEmptyState('No completed studies found');
@@ -188,7 +194,7 @@ class _StudyViewState extends State<StudyView>
                   title: study['name'] as String,
                   description: study['description'] as String,
                   progress:
-                      (study['responseCount']! / study['sampleSize']) as double,
+                  (study['responseCount']! / study['sampleSize']) as double,
                   status: study['status'] as String,
 
                   callback: () {
@@ -208,6 +214,23 @@ class _StudyViewState extends State<StudyView>
         return const SizedBox();
       },
     );
+  }
+
+  Widget _buildSkeletonStudyList() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 5, // Show 5 skeleton items
+        itemBuilder: (context, index) {
+          return _buildSkeletonStudyCard();
+        },
+      ),
+    );
+  }
+
+  Widget _buildSkeletonStudyCard() {
+    return const SkeletonStudyCard();
   }
 
   Widget _buildEmptyState(String message) {

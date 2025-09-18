@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart'; // Import the package
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -115,9 +116,27 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
       body: BlocConsumer<HomeCubit, HomeState>(
-        listener: (context, state) {
-        },
+        listener: (context, state) {},
         builder: (context, state) {
+          // Prepare fake data for skeleton when loading
+          final fakeTitles = [
+            'Active Assignments',
+            'Completed Assignments',
+            'New Assignments',
+            'Overdue Study',
+            'Study Involved',
+            'Pending Reviews',
+          ];
+          final fakeValues = [120, 5400, 2800, 4, 35, 89];
+          final fakeSubtitles = [
+            '2 Completed',
+            'This month',
+            'Across all projects',
+            'All tracks',
+            'Across all projects',
+            'Needs attention',
+          ];
+
           return Stack(
             children: [
               CustomScrollView(
@@ -156,12 +175,6 @@ class _HomeViewState extends State<HomeView> {
                       ),
                     ),
 
-                  // Loading Indicator
-                  if (state.isLoading)
-                    const SliverFillRemaining(
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-
                   // Error Message
                   if (state.errorMessage != null && !state.isLoading)
                     SliverToBoxAdapter(
@@ -174,13 +187,14 @@ class _HomeViewState extends State<HomeView> {
                       ),
                     ),
 
-                  // Main Content
-                  if (!state.isLoading && state.errorMessage == null)
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          DefaultTabController(
+                  // Main Content with Skeletonizer
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        Skeletonizer(
+                          enabled: state.isLoading,
+                          child: DefaultTabController(
                             length: 2,
                             child: Column(
                               children: [
@@ -194,9 +208,10 @@ class _HomeViewState extends State<HomeView> {
                                     crossAxisSpacing: 5,
                                     childAspectRatio: 1.3,
                                   ),
-                                  itemCount: 6,
+                                  itemCount: state.isLoading ? 6 : fakeTitles.length, // Use fake count when loading
                                   itemBuilder: (context, index) {
-                                    final titles = [
+                                    // Use fake data when loading, real data otherwise
+                                    final titles = state.isLoading ? fakeTitles : [
                                       'Active Assignments',
                                       'Completed Assignments',
                                       'New Assignments',
@@ -204,8 +219,8 @@ class _HomeViewState extends State<HomeView> {
                                       'Study Involved',
                                       'Pending Reviews',
                                     ];
-                                    final values = [120, 5400, 2800, 4, 35, 89];
-                                    final subtitles = [
+                                    final values = state.isLoading ? fakeValues : [120, 5400, 2800, 4, 35, 89];
+                                    final subtitles = state.isLoading ? fakeSubtitles : [
                                       '2 Completed',
                                       'This month',
                                       'Across all projects',
@@ -288,9 +303,10 @@ class _HomeViewState extends State<HomeView> {
                               ],
                             ),
                           ),
-                        ]),
-                      ),
+                        ),
+                      ]),
                     ),
+                  ),
                 ],
               ),
 
