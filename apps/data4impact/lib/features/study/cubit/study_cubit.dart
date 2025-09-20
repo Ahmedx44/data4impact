@@ -45,12 +45,9 @@ class StudyCubit extends Cubit<StudyState> {
         await OfflineModeDataRepo().saveAllStudys(studiesJson);
         emit(StudyLoaded(_studies));
       } catch (e) {
-        emit(
-          StudyError(
-            errorMessage: e.toString(),
-            errorDetails: e is Exception ? e : Exception(e.toString()),
-          ),
-        );
+        final savedStudies = await OfflineModeDataRepo().getSavedAllStudys();
+        _studies = savedStudies;
+        emit(StudyLoaded(_studies));
       }
     } else {
       try {

@@ -323,13 +323,15 @@ class HomeCubit extends Cubit<HomeState> {
         await _checkAndSyncOfflineData();
 
       } catch (e) {
+        final projects = await OfflineModeDataRepo().getSavedAllProjects();
         emit(
           state.copyWith(
             isLoading: false,
-            errorMessage: 'Failed to fetch projects: $e',
+            projects: projects,
+            selectedProject: projects.isNotEmpty ? projects.first : null,
+            isOffline: true,
           ),
         );
-        ToastService.showErrorToast(message: 'Failed to fetch projects');
       }
     } else {
       final projects = await OfflineModeDataRepo().getSavedAllProjects();
@@ -341,9 +343,6 @@ class HomeCubit extends Cubit<HomeState> {
           isOffline: true,
         ),
       );
-
-      ToastService.showWarningToast(
-          message: 'No internet connection available');
     }
   }
 

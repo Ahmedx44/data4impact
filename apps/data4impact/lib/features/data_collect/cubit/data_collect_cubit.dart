@@ -412,11 +412,97 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
+    // New logic: Determine which questions to skip based on current answers
+    skipQuestions.addAll(_determineSkipQuestions(study, answers));
+
     return currentState.copyWith(
       requiredQuestions: requiredQuestions,
       jumpTarget: jumpTarget,
       skipQuestions: skipQuestions,
     );
+  }
+
+  Set<String> _determineSkipQuestions(Study study, Map<String, dynamic> answers) {
+    Set<String> questionsToSkip = {};
+
+    // Check each question to see if it should be accessible based on current answers
+    for (final question in study.questions) {
+      if (!_isQuestionAccessible(question, study, answers)) {
+        questionsToSkip.add(question.id);
+      }
+    }
+
+    return questionsToSkip;
+  }
+
+  bool _isQuestionAccessible(ApiQuestion targetQuestion, Study study, Map<String, dynamic> answers) {
+    // A question is accessible if:
+    // 1. There's no logic preventing it, OR
+    // 2. There's explicit logic that leads to it
+
+    // Find all questions that have logic pointing to this target question
+    List<ApiQuestion> questionsWithLogicToTarget = [];
+
+    for (final question in study.questions) {
+      if (question.logic != null && question.logic!.isNotEmpty) {
+        for (final logicItem in question.logic!) {
+          if (logicItem is Map<String, dynamic>) {
+            final actions = logicItem['actions'] as List?;
+            if (actions != null) {
+              for (final action in actions) {
+                if (action['objective'] == 'jumpToQuestion' &&
+                    action['target'] == targetQuestion.id) {
+                  questionsWithLogicToTarget.add(question);
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // If no questions have logic pointing to this target, it's accessible by default
+    if (questionsWithLogicToTarget.isEmpty) {
+      return true;
+    }
+
+    // If there are questions with logic pointing to this target,
+    // check if any of their conditions are satisfied
+    for (final sourceQuestion in questionsWithLogicToTarget) {
+      if (sourceQuestion.logic != null) {
+        for (final logicItem in sourceQuestion.logic!) {
+          if (logicItem is Map<String, dynamic>) {
+            final conditions = logicItem['conditions'];
+            final actions = logicItem['actions'] as List?;
+
+            if (conditions != null && actions != null) {
+              // Check if this logic item targets our question
+              final targetsOurQuestion = actions.any((action) =>
+              action['objective'] == 'jumpToQuestion' &&
+                  action['target'] == targetQuestion.id
+              );
+
+              if (targetsOurQuestion) {
+                // Check if the condition is satisfied
+                final conditionResult = _evaluateConditionGroup(
+                  study,
+                  answers,
+                  conditions as Map<String, dynamic>,
+                );
+
+                if (conditionResult) {
+                  return true; // This path leads to our target question
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // No satisfied conditions lead to this question, so it should be skipped
+    return false;
   }
 
   bool _evaluateConditionGroup(
@@ -638,15 +724,17 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
+    // Find the next accessible question
     int nextIndex = currentIndex + 1;
 
     while (nextIndex < study.questions.length) {
       final nextQuestion = study.questions[nextIndex];
 
-      if (state.skipQuestions.contains(nextQuestion.id)) {
-        nextIndex++;
+      // Check if this question is accessible based on current answers
+      if (_isQuestionAccessible(nextQuestion, study, state.answers)) {
+        break; // Found an accessible question
       } else {
-        break;
+        nextIndex++; // Skip this question and check the next one
       }
     }
 
@@ -655,11 +743,17 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       final newHistory = List<int>.from(state.navigationHistory)
         ..add(currentIndex);
 
-      emit(state.copyWith(
+      // Create new state and re-evaluate logic
+      final newState = state.copyWith(
         currentQuestionIndex: nextIndex,
-        jumpTarget: null, // Ensure jumpTarget is cleared
+        jumpTarget: null,
         navigationHistory: newHistory,
-      ));
+      );
+
+      final evaluatedState = _evaluateLogic(newState);
+
+      emit(evaluatedState);
+
       Future.delayed(const Duration(milliseconds: 100), () {
         _isNavigating = false;
       });
