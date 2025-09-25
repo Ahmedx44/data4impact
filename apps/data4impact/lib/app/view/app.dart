@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/api_service/file_upload_service.dart';
+import 'package:data4impact/core/service/api_service/profile_service.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/api_service/segment_service.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
@@ -28,6 +29,8 @@ class App extends StatelessWidget {
     );
     final segmentService =
     SegmentService(apiClient: apiClient, secureStorage: secureStorage);
+    final profileService =
+    ProfileService(apiClient: apiClient, secureStorage: secureStorage);
     final studyService =
     StudyService(apiClient: apiClient, secureStorage: secureStorage);
     final projectService =
@@ -50,6 +53,7 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: studyService),
         RepositoryProvider.value(value: fileUploadService),
         RepositoryProvider.value(value: connectivity),
+        RepositoryProvider.value(value: profileService),
       ],
       child: MultiBlocProvider(
         providers: [

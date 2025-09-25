@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:skeletonizer/skeletonizer.dart'; // Import the package
+import 'package:skeletonizer/skeletonizer.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({Key? key}) : super(key: key);
@@ -16,22 +16,12 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfileView> {
-  File? _profileImage;
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     context.read<ProfileCubit>().fetchCurrentUser();
-  }
-
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _profileImage = File(image.path);
-      });
-    }
   }
 
   @override
@@ -44,7 +34,7 @@ class _ProfilePageState extends State<ProfileView> {
         return Scaffold(
           backgroundColor: colorScheme.surfaceVariant.withOpacity(0.05),
           body: Skeletonizer(
-            enabled: state.isLoading, // Enable skeleton when loading
+            enabled: state.isLoading,
             child: state.isLoading
                 ? _buildSkeletonProfile(context)
                 : RefreshIndicator(
@@ -55,7 +45,7 @@ class _ProfilePageState extends State<ProfileView> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
                   children: [
-                    _buildProfileHeader(context, state.user),
+                    _buildProfileHeader(context, state),
                     if (state.user != null)
                       _buildPersonalInfoSection(context, state.user!),
                     _buildExperienceSection(context),
@@ -67,6 +57,20 @@ class _ProfilePageState extends State<ProfileView> {
           ),
         );
       },
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context, ProfileState state) {
+    // Use the context from the BlocBuilder that has access to ProfileCubit
+    showDialog(
+      context: context,
+      builder: (dialogContext) => BlocProvider.value(
+        value: context.read<ProfileCubit>(),
+        child: EditProfileDialog(
+          user: state.user!,
+          tempProfileImage: state.tempProfileImage,
+        ),
+      ),
     );
   }
 
@@ -294,9 +298,10 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, CurrentUser? user) {
+  Widget _buildProfileHeader(BuildContext context, ProfileState state) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final user = state.user;
 
     return Container(
       decoration: BoxDecoration(
@@ -368,9 +373,9 @@ class _ProfilePageState extends State<ProfileView> {
                         ],
                       ),
                       child: ClipOval(
-                        child: _profileImage != null
+                        child: state.tempProfileImage != null
                             ? Image.file(
-                          _profileImage!,
+                          state.tempProfileImage!,
                           fit: BoxFit.cover,
                         )
                             : user?.imageUrl != null
@@ -430,7 +435,14 @@ class _ProfilePageState extends State<ProfileView> {
                   top: 110,
                   right: MediaQuery.of(context).size.width / 2 - 80,
                   child: GestureDetector(
-                    onTap: _pickImage,
+                    onTap: () async {
+                      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+                      if (image != null) {
+                        context.read<ProfileCubit>().startEditing();
+                        context.read<ProfileCubit>().setTempProfileImage(File(image.path));
+                        _showEditProfileDialog(context, state);
+                      }
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -487,7 +499,8 @@ class _ProfilePageState extends State<ProfileView> {
                   IconButton(
                     icon: Icon(Icons.edit, color: colorScheme.primary),
                     onPressed: () {
-                      // Handle edit personal info
+                      context.read<ProfileCubit>().startEditing();
+                      _showEditProfileDialog(context, context.read<ProfileCubit>().state);
                     },
                   ),
                 ],
@@ -645,8 +658,7 @@ class _ProfilePageState extends State<ProfileView> {
               role: 'Lead Research Analyst',
               period: 'May 2016 - Present',
               duration: '4 years 8 months',
-              description:
-              'Specializations: Survey Design, Consumer Research\nManaged team of 15 researchers',
+              description: 'Specializations: Survey Design, Consumer Research\nManaged team of 15 researchers',
             ),
             _buildExperienceItem(
               context,
@@ -654,8 +666,7 @@ class _ProfilePageState extends State<ProfileView> {
               role: 'Senior Research Associate',
               period: 'Jan 2014 - Apr 2016',
               duration: '2 years 4 months',
-              description:
-              'Specializations: Data Analysis, Market Research\nLed client presentations and reports',
+              description: 'Specializations: Data Analysis, Market Research\nLed client presentations and reports',
               isLast: true,
             ),
             Padding(
@@ -801,6 +812,159 @@ class _ProfilePageState extends State<ProfileView> {
             indent: 20,
             endIndent: 20,
           ),
+      ],
+    );
+  }
+}
+
+class EditProfileDialog extends StatefulWidget {
+  final CurrentUser user;
+  final File? tempProfileImage;
+
+  const EditProfileDialog({
+    Key? key,
+    required this.user,
+    this.tempProfileImage,
+  }) : super(key: key);
+
+  @override
+  State<EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<EditProfileDialog> {
+  late TextEditingController _firstNameController;
+  late TextEditingController _middleNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _phoneController;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController = TextEditingController(text: widget.user.firstName);
+    _middleNameController = TextEditingController(text: widget.user.middleName ?? '');
+    _lastNameController = TextEditingController(text: widget.user.lastName);
+    _phoneController = TextEditingController(text: widget.user.phone ?? '');
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return AlertDialog(
+      title: Text('Edit Profile', style: theme.textTheme.headlineSmall),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Profile Image Picker
+            GestureDetector(
+              onTap: () async {
+                final ImagePicker picker = ImagePicker();
+                final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                if (image != null) {
+                  context.read<ProfileCubit>().setTempProfileImage(File(image.path));
+                  setState(() {}); // Refresh the dialog to show new image
+                }
+              },
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colorScheme.primary, width: 2),
+                    ),
+                    child: ClipOval(
+                      child: widget.tempProfileImage != null
+                          ? Image.file(widget.tempProfileImage!, fit: BoxFit.cover)
+                          : widget.user.imageUrl != null
+                          ? Image.network(
+                        widget.user.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(Icons.person, size: 40, color: colorScheme.primary);
+                        },
+                      )
+                          : Icon(Icons.person, size: 40, color: colorScheme.primary),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.camera_alt, size: 16, color: colorScheme.onPrimary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Form Fields
+            TextField(
+              controller: _firstNameController,
+              decoration: const InputDecoration(labelText: 'First Name'),
+              onChanged: (value) => context.read<ProfileCubit>().updateField('firstName', value),
+            ),
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _middleNameController,
+              decoration: const InputDecoration(labelText: 'Middle Name'),
+              onChanged: (value) => context.read<ProfileCubit>().updateField('middleName', value),
+            ),
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _lastNameController,
+              decoration: const InputDecoration(labelText: 'Last Name'),
+              onChanged: (value) => context.read<ProfileCubit>().updateField('lastName', value),
+            ),
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _phoneController,
+              decoration: const InputDecoration(labelText: 'Phone'),
+              keyboardType: TextInputType.phone,
+              onChanged: (value) => context.read<ProfileCubit>().updateField('phone', value),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            context.read<ProfileCubit>().cancelEditing();
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            await context.read<ProfileCubit>().saveProfile(context);
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Text('Save'),
+        ),
       ],
     );
   }

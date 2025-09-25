@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:data4impact/features/collectors/page/collector_detail_view.dart';
+import 'package:data4impact/features/home/cubit/home_cubit.dart';
+import 'package:data4impact/features/home/cubit/home_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CollectorsView extends StatefulWidget {
@@ -119,15 +122,22 @@ class _CollectorsPageState extends State<CollectorsView> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceVariant.withOpacity(0.1),
-      body: Column(
-        children: [
-          _buildHeader(context),
-          Expanded(
-            child: _buildProfileList(context),
-          ),
-        ],
+    return BlocListener<HomeCubit,HomeState>(
+      listener: (context, state) {
+        if(state.projects.isNotEmpty){
+
+        }
+      },
+      child: Scaffold(
+        backgroundColor: colorScheme.surfaceVariant.withOpacity(0.1),
+        body: Column(
+          children: [
+            _buildHeader(context),
+            Expanded(
+              child: _buildProfileList(context),
+            ),
+          ],
+        ),
       ),
     );
   }

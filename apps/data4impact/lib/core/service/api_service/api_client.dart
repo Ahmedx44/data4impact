@@ -129,9 +129,17 @@ Error: ${e.message}
   }
 
   /// PUT request
-  Future<Response> put(String endpoint, {dynamic data}) async {
+  Future<Response> put(
+      String endpoint, {
+        dynamic data,
+        Options? options,
+      }) async {
     try {
-      final response = await dio.put(endpoint, data: data);
+      final response = await dio.put(
+        endpoint,
+        data: data,
+        options: options,
+      );
       return response;
     } on DioException catch (e, stack) {
       AppLogger.logError(
