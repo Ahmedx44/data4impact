@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:skeletonizer/skeletonizer.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({Key? key}) : super(key: key);
@@ -26,274 +25,85 @@ class _ProfilePageState extends State<ProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return BlocBuilder<ProfileCubit, ProfileState>(
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.05),
-          body: Skeletonizer(
-            enabled: state.isLoading,
-            child: state.isLoading
-                ? _buildSkeletonProfile(context)
-                : RefreshIndicator(
-              onRefresh: () async {
-                context.read<ProfileCubit>().refreshUserData();
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  children: [
-                    _buildProfileHeader(context, state),
-                    if (state.user != null)
-                      _buildPersonalInfoSection(context, state.user!),
-                    _buildExperienceSection(context),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          backgroundColor: Theme.of(context).colorScheme.background,
+          body: state.isLoading
+              ? _buildLoadingState()
+              : _buildProfileContent(context, state),
         );
       },
     );
   }
 
-  void _showEditProfileDialog(BuildContext context, ProfileState state) {
-    // Use the context from the BlocBuilder that has access to ProfileCubit
-    showDialog(
-      context: context,
-      builder: (dialogContext) => BlocProvider.value(
-        value: context.read<ProfileCubit>(),
-        child: EditProfileDialog(
-          user: state.user!,
-          tempProfileImage: state.tempProfileImage,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSkeletonProfile(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
+  Widget _buildLoadingState() {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Skeleton Header
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  colorScheme.primary.withOpacity(0.9),
-                  colorScheme.primary.withOpacity(0.5),
-                ],
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(),
-                        Row(
-                          children: [
-                            Bone.icon(), // Skeleton theme toggle icon
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Column(
-                        children: [
-                          const SizedBox(height: 20),
-                          // Skeleton profile image
-                          Bone.circle(size: 120),
-                          const SizedBox(height: 16),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              children: [
-                                Bone.text(words: 2), // Skeleton name
-                                const SizedBox(height: 8),
-                                Bone.text(words: 1), // Skeleton role
-                                const SizedBox(height: 20),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        top: 110,
-                        right: MediaQuery.of(context).size.width / 2 - 80,
-                        child: Bone.circle(size: 36), // Skeleton camera icon
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
             ),
           ),
-
-          // Skeleton Personal Info Section
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Bone.text(words: 2), // Skeleton section title
-                        Bone.icon(), // Skeleton edit icon
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ...List.generate(4, (index) => _buildSkeletonInfoTile(context)),
-                ],
-              ),
+          const SizedBox(height: 16),
+          Text(
+            'Loading your profile...',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
             ),
           ),
-
-          // Skeleton Experience Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Bone.text(words: 2), // Skeleton section title
-                        Bone.icon(), // Skeleton add icon
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ...List.generate(2, (index) => _buildSkeletonExperienceItem(context)),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Bone.text(words: 3), // Skeleton total experience
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildSkeletonInfoTile(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Bone.circle(size: 40), // Skeleton icon
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Bone.text(words: 1), // Skeleton title
-                    const SizedBox(height: 4),
-                    Bone.text(words: 2), // Skeleton value
-                  ],
-                ),
-              ),
-            ],
+  Widget _buildProfileContent(BuildContext context, ProfileState state) {
+    return CustomScrollView(
+      slivers: [
+        // App Bar with Theme Toggle
+        SliverAppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          elevation: 0,
+          floating: true,
+          pinned: true,
+          title: Text(
+            'Profile',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        Divider(
-          height: 1,
-          color: colorScheme.outline.withOpacity(0.1),
-          indent: 20,
-          endIndent: 20,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSkeletonExperienceItem(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Bone.square(size: 40), // Skeleton company logo
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Bone.text(words: 2), // Skeleton company name
-                        Bone.icon(), // Skeleton edit icon
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Bone.text(words: 3), // Skeleton role
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Bone.text(words: 1), // Skeleton period
-                        const SizedBox(width: 8),
-                        Bone.text(words: 1), // Skeleton duration
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Bone.text(words: 4), // Skeleton description
-                  ],
-                ),
+          actions: [
+            IconButton(
+              icon: Icon(
+                state.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-            ],
-          ),
+              onPressed: () {
+                context.read<ProfileCubit>().toggleDarkMode();
+                context.read<ThemeCubit>().toggleTheme();
+              },
+            ),
+          ],
         ),
-        Divider(
-          height: 1,
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-          indent: 20,
-          endIndent: 20,
+
+        // Profile Header Section
+        SliverToBoxAdapter(
+          child: _buildProfileHeader(context, state),
         ),
+
+        // Personal Information Section
+        SliverToBoxAdapter(
+          child: _buildPersonalInfoSection(context, state),
+        ),
+
+        // Experience Section
+        SliverToBoxAdapter(
+          child: _buildExperienceSection(context),
+        ),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
       ],
     );
   }
@@ -304,398 +114,431 @@ class _ProfilePageState extends State<ProfileView> {
     final user = state.user;
 
     return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            colorScheme.primary.withOpacity(0.9),
-            colorScheme.primary.withOpacity(0.5),
+            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withOpacity(0.4),
           ],
         ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(),
-                  Row(
-                    children: [
-                      BlocBuilder<ProfileCubit, ProfileState>(
-                        builder: (context, state) {
-                          return IconButton(
-                            icon: Icon(
-                              state.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                              color: colorScheme.onPrimary,
-                            ),
-                            onPressed: () {
-                              context.read<ProfileCubit>().toggleDarkMode();
-                              context.read<ThemeCubit>().toggleTheme();
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: colorScheme.surface,
-                          width: 4,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: state.tempProfileImage != null
-                            ? Image.file(
-                          state.tempProfileImage!,
-                          fit: BoxFit.cover,
-                        )
-                            : user?.imageUrl != null
-                            ? Image.network(
-                          user!.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: colorScheme.primaryContainer,
-                              child: Icon(
-                                Icons.person,
-                                size: 50,
-                                color: colorScheme.onPrimaryContainer,
-                              ),
-                            );
-                          },
-                        )
-                            : Container(
-                          color: colorScheme.primaryContainer,
-                          child: Icon(
-                            Icons.person,
-                            size: 50,
-                            color: colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          Text(
-                            user?.fullName ?? 'Loading...',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            user?.role.toUpperCase() ?? 'Loading role...',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onPrimary.withOpacity(0.9),
-                              letterSpacing: 1.2,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                Positioned(
-                  top: 110,
-                  right: MediaQuery.of(context).size.width / 2 - 80,
-                  child: GestureDetector(
-                    onTap: () async {
-                      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-                      if (image != null) {
-                        context.read<ProfileCubit>().startEditing();
-                        context.read<ProfileCubit>().setTempProfileImage(File(image.path));
-                        _showEditProfileDialog(context, state);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.camera_alt,
-                        size: 20,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPersonalInfoSection(BuildContext context, CurrentUser user) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Personal Information',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.edit, color: colorScheme.primary),
-                    onPressed: () {
-                      context.read<ProfileCubit>().startEditing();
-                      _showEditProfileDialog(context, context.read<ProfileCubit>().state);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            _buildInfoTile(
-              context,
-              icon: Icons.email,
-              title: 'Email',
-              value: user.email,
-            ),
-            _buildInfoTile(
-              context,
-              icon: Icons.phone,
-              title: 'Phone',
-              value: user.phone ?? 'No phone number provided',
-            ),
-            _buildInfoTile(
-              context,
-              icon: Icons.verified_user,
-              title: 'Email Verified',
-              value: user.emailVerified ? 'Verified' : 'Not Verified',
-              status: user.emailVerified,
-            ),
-            _buildInfoTile(
-              context,
-              icon: Icons.person,
-              title: 'User ID',
-              value: user.id,
-              isLast: true,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoTile(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String value,
-        bool isLast = false,
-        bool? status,
-      }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        children: [
+          // Profile Image with Edit Button
+          Stack(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: colorScheme.surface,
+                    width: 3,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: colorScheme.primary,
+                child: ClipOval(
+                  child: state.tempProfileImage != null
+                      ? Image.file(
+                    state.tempProfileImage!,
+                    fit: BoxFit.cover,
+                  )
+                      : user?.imageUrl != null
+                      ? Image.network(
+                    user!.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildPlaceholderAvatar(colorScheme);
+                    },
+                  )
+                      : _buildPlaceholderAvatar(colorScheme),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            value,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () => _pickProfileImage(context, state),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6,
                         ),
-                        if (status != null)
-                          Icon(
-                            status ? Icons.check_circle : Icons.error,
-                            color: status ? Colors.green : colorScheme.error,
-                            size: 16,
-                          ),
                       ],
                     ),
-                  ],
+                    child: Icon(
+                      Icons.camera_alt,
+                      size: 16,
+                      color: colorScheme.primary,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-        if (!isLast)
-          Divider(
-            height: 1,
-            color: colorScheme.outline.withOpacity(0.1),
-            indent: 20,
-            endIndent: 20,
+
+          const SizedBox(height: 16),
+
+          // User Name and Role
+          Text(
+            user?.fullName ?? 'Loading...',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            user?.role.toUpperCase() ?? 'LOADING ROLE',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onPrimary.withOpacity(0.9),
+              letterSpacing: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Edit Profile Button
+          ElevatedButton.icon(
+            onPressed: () => _showEditProfileDialog(context, state),
+            icon: const Icon(Icons.edit, size: 16),
+            label: const Text('Edit Profile'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.surface,
+              foregroundColor: colorScheme.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderAvatar(ColorScheme colorScheme) {
+    return Container(
+      color: colorScheme.primaryContainer,
+      child: Icon(
+        Icons.person,
+        size: 40,
+        color: colorScheme.onPrimaryContainer,
+      ),
+    );
+  }
+
+  Widget _buildPersonalInfoSection(BuildContext context, ProfileState state) {
+    final theme = Theme.of(context);
+    final user = state.user;
+
+    if (user == null) return const SizedBox();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Text(
+              'Personal Information',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          _buildInfoCard(context, user),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(BuildContext context, CurrentUser user) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildInfoRow(
+              context,
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: user.email,
+              isVerified: user.emailVerified,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              icon: Icons.phone_outlined,
+              label: 'Phone',
+              value: user.phone ?? 'Not provided',
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              icon: Icons.fingerprint_outlined,
+              label: 'User ID',
+              value: user.id,
+              showCopyButton: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required String value,
+        bool isVerified = false,
+        bool showCopyButton = false,
+      }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 20, color: colorScheme.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (isVerified)
+                    Icon(
+                      Icons.verified,
+                      size: 16,
+                      color: Colors.green,
+                    ),
+                  if (showCopyButton)
+                    IconButton(
+                      icon: Icon(
+                        Icons.content_copy,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
+                      onPressed: () {
+                        // Implement copy functionality
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildExperienceSection(BuildContext context) {
     final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Work Experience',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add, color: theme.colorScheme.primary),
+                  onPressed: () {
+                    // Handle add experience
+                  },
+                ),
+              ],
+            ),
+          ),
+          _buildExperienceList(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExperienceList(BuildContext context) {
+    final experiences = [
+      {
+        'company': 'Impact Makers',
+        'role': 'Lead Research Analyst',
+        'period': 'May 2016 - Present',
+        'duration': '4 years 8 months',
+        'description': 'Specializations: Survey Design, Consumer Research\nManaged team of 15 researchers',
+      },
+      {
+        'company': 'Data Insights Co.',
+        'role': 'Senior Research Associate',
+        'period': 'Jan 2014 - Apr 2016',
+        'duration': '2 years 4 months',
+        'description': 'Specializations: Data Analysis, Market Research\nLed client presentations and reports',
+      },
+    ];
+
+    return Column(
+      children: [
+        ...experiences.map((exp) => _buildExperienceItem(context, exp)),
+        _buildExperienceSummary(context),
+      ],
+    );
+  }
+
+  Widget _buildExperienceItem(BuildContext context, Map<String, String> experience) {
+    final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Work Experience',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+            // Company Avatar
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(
+                  experience['company']!.substring(0, 2).toUpperCase(),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
                   ),
-                  IconButton(
-                    icon: Icon(Icons.add, color: colorScheme.primary),
-                    onPressed: () {
-                      // Handle add experience
-                    },
-                  ),
-                ],
+                ),
               ),
             ),
-            const Divider(height: 1),
-            _buildExperienceItem(
-              context,
-              company: 'Impact Makers',
-              role: 'Lead Research Analyst',
-              period: 'May 2016 - Present',
-              duration: '4 years 8 months',
-              description: 'Specializations: Survey Design, Consumer Research\nManaged team of 15 researchers',
-            ),
-            _buildExperienceItem(
-              context,
-              company: 'Data Insights Co.',
-              role: 'Senior Research Associate',
-              period: 'Jan 2014 - Apr 2016',
-              duration: '2 years 4 months',
-              description: 'Specializations: Data Analysis, Market Research\nLed client presentations and reports',
-              isLast: true,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.work_history,
-                      color: colorScheme.primary,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Total: 8 years of professional experience',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 12,
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w500,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        experience['company']!,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      IconButton(
+                        icon: Icon(Icons.more_vert, size: 18),
+                        onPressed: () {
+                          // Handle menu options
+                        },
+                      ),
+                    ],
+                  ),
+                  Text(
+                    experience['role']!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.8),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+                      const SizedBox(width: 4),
+                      Text(
+                        experience['period']!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.access_time, size: 12, color: colorScheme.onSurface.withOpacity(0.5)),
+                      const SizedBox(width: 2),
+                      Text(
+                        experience['duration']!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 10,
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    experience['description']!,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
               ),
             ),
           ],
@@ -704,115 +547,52 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  Widget _buildExperienceItem(
-      BuildContext context, {
-        required String company,
-        required String role,
-        required String period,
-        required String duration,
-        required String description,
-        bool isLast = false,
-      }) {
+  Widget _buildExperienceSummary(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    company.substring(0, 2).toUpperCase(),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          company,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.edit, size: 18, color: colorScheme.primary),
-                          onPressed: () {
-                            // Handle edit experience
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      role,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.8),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 14, color: colorScheme.onSurface.withOpacity(0.6)),
-                        const SizedBox(width: 4),
-                        Text(
-                          period,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 10,
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.access_time, size: 14, color: colorScheme.onSurface.withOpacity(0.6)),
-                        const SizedBox(width: 4),
-                        Text(
-                          duration,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 10,
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      description,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.work_history, size: 16, color: colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            'Total: 8 years of professional experience',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickProfileImage(BuildContext context, ProfileState state) async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      context.read<ProfileCubit>().startEditing();
+      context.read<ProfileCubit>().setTempProfileImage(File(image.path));
+      _showEditProfileDialog(context, state);
+    }
+  }
+
+  void _showEditProfileDialog(BuildContext context, ProfileState state) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => BlocProvider.value(
+        value: context.read<ProfileCubit>(),
+        child: EditProfileDialog(
+          user: state.user!,
+          tempProfileImage: state.tempProfileImage,
         ),
-        if (!isLast)
-          Divider(
-            height: 1,
-            color: colorScheme.outline.withOpacity(0.1),
-            indent: 20,
-            endIndent: 20,
-          ),
-      ],
+      ),
     );
   }
 }
@@ -860,28 +640,37 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return AlertDialog(
-      title: Text('Edit Profile', style: theme.textTheme.headlineSmall),
-      content: SingleChildScrollView(
+    return Dialog(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Profile Image Picker
+            Text(
+              'Edit Profile',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Profile Image
             GestureDetector(
               onTap: () async {
                 final ImagePicker picker = ImagePicker();
                 final XFile? image = await picker.pickImage(source: ImageSource.gallery);
                 if (image != null) {
                   context.read<ProfileCubit>().setTempProfileImage(File(image.path));
-                  setState(() {}); // Refresh the dialog to show new image
+                  setState(() {});
                 }
               },
               child: Stack(
-                alignment: Alignment.center,
                 children: [
                   Container(
-                    width: 100,
-                    height: 100,
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: colorScheme.primary, width: 2),
@@ -894,10 +683,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                         widget.user.imageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return Icon(Icons.person, size: 40, color: colorScheme.primary);
+                          return Icon(Icons.person, size: 30, color: colorScheme.primary);
                         },
                       )
-                          : Icon(Icons.person, size: 40, color: colorScheme.primary),
+                          : Icon(Icons.person, size: 30, color: colorScheme.primary),
                     ),
                   ),
                   Positioned(
@@ -909,63 +698,80 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                         color: colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.camera_alt, size: 16, color: colorScheme.onPrimary),
+                      child: Icon(Icons.edit, size: 12, color: colorScheme.onPrimary),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             // Form Fields
-            TextField(
-              controller: _firstNameController,
-              decoration: const InputDecoration(labelText: 'First Name'),
-              onChanged: (value) => context.read<ProfileCubit>().updateField('firstName', value),
-            ),
-            const SizedBox(height: 16),
+            _buildTextField(_firstNameController, 'First Name', (value) {
+              context.read<ProfileCubit>().updateField('firstName', value);
+            }),
+            const SizedBox(height: 12),
+            _buildTextField(_middleNameController, 'Middle Name', (value) {
+              context.read<ProfileCubit>().updateField('middleName', value);
+            }),
+            const SizedBox(height: 12),
+            _buildTextField(_lastNameController, 'Last Name', (value) {
+              context.read<ProfileCubit>().updateField('lastName', value);
+            }),
+            const SizedBox(height: 12),
+            _buildTextField(_phoneController, 'Phone', (value) {
+              context.read<ProfileCubit>().updateField('phone', value);
+            }, keyboardType: TextInputType.phone),
+            const SizedBox(height: 24),
 
-            TextField(
-              controller: _middleNameController,
-              decoration: const InputDecoration(labelText: 'Middle Name'),
-              onChanged: (value) => context.read<ProfileCubit>().updateField('middleName', value),
-            ),
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: _lastNameController,
-              decoration: const InputDecoration(labelText: 'Last Name'),
-              onChanged: (value) => context.read<ProfileCubit>().updateField('lastName', value),
-            ),
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: _phoneController,
-              decoration: const InputDecoration(labelText: 'Phone'),
-              keyboardType: TextInputType.phone,
-              onChanged: (value) => context.read<ProfileCubit>().updateField('phone', value),
+            // Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      context.read<ProfileCubit>().cancelEditing();
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await context.read<ProfileCubit>().saveProfile(context);
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            context.read<ProfileCubit>().cancelEditing();
-            Navigator.of(context).pop();
-          },
-          child: const Text('Cancel'),
+    );
+  }
+
+  Widget _buildTextField(
+      TextEditingController controller,
+      String label,
+      Function(String) onChanged, {
+        TextInputType keyboardType = TextInputType.text,
+      }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        ElevatedButton(
-          onPressed: () async {
-            await context.read<ProfileCubit>().saveProfile(context);
-            if (context.mounted) {
-              Navigator.of(context).pop();
-            }
-          },
-          child: const Text('Save'),
-        ),
-      ],
+      ),
+      keyboardType: keyboardType,
+      onChanged: onChanged,
     );
   }
 }

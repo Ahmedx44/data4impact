@@ -131,10 +131,46 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
     }
   }
 
+  Color _getTextFieldFillColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey.shade800.withOpacity(0.4)
+        : Colors.white;
+  }
+
+  Color _getTextColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.white
+        : Colors.grey.shade800;
+  }
+
+  Color _getSubtitleColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.white70
+        : Colors.grey.shade600;
+  }
+
+  Color _getDividerColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey.shade600
+        : Colors.grey.shade300;
+  }
+
+  Color _getOtpFieldColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey.shade700
+        : Colors.grey.shade200;
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height;
     final theme = Theme.of(context);
+    final brightness = Theme.of(context).brightness;
 
     return BlocConsumer<ForgetPasswordCubit, ForgetPasswordState>(
       listener: (context, state) {
@@ -197,7 +233,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade800,
+                      color: _getTextColor(context),
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -210,7 +246,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                         : 'Create a new password for your account',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey.shade600,
+                      color: _getSubtitleColor(context),
                       fontWeight: FontWeight.w400,
                     ),
                     textAlign: TextAlign.center,
@@ -241,7 +277,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                               shape: BoxShape.circle,
                               color: index <= state.currentStep
                                   ? theme.colorScheme.primary
-                                  : Colors.grey.shade300,
+                                  : _getDividerColor(context),
                             ),
                             child: Center(
                               child: Text(
@@ -249,7 +285,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                                 style: TextStyle(
                                   color: index <= state.currentStep
                                       ? Colors.white
-                                      : Colors.grey.shade600,
+                                      : _getSubtitleColor(context),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -261,7 +297,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                               height: 2,
                               color: index < state.currentStep
                                   ? theme.colorScheme.primary
-                                  : Colors.grey.shade300,
+                                  : _getDividerColor(context),
                             ),
                         ],
                       );
@@ -339,12 +375,16 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
   }
 
   Widget _buildEmailStep(ThemeData theme) {
+    final brightness = Theme.of(context).brightness;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(
+              brightness == Brightness.dark ? 0.2 : 0.04,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -352,14 +392,19 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
       ),
       child: TextField(
         controller: _emailController,
+        style: TextStyle(
+          color: _getTextColor(context),
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
         decoration: InputDecoration(
           labelText: 'Email Address',
           labelStyle: TextStyle(
-            color: Colors.grey.shade600,
+            color: _getSubtitleColor(context),
             fontWeight: FontWeight.w500,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: _getTextFieldFillColor(context),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -369,6 +414,13 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
             borderSide: BorderSide(
               color: theme.colorScheme.primary,
               width: 2,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: _getDividerColor(context),
+              width: 1,
             ),
           ),
           prefixIcon: Container(
@@ -390,16 +442,13 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
           ),
         ),
         keyboardType: TextInputType.emailAddress,
-        style: TextStyle(
-          color: Colors.grey.shade800,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
       ),
     );
   }
 
   Widget _buildOtpStep(ThemeData theme) {
+    final brightness = Theme.of(context).brightness;
+
     return Column(
       children: [
         // 6-Digit OTP Input
@@ -417,12 +466,12 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
+                  color: _getTextColor(context),
                 ),
                 decoration: InputDecoration(
                   counterText: '',
                   filled: true,
-                  fillColor: Colors.grey.shade200,
+                  fillColor: _getOtpFieldColor(context),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -432,6 +481,13 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                     borderSide: BorderSide(
                       color: theme.colorScheme.primary,
                       width: 2,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: _getDividerColor(context),
+                      width: 1,
                     ),
                   ),
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -453,7 +509,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
             Text(
               "Didn't receive code?",
               style: TextStyle(
-                color: Colors.grey.shade600,
+                color: _getSubtitleColor(context),
                 fontSize: 15,
               ),
             ),
@@ -465,7 +521,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                 style: TextStyle(
                   color: _canResendOtp
                       ? theme.colorScheme.primary
-                      : Colors.grey.shade500,
+                      : _getSubtitleColor(context),
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
                 ),
@@ -476,7 +532,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
               Text(
                 _formatCountdown(),
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: _getSubtitleColor(context),
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
                 ),
@@ -489,6 +545,8 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
   }
 
   Widget _buildPasswordStep(ThemeData theme) {
+    final brightness = Theme.of(context).brightness;
+
     return Column(
       children: [
         // New Password
@@ -497,7 +555,9 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withOpacity(
+                  brightness == Brightness.dark ? 0.2 : 0.04,
+                ),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -506,14 +566,19 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
           child: TextField(
             controller: _newPasswordController,
             obscureText: !_isPasswordVisible,
+            style: TextStyle(
+              color: _getTextColor(context),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
             decoration: InputDecoration(
               labelText: 'New Password',
               labelStyle: TextStyle(
-                color: Colors.grey.shade600,
+                color: _getSubtitleColor(context),
                 fontWeight: FontWeight.w500,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: _getTextFieldFillColor(context),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -523,6 +588,13 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                 borderSide: BorderSide(
                   color: theme.colorScheme.primary,
                   width: 2,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: _getDividerColor(context),
+                  width: 1,
                 ),
               ),
               prefixIcon: Container(
@@ -543,7 +615,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                   _isPasswordVisible
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.grey.shade600,
+                  color: _getSubtitleColor(context),
                 ),
                 onPressed: () {
                   setState(() {
@@ -556,11 +628,6 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                 horizontal: 16,
               ),
             ),
-            style: TextStyle(
-              color: Colors.grey.shade800,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -571,7 +638,9 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withOpacity(
+                  brightness == Brightness.dark ? 0.2 : 0.04,
+                ),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -580,14 +649,19 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
           child: TextField(
             controller: _confirmPasswordController,
             obscureText: !_isConfirmPasswordVisible,
+            style: TextStyle(
+              color: _getTextColor(context),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
             decoration: InputDecoration(
               labelText: 'Confirm Password',
               labelStyle: TextStyle(
-                color: Colors.grey.shade600,
+                color: _getSubtitleColor(context),
                 fontWeight: FontWeight.w500,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: _getTextFieldFillColor(context),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -597,6 +671,13 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                 borderSide: BorderSide(
                   color: theme.colorScheme.primary,
                   width: 2,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: _getDividerColor(context),
+                  width: 1,
                 ),
               ),
               prefixIcon: Container(
@@ -617,7 +698,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                   _isConfirmPasswordVisible
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.grey.shade600,
+                  color: _getSubtitleColor(context),
                 ),
                 onPressed: () {
                   setState(() {
@@ -629,11 +710,6 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                 vertical: 20,
                 horizontal: 16,
               ),
-            ),
-            style: TextStyle(
-              color: Colors.grey.shade800,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ),

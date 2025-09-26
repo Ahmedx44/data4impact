@@ -78,10 +78,39 @@ class _SignUpViewState extends State<SignUpView> {
     });
   }
 
+  Color _getTextFieldFillColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey.shade800.withOpacity(0.4)
+        : Colors.white;
+  }
+
+  Color _getTextColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.white
+        : Colors.grey.shade800;
+  }
+
+  Color _getSubtitleColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.white70
+        : Colors.grey.shade600;
+  }
+
+  Color _getDividerColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey.shade600
+        : Colors.grey.shade300;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
+    final brightness = Theme.of(context).brightness;
 
     return BlocConsumer<SignupCubit, SignupState>(
       listener: (context, state) {
@@ -149,6 +178,7 @@ class _SignUpViewState extends State<SignUpView> {
 
   Widget _buildPasswordRequirements() {
     final password = _passwordController.text;
+    final brightness = Theme.of(context).brightness;
 
     final hasMinLength = password.length >= 6;
     final hasUppercase = password.contains(RegExp(r'[A-Z]'));
@@ -163,7 +193,9 @@ class _SignUpViewState extends State<SignUpView> {
           'Password must contain:',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade600,
+            color: brightness == Brightness.dark
+                ? Colors.white70
+                : Colors.grey.shade600,
           ),
         ),
         const SizedBox(height: 4),
@@ -189,7 +221,11 @@ class _SignUpViewState extends State<SignUpView> {
           text,
           style: TextStyle(
             fontSize: 12,
-            color: isMet ? Colors.green : Colors.grey,
+            color: isMet
+                ? Colors.green
+                : (Theme.of(context).brightness == Brightness.dark
+                ? Colors.white70
+                : Colors.grey),
           ),
         ),
       ],
@@ -231,6 +267,8 @@ class _SignUpViewState extends State<SignUpView> {
   }
 
   Widget _buildHeaderText() {
+    final brightness = Theme.of(context).brightness;
+
     return Column(
       children: [
         Text(
@@ -238,7 +276,7 @@ class _SignUpViewState extends State<SignUpView> {
           style: TextStyle(
             fontSize: 25,
             fontWeight: FontWeight.w700,
-            color: Colors.grey.shade800,
+            color: _getTextColor(context),
           ),
         ),
         const SizedBox(height: 5),
@@ -246,7 +284,7 @@ class _SignUpViewState extends State<SignUpView> {
           'Fill in your details to get started',
           style: TextStyle(
             fontSize: 16,
-            color: Colors.grey.shade600,
+            color: _getSubtitleColor(context),
           ),
         ),
       ],
@@ -267,8 +305,7 @@ class _SignUpViewState extends State<SignUpView> {
           controller: _middleNameController,
           label: 'Middle Name',
           icon: Icons.person_outline,
-          validator: (value) =>
-              value?.isEmpty ?? true ? 'Required' : null, // Added validation
+          validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
         ),
         const SizedBox(height: 13),
         _buildTextField(
@@ -327,17 +364,17 @@ class _SignUpViewState extends State<SignUpView> {
       label: isPassword ? 'Password' : 'Confirm Password',
       icon: Icons.lock_outline,
       obscureText:
-          isPassword ? !_isPasswordVisible : !_isConfirmPasswordVisible,
+      isPassword ? !_isPasswordVisible : !_isConfirmPasswordVisible,
       suffixIcon: IconButton(
         icon: Icon(
           isPassword
               ? _isPasswordVisible
-                  ? Icons.visibility
-                  : Icons.visibility_off
+              ? Icons.visibility
+              : Icons.visibility_off
               : _isConfirmPasswordVisible
-                  ? Icons.visibility
-                  : Icons.visibility_off,
-          color: Colors.grey.shade600,
+              ? Icons.visibility
+              : Icons.visibility_off,
+          color: _getSubtitleColor(context),
         ),
         onPressed: () {
           setState(() {
@@ -351,8 +388,8 @@ class _SignUpViewState extends State<SignUpView> {
       ),
       borderColor: hasText
           ? isPasswordValid
-              ? Colors.green
-              : Colors.red
+          ? Colors.green
+          : Colors.red
           : null,
       validator: (value) {
         if (value?.isEmpty ?? true) return 'Required';
@@ -378,13 +415,16 @@ class _SignUpViewState extends State<SignUpView> {
     Color? borderColor,
   }) {
     final theme = Theme.of(context);
+    final brightness = Theme.of(context).brightness;
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(
+              brightness == Brightness.dark ? 0.2 : 0.04,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -395,10 +435,21 @@ class _SignUpViewState extends State<SignUpView> {
         obscureText: obscureText,
         keyboardType: keyboardType,
         validator: validator,
+        style: TextStyle(
+          color: _getTextColor(context),
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(
+            color: brightness == Brightness.dark
+                ? Colors.white70
+                : Colors.grey.shade700,
+            fontWeight: FontWeight.w500,
+          ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: _getTextFieldFillColor(context),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -413,8 +464,8 @@ class _SignUpViewState extends State<SignUpView> {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-              color: borderColor ?? Colors.transparent,
-              width: borderColor != null ? 2 : 0,
+              color: borderColor ?? _getDividerColor(context),
+              width: borderColor != null ? 2 : 1,
             ),
           ),
           prefixIcon: Container(
@@ -424,11 +475,15 @@ class _SignUpViewState extends State<SignUpView> {
               color: theme.colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+            child: Icon(
+                icon,
+                color: theme.colorScheme.primary,
+                size: 20
+            ),
           ),
           suffixIcon: suffixIcon,
           contentPadding:
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );
@@ -467,13 +522,13 @@ class _SignUpViewState extends State<SignUpView> {
   void _handleSignup() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<SignupCubit>().signup(
-            firstName: _firstNameController.text.trim(),
-            lastName: _lastNameController.text.trim(),
-            email: _emailController.text.trim(),
-            phone: _phoneController.text.trim(),
-            password: _passwordController.text.trim(),
-            middleName: _middleNameController.text.trim(),
-          );
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        password: _passwordController.text.trim(),
+        middleName: _middleNameController.text.trim(),
+      );
     }
   }
 
@@ -481,7 +536,12 @@ class _SignUpViewState extends State<SignUpView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Already have an account? "),
+        Text(
+          "Already have an account? ",
+          style: TextStyle(
+            color: _getSubtitleColor(context),
+          ),
+        ),
         GestureDetector(
           onTap: () => Navigator.pushReplacement(
             context,
@@ -500,26 +560,85 @@ class _SignUpViewState extends State<SignUpView> {
   }
 
   Widget _buildOrDivider() {
+    final brightness = Theme.of(context).brightness;
+
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.grey.shade300)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('OR', style: TextStyle(color: Colors.grey.shade500)),
+        Expanded(
+          child: Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  _getDividerColor(context),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
         ),
-        Expanded(child: Divider(color: Colors.grey.shade300)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: brightness == Brightness.dark
+                  ? Colors.grey.shade800.withOpacity(0.4)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _getDividerColor(context),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              'OR',
+              style: TextStyle(
+                color: brightness == Brightness.dark
+                    ? Colors.white70
+                    : Colors.grey.shade500,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  _getDividerColor(context),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildGoogleButton() {
+    final brightness = Theme.of(context).brightness;
+
     return SignInButton(
       Buttons.google,
       text: "Continue with Google",
       onPressed: () {},
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(
+          color: _getDividerColor(context),
+          width: 1,
+        ),
       ),
     );
   }

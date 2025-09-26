@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:data4impact/core/service/dialog_loading.dart';
+import 'package:data4impact/core/theme/color.dart';
 import 'package:data4impact/core/widget/AfiyaButton.dart';
 import 'package:data4impact/features/forget_password/page/forget_password_page.dart';
 import 'package:data4impact/features/login/cubit/signin_cubit.dart';
@@ -29,10 +30,32 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
+  Color _getTextFieldFillColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey.shade800.withOpacity(0.4)
+        : Colors.white;
+  }
+
+  Color _getTextColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.white
+        : Colors.grey.shade800;
+  }
+
+  Color _getSubtitleColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.white70
+        : Colors.grey.shade600;
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height;
     final theme = Theme.of(context);
+    final brightness = Theme.of(context).brightness;
 
     return BlocConsumer<SigninCubit, SigninState>(
       listener: (context, state) {
@@ -99,7 +122,7 @@ class _LoginViewState extends State<LoginView> {
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade800,
+                      color: _getTextColor(context),
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -108,7 +131,7 @@ class _LoginViewState extends State<LoginView> {
                     'Sign in to continue to your account',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey.shade600,
+                      color: _getSubtitleColor(context),
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -118,7 +141,9 @@ class _LoginViewState extends State<LoginView> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withOpacity(
+                            brightness == Brightness.dark ? 0.2 : 0.04,
+                          ),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -129,11 +154,13 @@ class _LoginViewState extends State<LoginView> {
                       decoration: InputDecoration(
                         labelText: 'Email Address',
                         labelStyle: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: brightness == Brightness.dark
+                              ? Colors.white70
+                              : Colors.grey.shade700,
                           fontWeight: FontWeight.w500,
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: _getTextFieldFillColor(context),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
@@ -143,6 +170,15 @@ class _LoginViewState extends State<LoginView> {
                           borderSide: BorderSide(
                             color: theme.colorScheme.primary,
                             width: 2,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: brightness == Brightness.dark
+                                ? Colors.grey.shade600
+                                : Colors.grey.shade300,
+                            width: 1,
                           ),
                         ),
                         prefixIcon: Container(
@@ -165,7 +201,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       keyboardType: TextInputType.emailAddress,
                       style: TextStyle(
-                        color: Colors.grey.shade800,
+                        color: _getTextColor(context),
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -177,7 +213,9 @@ class _LoginViewState extends State<LoginView> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withOpacity(
+                            brightness == Brightness.dark ? 0.2 : 0.04,
+                          ),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -188,11 +226,13 @@ class _LoginViewState extends State<LoginView> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         labelStyle: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: brightness == Brightness.dark
+                              ? Colors.white70
+                              : Colors.grey.shade700,
                           fontWeight: FontWeight.w500,
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: _getTextFieldFillColor(context),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
@@ -202,6 +242,15 @@ class _LoginViewState extends State<LoginView> {
                           borderSide: BorderSide(
                             color: theme.colorScheme.primary,
                             width: 2,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: brightness == Brightness.dark
+                                ? Colors.grey.shade600
+                                : Colors.grey.shade300,
+                            width: 1,
                           ),
                         ),
                         prefixIcon: Container(
@@ -237,7 +286,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       obscureText: !_isPasswordVisible,
                       style: TextStyle(
-                        color: Colors.grey.shade800,
+                        color: _getTextColor(context),
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -289,9 +338,9 @@ class _LoginViewState extends State<LoginView> {
                       height: 60,
                       onTap: () {
                         context.read<SigninCubit>().login(
-                              email: _emailController.text.trim(),
-                              password: _passwordController.text.trim(),
-                            );
+                          email: _emailController.text.trim(),
+                          password: _passwordController.text.trim(),
+                        );
                       },
                       width: double.infinity,
                       child: const Text(
@@ -312,7 +361,7 @@ class _LoginViewState extends State<LoginView> {
                       Text(
                         "Don't have an account? ",
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: _getSubtitleColor(context),
                           fontSize: 15,
                         ),
                       ),
@@ -346,7 +395,9 @@ class _LoginViewState extends State<LoginView> {
                             gradient: LinearGradient(
                               colors: [
                                 Colors.transparent,
-                                Colors.grey.shade300,
+                                brightness == Brightness.dark
+                                    ? Colors.grey.shade600
+                                    : Colors.grey.shade300,
                                 Colors.transparent,
                               ],
                             ),
@@ -361,17 +412,23 @@ class _LoginViewState extends State<LoginView> {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: brightness == Brightness.dark
+                                ? AppColors.darkCard
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Colors.grey.shade200,
+                              color: brightness == Brightness.dark
+                                  ? Colors.grey.shade600
+                                  : Colors.grey.shade200,
                               width: 1,
                             ),
                           ),
                           child: Text(
                             'OR',
                             style: TextStyle(
-                              color: Colors.grey.shade500,
+                              color: brightness == Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.grey.shade500,
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
                               letterSpacing: 1,
@@ -386,7 +443,9 @@ class _LoginViewState extends State<LoginView> {
                             gradient: LinearGradient(
                               colors: [
                                 Colors.transparent,
-                                Colors.grey.shade300,
+                                brightness == Brightness.dark
+                                    ? Colors.grey.shade600
+                                    : Colors.grey.shade300,
                                 Colors.transparent,
                               ],
                             ),
@@ -405,7 +464,9 @@ class _LoginViewState extends State<LoginView> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
-                        color: Colors.grey.shade200,
+                        color: brightness == Brightness.dark
+                            ? Colors.grey.shade600
+                            : Colors.grey.shade200,
                         width: 1,
                       ),
                     ),
