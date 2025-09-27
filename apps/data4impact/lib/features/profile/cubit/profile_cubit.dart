@@ -90,31 +90,52 @@ class ProfileCubit extends Cubit<ProfileState> {
     emit(state.copyWith(editedFields: updatedFields));
   }
 
+  // New method to handle image upload separately
+  Future<void> uploadProfileImage(File imageFile) async {
+    emit(state.copyWith(isLoading: true));
+
+    try {
+      // Upload the profile image
+      final imageUrl = await profileService.uploadProfileImage(imageFile);
+
+      // Update profile with the new image URL
+      final updatedUser = await profileService.updateProfile(
+        firstName: state.user?.firstName,
+        middleName: state.user?.middleName,
+        lastName: state.user?.lastName,
+        phone: state.user?.phone,
+        imageUrl: imageUrl,
+      );
+
+      emit(state.copyWith(
+        user: updatedUser,
+        isLoading: false,
+        tempProfileImage: imageFile, // Keep the temp image for immediate UI update
+      ));
+
+    } catch (e) {
+      emit(state.copyWith(isLoading: false));
+      rethrow;
+    }
+  }
+
   Future<void> saveProfile(BuildContext context) async {
     emit(state.copyWith(isLoading: true));
 
     try {
-      String? imageUrl;
-
-      // Upload new profile image if selected
-      if (state.tempProfileImage != null) {
-        imageUrl = await profileService.uploadProfileImage(state.tempProfileImage!);
-      }
-
-      // Update profile with edited fields
+      // Update profile with edited fields only (no image handling here)
       final updatedUser = await profileService.updateProfile(
         firstName: state.editedFields['firstName'] ?? state.user?.firstName,
         middleName: state.editedFields['middleName'] ?? state.user?.middleName,
         lastName: state.editedFields['lastName'] ?? state.user?.lastName,
         phone: state.editedFields['phone'] ?? state.user?.phone,
-        imageUrl: imageUrl,
+        imageUrl: null, // Image is handled separately via uploadProfileImage
       );
 
       emit(state.copyWith(
         user: updatedUser,
         isEditing: false,
         isLoading: false,
-        tempProfileImage: null,
         editedFields: {},
       ));
 

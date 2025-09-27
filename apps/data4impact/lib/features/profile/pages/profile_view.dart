@@ -29,11 +29,76 @@ class _ProfilePageState extends State<ProfileView> {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.background,
-          body: state.isLoading
-              ? _buildLoadingState()
-              : _buildProfileContent(context, state),
+          appBar: AppBar(
+            elevation: 0,
+            forceMaterialTransparency: true,
+            title: Text(
+              'Profile',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  state.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                onPressed: () {
+                  context.read<ProfileCubit>().toggleDarkMode();
+                  context.read<ThemeCubit>().toggleTheme();
+                },
+              ),
+            ],
+          ),
+          body: _buildProfileContent(context, state),
         );
       },
+    );
+  }
+
+  Widget _buildProfileContent(BuildContext context, ProfileState state) {
+    // Show loading only for initial load, not for saving
+    if (state.isLoading && state.user == null) {
+      return _buildLoadingState();
+    }
+
+    return Stack(
+      children: [
+        CustomScrollView(
+          slivers: [
+            // Profile Header Section
+            SliverToBoxAdapter(
+              child: _buildProfileHeader(context, state),
+            ),
+
+            // Personal Information Section
+            SliverToBoxAdapter(
+              child: _buildPersonalInfoSection(context, state),
+            ),
+
+            // Experience Section
+            SliverToBoxAdapter(
+              child: _buildExperienceSection(context),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          ],
+        ),
+
+        // Show loading overlay only when saving
+        if (state.isLoading && state.user != null)
+          Container(
+            color: Colors.black.withOpacity(0.3),
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -56,55 +121,6 @@ class _ProfilePageState extends State<ProfileView> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildProfileContent(BuildContext context, ProfileState state) {
-    return CustomScrollView(
-      slivers: [
-        // App Bar with Theme Toggle
-        SliverAppBar(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          elevation: 0,
-          floating: true,
-          pinned: true,
-          title: Text(
-            'Profile',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(
-                state.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () {
-                context.read<ProfileCubit>().toggleDarkMode();
-                context.read<ThemeCubit>().toggleTheme();
-              },
-            ),
-          ],
-        ),
-
-        // Profile Header Section
-        SliverToBoxAdapter(
-          child: _buildProfileHeader(context, state),
-        ),
-
-        // Personal Information Section
-        SliverToBoxAdapter(
-          child: _buildPersonalInfoSection(context, state),
-        ),
-
-        // Experience Section
-        SliverToBoxAdapter(
-          child: _buildExperienceSection(context),
-        ),
-
-        const SliverToBoxAdapter(child: SizedBox(height: 20)),
-      ],
     );
   }
 
@@ -170,7 +186,7 @@ class _ProfilePageState extends State<ProfileView> {
                 bottom: 0,
                 right: 0,
                 child: GestureDetector(
-                  onTap: () => _pickProfileImage(context, state),
+                  onTap: () => _pickProfileImage(context),
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
@@ -221,7 +237,7 @@ class _ProfilePageState extends State<ProfileView> {
 
           // Edit Profile Button
           ElevatedButton.icon(
-            onPressed: () => _showEditProfileDialog(context, state),
+            onPressed: state.isLoading ? null : () => _showEditProfileDialog(context, state),
             icon: const Icon(Icons.edit, size: 16),
             label: const Text('Edit Profile'),
             style: ElevatedButton.styleFrom(
@@ -305,13 +321,6 @@ class _ProfilePageState extends State<ProfileView> {
               value: user.phone ?? 'Not provided',
             ),
             const SizedBox(height: 12),
-            _buildInfoRow(
-              context,
-              icon: Icons.fingerprint_outlined,
-              label: 'User ID',
-              value: user.id,
-              showCopyButton: true,
-            ),
           ],
         ),
       ),
@@ -574,12 +583,11 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  Future<void> _pickProfileImage(BuildContext context, ProfileState state) async {
+  Future<void> _pickProfileImage(BuildContext context) async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      context.read<ProfileCubit>().startEditing();
-      context.read<ProfileCubit>().setTempProfileImage(File(image.path));
-      _showEditProfileDialog(context, state);
+      // Immediately upload the image when selected
+      await context.read<ProfileCubit>().uploadProfileImage(File(image.path));
     }
   }
 
@@ -590,7 +598,6 @@ class _ProfilePageState extends State<ProfileView> {
         value: context.read<ProfileCubit>(),
         child: EditProfileDialog(
           user: state.user!,
-          tempProfileImage: state.tempProfileImage,
         ),
       ),
     );
@@ -599,12 +606,10 @@ class _ProfilePageState extends State<ProfileView> {
 
 class EditProfileDialog extends StatefulWidget {
   final CurrentUser user;
-  final File? tempProfileImage;
 
   const EditProfileDialog({
     Key? key,
     required this.user,
-    this.tempProfileImage,
   }) : super(key: key);
 
   @override
@@ -639,6 +644,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final state = context.watch<ProfileCubit>().state;
 
     return Dialog(
       backgroundColor: colorScheme.surface,
@@ -656,72 +662,22 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
             ),
             const SizedBox(height: 20),
 
-            // Profile Image
-            GestureDetector(
-              onTap: () async {
-                final ImagePicker picker = ImagePicker();
-                final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                if (image != null) {
-                  context.read<ProfileCubit>().setTempProfileImage(File(image.path));
-                  setState(() {});
-                }
-              },
-              child: Stack(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: colorScheme.primary, width: 2),
-                    ),
-                    child: ClipOval(
-                      child: widget.tempProfileImage != null
-                          ? Image.file(widget.tempProfileImage!, fit: BoxFit.cover)
-                          : widget.user.imageUrl != null
-                          ? Image.network(
-                        widget.user.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(Icons.person, size: 30, color: colorScheme.primary);
-                        },
-                      )
-                          : Icon(Icons.person, size: 30, color: colorScheme.primary),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.edit, size: 12, color: colorScheme.onPrimary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
             // Form Fields
             _buildTextField(_firstNameController, 'First Name', (value) {
               context.read<ProfileCubit>().updateField('firstName', value);
-            }),
+            }, isEnabled: !state.isLoading),
             const SizedBox(height: 12),
             _buildTextField(_middleNameController, 'Middle Name', (value) {
               context.read<ProfileCubit>().updateField('middleName', value);
-            }),
+            }, isEnabled: !state.isLoading),
             const SizedBox(height: 12),
             _buildTextField(_lastNameController, 'Last Name', (value) {
               context.read<ProfileCubit>().updateField('lastName', value);
-            }),
+            }, isEnabled: !state.isLoading),
             const SizedBox(height: 12),
             _buildTextField(_phoneController, 'Phone', (value) {
               context.read<ProfileCubit>().updateField('phone', value);
-            }, keyboardType: TextInputType.phone),
+            }, keyboardType: TextInputType.phone, isEnabled: !state.isLoading),
             const SizedBox(height: 24),
 
             // Action Buttons
@@ -729,7 +685,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
+                    onPressed: state.isLoading ? null : () {
                       context.read<ProfileCubit>().cancelEditing();
                       Navigator.of(context).pop();
                     },
@@ -739,13 +695,24 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () async {
+                    onPressed: state.isLoading ? null : () async {
                       await context.read<ProfileCubit>().saveProfile(context);
                       if (context.mounted) {
                         Navigator.of(context).pop();
                       }
                     },
-                    child: const Text('Save'),
+                    child: state.isLoading
+                        ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.onPrimary,
+                        ),
+                      ),
+                    )
+                        : const Text('Save'),
                   ),
                 ),
               ],
@@ -761,9 +728,11 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       String label,
       Function(String) onChanged, {
         TextInputType keyboardType = TextInputType.text,
+        bool isEnabled = true,
       }) {
     return TextField(
       controller: controller,
+      enabled: isEnabled,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(
