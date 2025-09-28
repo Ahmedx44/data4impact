@@ -9,6 +9,7 @@ import 'package:data4impact/core/service/api_service/study_service.dart';
 import 'package:data4impact/core/service/app_global_context.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
 import 'package:data4impact/core/theme/theme.dart';
+import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/splash/page/splash_page.dart';
 import 'package:data4impact/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -28,13 +29,13 @@ class App extends StatelessWidget {
       secureStorage: secureStorage,
     );
     final segmentService =
-    SegmentService(apiClient: apiClient, secureStorage: secureStorage);
+        SegmentService(apiClient: apiClient, secureStorage: secureStorage);
     final profileService =
-    ProfileService(apiClient: apiClient, secureStorage: secureStorage);
+        ProfileService(apiClient: apiClient, secureStorage: secureStorage);
     final studyService =
-    StudyService(apiClient: apiClient, secureStorage: secureStorage);
+        StudyService(apiClient: apiClient, secureStorage: secureStorage);
     final projectService =
-    ProjectService(apiClient: apiClient, secureStorage: secureStorage);
+        ProjectService(apiClient: apiClient, secureStorage: secureStorage);
     final fileUploadService = FileUploadService(
       dio: apiClient.dio,
       secureStorage: secureStorage,
@@ -59,6 +60,15 @@ class App extends StatelessWidget {
         providers: [
           BlocProvider(
             create: (_) => ThemeCubit(),
+          ),
+          BlocProvider(
+            create: (_) => HomeCubit(
+                secureStorage: secureStorage,
+                projectService: projectService,
+                segmentService: segmentService,
+                studyService: studyService,
+                fileUploadService: fileUploadService,
+                connectivity: connectivity),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(

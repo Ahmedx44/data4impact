@@ -153,6 +153,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           timer.cancel();
           return;
         }
+
+        // Stop recording if we reach the max duration
+        if (state.maxRecordingDuration > 0 &&
+            state.recordingDuration >= state.maxRecordingDuration) {
+          stopRecording();
+          timer.cancel();
+          return;
+        }
+
         emit(state.copyWith(
           recordingDuration: audioRecordingService.recordingDuration,
         ));
@@ -329,6 +338,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   Future<void> _processStudyData(Study study) async {
     final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
     final isLocationRequired = study.responseValidation?.requiredLocation ?? false;
+    final voiceDuration = study.responseValidation?.voiceDuration ?? 180; // Get duration from API, default to 180
 
     // Reset all state including hasSeenWelcome
     emit(state.copyWith(
@@ -343,7 +353,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       logicJumps: {},
       availableLanguages: study.languages ?? [],
       isLocationRequired: isLocationRequired,
-      hasSeenWelcome: false, // Reset welcome screen state
+      maxRecordingDuration: voiceDuration, // Set the max duration
+      hasSeenWelcome: false,
     ));
 
     if (isLocationRequired) {

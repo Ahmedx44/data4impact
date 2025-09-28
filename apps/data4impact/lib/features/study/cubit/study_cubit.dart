@@ -14,9 +14,7 @@ class StudyCubit extends Cubit<StudyState> {
   StudyCubit({
     required this.studyService,
     this.projectSlug,
-  }) : super(StudyInitial()) {
-    fetchStudies();
-  }
+  }) : super(StudyInitial());
 
   List<Map<String, dynamic>> get studies => _studies;
 
@@ -28,7 +26,7 @@ class StudyCubit extends Cubit<StudyState> {
     }
   }
 
-  Future<void> fetchStudies() async {
+  Future<void> fetchStudies(String projectSlug) async {
     emit(StudyLoading());
 
     final connected = InternetConnectionMonitor(
@@ -40,7 +38,7 @@ class StudyCubit extends Cubit<StudyState> {
 
     if (isConnected) {
       try {
-        _studies = await studyService.getStudies(projectSlug ?? 'majlis-starategy');
+        _studies = await studyService.getStudies(projectSlug);
         final studiesJson = jsonEncode(_studies);
         await OfflineModeDataRepo().saveAllStudys(studiesJson);
         emit(StudyLoaded(_studies));

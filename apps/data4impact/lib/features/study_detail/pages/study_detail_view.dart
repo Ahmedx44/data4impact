@@ -167,7 +167,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
           ),
           SliverToBoxAdapter(
             child: SizedBox(
-              height: 400,
+              height: 410,
               child: TabBarView(
                 controller: _tabController,
                 children: [

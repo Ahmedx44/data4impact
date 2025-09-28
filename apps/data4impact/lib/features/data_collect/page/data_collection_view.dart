@@ -414,9 +414,18 @@ class _DataCollectionViewState extends State<DataCollectionView> {
 
   Widget _buildAudioRecordingUI(DataCollectState state) {
     final cubit = context.read<DataCollectCubit>();
-    final remainingSeconds = 180 - state.recordingDuration;
+
+    // Calculate remaining seconds based on max duration
+    final remainingSeconds = state.maxRecordingDuration > 0
+        ? state.maxRecordingDuration - state.recordingDuration
+        : 999; // Show a large number if no limit
+
     final minutes = (remainingSeconds ~/ 60).toString().padLeft(2, '0');
     final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
+
+    final displayText = state.maxRecordingDuration > 0
+        ? 'Recording: $minutes:$seconds remaining'
+        : 'Recording: No time limit';
 
     // Check if we have a valid audio file that actually exists
     bool hasAudioFile = false;
@@ -439,10 +448,10 @@ class _DataCollectionViewState extends State<DataCollectionView> {
             const SizedBox(width: 8),
             Text(
               state.isRecording
-                  ? 'Recording: $minutes:$seconds remaining'
+                  ? displayText // Use the dynamic display text
                   : hasAudioFile
-                      ? 'Audio recorded'
-                      : 'Audio recording ready',
+                  ? 'Audio recorded'
+                  : 'Audio recording ready',
               style: TextStyle(
                 color: state.isRecording ? Colors.red : Colors.grey,
                 fontSize: 14,

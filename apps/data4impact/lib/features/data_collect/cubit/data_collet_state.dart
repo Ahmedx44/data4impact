@@ -1,6 +1,7 @@
 import 'package:data4impact/core/service/api_service/Model/study.dart';
+import 'package:equatable/equatable.dart';
 
-class DataCollectState {
+class DataCollectState extends Equatable {
   final Study? study;
   final bool isLoading;
   final String? error;
@@ -39,6 +40,7 @@ class DataCollectState {
   // Submission properties
   final bool isSubmitting;
   final Map<String, dynamic>? submissionResult;
+  final int maxRecordingDuration;
 
   const DataCollectState({
     this.study,
@@ -79,6 +81,7 @@ class DataCollectState {
     // Submission defaults
     this.isSubmitting = false,
     this.submissionResult,
+    this.maxRecordingDuration = 180,
   });
 
   DataCollectState copyWith({
@@ -120,6 +123,7 @@ class DataCollectState {
     // Submission copyWith parameters
     bool? isSubmitting,
     Map<String, dynamic>? submissionResult,
+    int? maxRecordingDuration,
   }) {
     return DataCollectState(
       study: study ?? this.study,
@@ -160,15 +164,50 @@ class DataCollectState {
       // Submission copyWith
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submissionResult: submissionResult ?? this.submissionResult,
+      maxRecordingDuration: maxRecordingDuration ?? this.maxRecordingDuration,
     );
   }
+
+  @override
+  List<Object?> get props => [
+    study,
+    isLoading,
+    error,
+    currentQuestionIndex,
+    answers,
+    requiredQuestions,
+    skipQuestions,
+    jumpTarget,
+    navigationHistory,
+    logicJumps,
+    isRecording,
+    recordingDuration,
+    audioFilePath,
+    isUploadingAudio,
+    audioUploadResult,
+    isPlayingAudio,
+    audioPosition,
+    audioDuration,
+    selectedLanguage,
+    availableLanguages,
+    locationData,
+    isLocationLoading,
+    isLocationRequired,
+    hasSeenWelcome,
+    isSubmitting,
+    submissionResult,
+    maxRecordingDuration,
+  ];
+
+  @override
+  bool get stringify => true;
 }
 
-class LocationData {
+class LocationData extends Equatable {
   final String lat;
   final String lng;
 
-  LocationData({required this.lat, required this.lng});
+  const LocationData({required this.lat, required this.lng});
 
   Map<String, dynamic> toJson() {
     return {
@@ -176,6 +215,12 @@ class LocationData {
       'lng': lng,
     };
   }
+
+  @override
+  List<Object> get props => [lat, lng];
+
+  @override
+  bool get stringify => true;
 
   @override
   String toString() {
