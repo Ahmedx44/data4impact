@@ -9,6 +9,7 @@ class ActivityCard extends StatelessWidget {
     this.icon = Icons.star,
   });
 
+  
   final String title;
   final int value;
   final String subtitle;
