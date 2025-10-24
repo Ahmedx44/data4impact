@@ -3,7 +3,7 @@ class SignInResponseModel {
   final String firstName;
   final String? middleName;
   final String lastName;
-  final String role;
+  final List<dynamic> role;
   final String phone;
   final String email;
   final bool emailVerified;
@@ -36,7 +36,7 @@ class SignInResponseModel {
         firstName: json['firstName'] as String,
         middleName: json['middleName'] as String?,
         lastName: json['lastName'] as String,
-        role: json['role'] as String,
+        role: json['roles'] as List<dynamic>,
         phone: json['phone'] as String,
         email: json['email'] as String,
         emailVerified: json['emailVerified'] as bool,

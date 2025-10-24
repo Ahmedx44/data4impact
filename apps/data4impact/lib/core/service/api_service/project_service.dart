@@ -24,8 +24,6 @@ class ProjectService {
         }),
       );
 
-      print('Raw API response: ${response.data}'); // Debug log
-
       if (response.data is List) {
         final list = response.data as List;
         if (list.isEmpty) return [];

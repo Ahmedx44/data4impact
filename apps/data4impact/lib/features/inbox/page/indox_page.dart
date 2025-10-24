@@ -6,6 +6,6 @@ class InboxPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InboxView();
+    return const InboxView();
   }
 }

@@ -170,8 +170,31 @@ class ProfileService {
         throw Exception('Unexpected response format');
       }
     } on DioException catch (e) {
-      print('Get user profile error: ${e.response?.data}');
       rethrow;
     }
   }
+
+ /* Future<Map<String,dynamic>> getListOfInvites(String userId) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) {
+        throw Exception('No authentication cookie found');
+      }
+
+      final response = await apiClient.get(
+        '/users/$userId',
+        options: Options(headers: {
+          'Cookie': cookie,
+        }),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return CurrentUser.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw Exception('Unexpected response format');
+      }
+    } on DioException catch (e) {
+      rethrow;
+    }
+  }*/
 }

@@ -83,6 +83,12 @@
       <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/record_windows/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/record_windows/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/record_windows/build" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/build" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/data4impact/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
