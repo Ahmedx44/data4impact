@@ -5,31 +5,6 @@ import 'color.dart';
 
 final ThemeData lightTheme = ThemeData(
   brightness: Brightness.light,
-  primaryColor: AppColors.primary,
-  scaffoldBackgroundColor: AppColors.lightBackground,
-  cardColor: AppColors.lightCard,
-  appBarTheme: const AppBarTheme(
-    backgroundColor: AppColors.lightBackground,
-    foregroundColor: AppColors.lightText,
-    elevation: 0,
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: Colors.white,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.grey.shade300),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.grey.shade300),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-    ),
-    labelStyle: TextStyle(color: Colors.grey.shade700),
-  ),
   colorScheme: const ColorScheme.light(
     primary: AppColors.primary,
     onPrimary: Colors.white,
@@ -62,31 +37,6 @@ final ThemeData lightTheme = ThemeData(
 
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
-  primaryColor: AppColors.primary,
-  scaffoldBackgroundColor: AppColors.darkBackground,
-  cardColor: AppColors.darkCard,
-  appBarTheme: const AppBarTheme(
-    backgroundColor: AppColors.darkBackground,
-    foregroundColor: AppColors.darkText,
-    elevation: 0,
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: Colors.grey.shade800.withOpacity(0.4),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.grey.shade600),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.grey.shade600),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-    ),
-    labelStyle: const TextStyle(color: Colors.white70),
-  ),
   colorScheme: const ColorScheme.dark(
     primary: AppColors.primary,
     onPrimary: Colors.white,

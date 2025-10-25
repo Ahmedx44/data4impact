@@ -14,18 +14,13 @@ class CollectorService {
     String? projectSlug,
   }) async {
     try {
-      print('debug: starting getCollectors');
-
       final cookie = await secureStorage.read(key: 'session_cookie');
-      print('debug: cookie from storage = $cookie');
 
       if (cookie == null || cookie.isEmpty) {
-        print('debug: cookie is null or empty');
         throw Exception('No authentication cookie found');
       }
 
       final trimmedCookie = cookie.trim();
-      print('debug: trimmed cookie = $trimmedCookie');
 
       final response = await apiClient.get(
         '/collectors',
@@ -37,9 +32,6 @@ class CollectorService {
           headers: {'Cookie': trimmedCookie},
         ),
       );
-
-      print('debug: response status = ${response.statusCode}');
-      print('debug: response data = ${response.data}');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to fetch collectors');
@@ -100,8 +92,6 @@ class CollectorService {
   void _handleDioError(DioException e) {
     if (e.response?.statusCode == 401) {
       // NOTE: Do NOT delete cookie
-      print(
-          'debug: 401 Unauthorized in _handleDioError, cookie is NOT deleted');
       throw Exception('Session expired. Please login again.');
     }
 

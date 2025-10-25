@@ -11,6 +11,7 @@ class DialogLoading {
     showDialog(
       context: context,
       barrierDismissible: false,
+      barrierColor: Colors.black54,
       builder: (BuildContext context) {
         return const _LoadingContent();
       },
@@ -30,18 +31,28 @@ class _LoadingContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDarkTheme ? Colors.grey[800] : Colors.white,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
         ),
-        child:  SizedBox(
+        child: SizedBox(
           height: 50,
           width: 50,
           child: SpinKitFadingCircle(
-            color: Theme.of(context).colorScheme.primary
+            color: Theme.of(context).colorScheme.primary,
+            size: 50.0,
           ),
         ),
       ),
