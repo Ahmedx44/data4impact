@@ -209,4 +209,37 @@ class AuthService {
   Future<void> clearStoredRole() async {
     await secureStorage.delete(key: 'user_role');
   }
+
+  Future<void> switchProject(String projectId) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+
+      if (cookie == null) {
+        throw Exception('No authentication cookie found');
+      }
+
+      await apiClient.post(
+        '/auth/switch-project',
+        data: {'projectId': projectId},
+        options: Options(
+          headers: {
+            'Cookie': cookie,
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      // Update stored project in secure storage
+      await secureStorage.write(key: 'current_project_id', value: projectId);
+
+    } on DioException catch (e) {
+      print('Error switching project: ${e.message}');
+      rethrow;
+    }
+  }
+
+  // Get current project ID from storage
+  Future<String?> getCurrentProjectId() async {
+    return await secureStorage.read(key: 'current_project_id');
+  }
 }

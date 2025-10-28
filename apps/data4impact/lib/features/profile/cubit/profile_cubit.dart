@@ -34,9 +34,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (isConnected) {
       try {
         final currentUser = await authService.getCurrentUser();
-
         await OfflineModeDataRepo().saveCurrentUser(currentUser);
-
         emit(
           state.copyWith(
             user: currentUser,
@@ -44,19 +42,19 @@ class ProfileCubit extends Cubit<ProfileState> {
           ),
         );
       } catch (e) {
+        // Handle offline case when online request fails
         final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
-
         emit(state.copyWith(
-          user: currentUser,
+          user: currentUser, // This can be null now
           isLoading: false,
         ));
       }
     } else {
+      // Offline case
       final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
-
       emit(
         state.copyWith(
-          user: currentUser,
+          user: currentUser, // This can be null now
           isLoading: false,
         ),
       );

@@ -12,6 +12,7 @@ import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
 import 'package:data4impact/core/theme/theme.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/splash/page/splash_page.dart';
+import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:data4impact/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,7 +43,7 @@ class App extends StatelessWidget {
       secureStorage: secureStorage,
     );
     final invitationService =
-    InvitationService(apiClient: apiClient,secureStorage: secureStorage);
+        InvitationService(apiClient: apiClient, secureStorage: secureStorage);
     final connectivity = Connectivity(); // Add this
 
     AppGlobalContext.setContext(context);
@@ -67,12 +68,16 @@ class App extends StatelessWidget {
           ),
           BlocProvider(
             create: (_) => HomeCubit(
+                authService: authService,
                 secureStorage: secureStorage,
                 projectService: projectService,
                 segmentService: segmentService,
                 studyService: studyService,
                 fileUploadService: fileUploadService,
                 connectivity: connectivity),
+          ),
+          BlocProvider(
+            create: (_) => StudyCubit(studyService: studyService),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(

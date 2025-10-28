@@ -11,9 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class StudyView extends StatefulWidget {
-  final String projectSlug;
-
-  const StudyView({super.key, required this.projectSlug});
+  const StudyView({super.key});
 
   @override
   _StudyViewState createState() => _StudyViewState();
@@ -28,7 +26,6 @@ class _StudyViewState extends State<StudyView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _currentProjectSlug = widget.projectSlug;
   }
 
   @override
@@ -37,22 +34,9 @@ class _StudyViewState extends State<StudyView>
     super.dispose();
   }
 
-  void _fetchStudiesIfProjectChanged(HomeState state) {
-    if (state.selectedProject != null &&
-        state.selectedProject!.slug != _currentProjectSlug) {
-      _currentProjectSlug = state.selectedProject!.slug;
-      context.read<StudyCubit>().fetchStudies(_currentProjectSlug!);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return BlocListener<HomeCubit, HomeState>(
-      listener: (context, state) {
-        _fetchStudiesIfProjectChanged(state);
-      },
-      child: _buildStudyViewContent(),
-    );
+    return _buildStudyViewContent();
   }
 
   Widget _buildStudyViewContent() {
@@ -113,46 +97,78 @@ class _StudyViewState extends State<StudyView>
   }
 
   Widget _buildActiveStudiesTab() {
-    return BlocBuilder<HomeCubit, HomeState>(
+    return BlocConsumer<HomeCubit, HomeState>(
+      listener: (context, homeState) {
+        // When project changes, fetch studies
+        final projectSlug = homeState.selectedProject?.slug ?? '';
+        if (projectSlug.isNotEmpty && projectSlug != _currentProjectSlug) {
+          _currentProjectSlug = projectSlug;
+          print('🔄 Project changed, fetching studies for: $projectSlug');
+          context.read<StudyCubit>().fetchStudies(projectSlug);
+        }
+      },
       builder: (context, homeState) {
-        return BlocBuilder<StudyCubit, StudyState>(
+        return BlocConsumer<StudyCubit, StudyState>(
+          listener: (context, studyState) {
+            // Listen for state changes
+            print('🎯 StudyState changed:');
+            print('   - studies count: ${studyState.studies.length}');
+            print('   - isLoading: ${studyState.isLoading}');
+            print('   - hasError: ${studyState.hasError}');
+          },
           builder: (context, studyState) {
-            // Handle initial state - fetch studies if we have a project
-            if (studyState is StudyInitial) {
-              final projectSlug = homeState.selectedProject?.slug ?? widget.projectSlug;
-              if (projectSlug.isNotEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  context.read<StudyCubit>().fetchStudies(projectSlug);
-                });
-              }
-            }
+            print('🎯 Active Studies Tab - Current State:');
+            print('   - studies count: ${studyState.studies.length}');
+            print('   - isLoading: ${studyState.isLoading}');
+            print('   - hasError: ${studyState.hasError}');
 
-            if (studyState is StudyInitial || studyState is StudyLoading) {
+            if (studyState.isLoading) {
+              print('⏳ Loading state - showing skeleton');
               return _buildSkeletonStudyList();
-            } else if (studyState is StudyError) {
+            } else if (studyState.hasError) {
+              print('❌ Error state: ${studyState.errorMessage}');
               return ApiErrorWidget(
-                errorMessage: _getUserFriendlyErrorMessage(studyState.errorMessage),
-                errorDetails: studyState.errorDetails,
+                errorMessage: _getUserFriendlyErrorMessage(studyState.errorMessage!),
+                errorDetails: studyState.errorDetails!,
                 onRetry: () {
-                  final projectSlug = homeState.selectedProject?.slug ?? widget.projectSlug;
+                  final projectSlug = homeState.selectedProject?.slug ?? '';
                   if (projectSlug.isNotEmpty) {
                     context.read<StudyCubit>().fetchStudies(projectSlug);
                   }
                 },
               );
-            } else if (studyState is StudyLoaded) {
-              final activeStudies = studyState.studies.where((study) =>
-              study['status'] == 'inProgress' || study['status'] == 'draft');
+            } else {
+              final activeStudies = studyState.studies.where((study) {
+                final status = study['status'] as String?;
+                final isActive = status == 'inProgress' || status == 'draft';
+                print('🔍 Study "${study['name']}" - status: $status, isActive: $isActive');
+                return isActive;
+              }).toList();
+
+              print('🔍 Filtered active studies: ${activeStudies.length}');
 
               if (activeStudies.isEmpty) {
+                print('📭 No active studies found');
                 return _buildEmptyState('No active studies found');
               }
 
+              print('🎉 Building list with ${activeStudies.length} active studies');
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: activeStudies.length,
                 itemBuilder: (context, index) {
-                  final study = activeStudies.elementAt(index);
+                  final study = activeStudies[index];
+
+                  // Safe progress calculation
+                  double progress = 0.0;
+                  try {
+                    final responses = study['responseCount'] as int? ?? 0;
+                    final sample = study['sampleSize'] as int? ?? 0;
+                    progress = sample > 0 ? responses / sample : 0.0;
+                  } catch (e) {
+                    print('❌ Error calculating progress: $e');
+                  }
+
                   return GestureDetector(
                     onTap: () {
                       final studyCubit = context.read<StudyCubit>();
@@ -171,10 +187,10 @@ class _StudyViewState extends State<StudyView>
                       }
                     },
                     child: StudyCard(
-                      title: study['name'] as String,
-                      description: study['description'] as String,
-                      progress: (study['responseCount']! / study['sampleSize']) as double,
-                      status: study['status'] as String,
+                      title: study['name'] as String? ?? 'Untitled Study',
+                      description: study['description'] as String? ?? 'No description available',
+                      progress: progress,
+                      status: study['status'] as String? ?? 'unknown',
                       callback: () {
                         final studyCubit = context.read<StudyCubit>();
                         final studyData = studyCubit.getStudyById(study['_id'] as String);
@@ -196,7 +212,6 @@ class _StudyViewState extends State<StudyView>
                 },
               );
             }
-            return const SizedBox();
           },
         );
       },
@@ -208,9 +223,16 @@ class _StudyViewState extends State<StudyView>
       builder: (context, homeState) {
         return BlocBuilder<StudyCubit, StudyState>(
           builder: (context, studyState) {
+            // Debug prints
+            print('🎯 Old Studies Tab State:');
+            print('   - isInitial: ${studyState.isInitial}');
+            print('   - isLoading: ${studyState.isLoading}');
+            print('   - hasError: ${studyState.hasError}');
+            print('   - studies count: ${studyState.studies.length}');
+
             // Handle initial state - fetch studies if we have a project
-            if (studyState is StudyInitial) {
-              final projectSlug = homeState.selectedProject?.slug ?? widget.projectSlug;
+            if (studyState.isInitial) {
+              final projectSlug = homeState.selectedProject?.slug ?? '';
               if (projectSlug.isNotEmpty) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   context.read<StudyCubit>().fetchStudies(projectSlug);
@@ -218,22 +240,29 @@ class _StudyViewState extends State<StudyView>
               }
             }
 
-            if (studyState is StudyInitial || studyState is StudyLoading) {
+            if (studyState.isLoading) {
               return _buildSkeletonStudyList();
-            } else if (studyState is StudyError) {
+            } else if (studyState.hasError) {
               return ApiErrorWidget(
-                errorMessage: _getUserFriendlyErrorMessage(studyState.errorMessage),
-                errorDetails: studyState.errorDetails,
+                errorMessage:
+                _getUserFriendlyErrorMessage(studyState.errorMessage!),
+                errorDetails: studyState.errorDetails!,
                 onRetry: () {
-                  final projectSlug = homeState.selectedProject?.slug ?? widget.projectSlug;
+                  final projectSlug = homeState.selectedProject?.slug ?? '';
                   if (projectSlug.isNotEmpty) {
                     context.read<StudyCubit>().fetchStudies(projectSlug);
                   }
                 },
               );
-            } else if (studyState is StudyLoaded) {
-              final oldStudies = studyState.studies.where((study) =>
-              study['status'] != 'inProgress' && study['status'] != 'draft');
+            } else {
+              final oldStudies = studyState.studies.where((study) {
+                final status = study['status'] as String?;
+                final isOld = status != 'inProgress' && status != 'draft';
+                print('🔍 Study "${study['name']}" - status: $status, isOld: $isOld');
+                return isOld;
+              }).toList();
+
+              print('🔍 Filtered old studies: ${oldStudies.length}');
 
               if (oldStudies.isEmpty) {
                 return _buildEmptyState('No completed studies found');
@@ -243,7 +272,18 @@ class _StudyViewState extends State<StudyView>
                 padding: const EdgeInsets.all(16),
                 itemCount: oldStudies.length,
                 itemBuilder: (context, index) {
-                  final study = oldStudies.elementAt(index);
+                  final study = oldStudies[index];
+
+                  // Safe progress calculation
+                  double progress = 0.0;
+                  try {
+                    final responses = study['responseCount'] as int? ?? 0;
+                    final sample = study['sampleSize'] as int? ?? 0;
+                    progress = sample > 0 ? responses / sample : 0.0;
+                  } catch (e) {
+                    print('❌ Error calculating progress: $e');
+                  }
+
                   return GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -257,10 +297,10 @@ class _StudyViewState extends State<StudyView>
                       );
                     },
                     child: StudyCard(
-                      title: study['name'] as String,
-                      description: study['description'] as String,
-                      progress: (study['responseCount']! / study['sampleSize']) as double,
-                      status: study['status'] as String,
+                      title: study['name'] as String? ?? 'Untitled Study',
+                      description: study['description'] as String? ?? 'No description available',
+                      progress: progress,
+                      status: study['status'] as String? ?? 'unknown',
                       callback: () {
                         Navigator.push(
                           context,
@@ -277,7 +317,6 @@ class _StudyViewState extends State<StudyView>
                 },
               );
             }
-            return const SizedBox();
           },
         );
       },

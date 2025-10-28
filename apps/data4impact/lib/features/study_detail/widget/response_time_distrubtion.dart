@@ -21,7 +21,7 @@ class ResponseTimeDistributionChart extends StatelessWidget {
     final progress = sampleSize as int > 0 ? responseCount / sampleSize : 0;
 
     // Generate sample data based on actual progress
-    final dailyData = _generateWeeklyData(progress as double, sampleSize);
+    final dailyData = _generateWeeklyData(double.tryParse(progress.toString())??0, sampleSize);
 
     return Card(
       elevation: 1,

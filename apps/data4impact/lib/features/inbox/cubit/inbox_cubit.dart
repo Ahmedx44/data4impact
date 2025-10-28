@@ -24,8 +24,6 @@ class InboxCubit extends Cubit<InboxState> {
     try {
       final acceptInivation = await invitationService.acceptInvitation(invitationId);
 
-      print('accept invitation: ${acceptInivation}');
-
       ToastService.showSuccessToast(message: 'Successfully accepted the invitation');
       emit(state.copyWith(isAccepting: false));
       await getInvitation();

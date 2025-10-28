@@ -16,10 +16,10 @@ class OfflineModeDataRepo {
 
   static final OfflineModeDataRepo _instance = OfflineModeDataRepo._internal();
 
-  //Project
+  // Project
   Future<void> saveAllProjects(List<Project> value) async {
     Box<List<ProjectHive>> hiveBox =
-        await Hive.openBox<List<ProjectHive>>(projectsBox);
+    await Hive.openBox<List<ProjectHive>>(projectsBox);
 
     final hiveProjects = value.map((p) => ProjectHive.fromProject(p)).toList();
 
@@ -29,7 +29,6 @@ class OfflineModeDataRepo {
   Future<List<Project>> getSavedAllProjects() async {
     try {
       final box = await Hive.openBox<List<dynamic>>(projectsBox);
-
       final storedProjects = box.get(projectsKey);
 
       if (storedProjects == null) {
@@ -41,52 +40,74 @@ class OfflineModeDataRepo {
           .toList();
       return result;
     } catch (e) {
+      AppLogger.logError('Error loading saved projects: $e');
       return [];
     }
   }
 
-  //Study
+  // Study
   Future<void> saveAllStudys(String value) async {
     final hiveBox = await Hive.openBox(studysBox);
-
     await hiveBox.put(studysKey, value);
   }
 
   Future<List<Map<String, dynamic>>> getSavedAllStudys() async {
-    final hiveBox = await Hive.openBox(studysBox);
+    try {
+      final hiveBox = await Hive.openBox(studysBox);
+      final studys = hiveBox.get(studysKey);
 
-    final studys = hiveBox.get(studysKey);
+      if (studys == null) {
+        return [];
+      }
 
-    if (studys == null) {
+      final storedStudies = (jsonDecode(studys.toString()) as List)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+
+      return storedStudies;
+    } catch (e) {
+      AppLogger.logError('Error loading saved studies: $e');
       return [];
     }
-
-    final storedStudies = (jsonDecode(studys.toString()) as List)
-        .map((e) => e as Map<String, dynamic>)
-        .toList();
-
-    return storedStudies;
   }
 
-  // Current User
+  // Current User - FIXED VERSION
   Future<void> saveCurrentUser(CurrentUser user) async {
-    final hiveBox = await Hive.openBox<CurrentUserHive>(currentUserBox);
-    final userHive = CurrentUserHive.fromCurrentUser(user);
-
-    await hiveBox.put(currentUserKey, userHive);
-
-    print('current user saved');
+    try {
+      final hiveBox = await Hive.openBox<CurrentUserHive>(currentUserBox);
+      final userHive = CurrentUserHive.fromCurrentUser(user);
+      await hiveBox.put(currentUserKey, userHive);
+      AppLogger.logInfo('Current user saved successfully');
+    } catch (e) {
+      AppLogger.logError('Error saving current user: $e');
+    }
   }
 
-  Future<CurrentUser> getSavedCurrentUser() async {
-    final hiveBox = await Hive.openBox<CurrentUserHive>(currentUserBox);
+  Future<CurrentUser?> getSavedCurrentUser() async {
+    try {
+      final hiveBox = await Hive.openBox<CurrentUserHive>(currentUserBox);
+      final userHive = hiveBox.get(currentUserKey);
 
-    return hiveBox.get(currentUserKey)!.toCurrentUser();
+      if (userHive == null) {
+        AppLogger.logInfo('No saved user found in local storage');
+        return null;
+      }
+
+      AppLogger.logInfo('Loaded user from local storage: ${userHive.email}');
+      return userHive.toCurrentUser();
+    } catch (e) {
+      AppLogger.logError('Error loading saved current user: $e');
+      return null;
+    }
   }
 
   Future<void> saveStudyQuestions(String studyId, String questionsJson) async {
-    final hiveBox = await Hive.openBox(studyQuestionsBox);
-    await hiveBox.put('${studyQuestionsKey}_$studyId', questionsJson);
+    try {
+      final hiveBox = await Hive.openBox(studyQuestionsBox);
+      await hiveBox.put('${studyQuestionsKey}_$studyId', questionsJson);
+    } catch (e) {
+      AppLogger.logError('Error saving study questions: $e');
+    }
   }
 
   Future<Map<String, dynamic>?> getSavedStudyQuestions(String studyId) async {
@@ -106,13 +127,14 @@ class OfflineModeDataRepo {
   }
 
   Future<void> saveOfflineAnswer(String studyId, Map<String, dynamic> answerData) async {
-    final hiveBox = await Hive.openBox(offlineAnswersBox);
-
-    // Get existing answers for this study
-    final existingAnswers = await getOfflineAnswers(studyId);
-    existingAnswers.add(answerData);
-
-    await hiveBox.put('${offlineAnswersKey}_$studyId', jsonEncode(existingAnswers));
+    try {
+      final hiveBox = await Hive.openBox(offlineAnswersBox);
+      final existingAnswers = await getOfflineAnswers(studyId);
+      existingAnswers.add(answerData);
+      await hiveBox.put('${offlineAnswersKey}_$studyId', jsonEncode(existingAnswers));
+    } catch (e) {
+      AppLogger.logError('Error saving offline answer: $e');
+    }
   }
 
   Future<List<Map<String, dynamic>>> getOfflineAnswers(String studyId) async {
@@ -133,12 +155,15 @@ class OfflineModeDataRepo {
   }
 
   Future<void> removeOfflineAnswer(String studyId, int index) async {
-    final answers = await getOfflineAnswers(studyId);
-    if (index >= 0 && index < answers.length) {
-      answers.removeAt(index);
-      final hiveBox = await Hive.openBox(offlineAnswersBox);
-      await hiveBox.put('${offlineAnswersKey}_$studyId', jsonEncode(answers));
+    try {
+      final answers = await getOfflineAnswers(studyId);
+      if (index >= 0 && index < answers.length) {
+        answers.removeAt(index);
+        final hiveBox = await Hive.openBox(offlineAnswersBox);
+        await hiveBox.put('${offlineAnswersKey}_$studyId', jsonEncode(answers));
+      }
+    } catch (e) {
+      AppLogger.logError('Error removing offline answer: $e');
     }
   }
-
 }

@@ -8,6 +8,7 @@ import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/api_service/segment_service.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
 import 'package:data4impact/core/service/api_service/file_upload_service.dart';
+import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/internt_connection_monitor.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/home/cubit/home_state.dart';
@@ -27,10 +28,12 @@ class HomeCubit extends Cubit<HomeState> {
     required this.segmentService,
     required this.studyService,
     required this.fileUploadService,
+    required this.authService,
     required this.connectivity,
   }) : super(const HomeState()) {
     _startPeriodicSync();
     _setupConnectivityListener();
+    _initializeCurrentProject();
   }
 
   final FlutterSecureStorage secureStorage;
@@ -38,6 +41,7 @@ class HomeCubit extends Cubit<HomeState> {
   final SegmentService segmentService;
   final StudyService studyService;
   final FileUploadService fileUploadService;
+  final AuthService authService;
   final Connectivity connectivity;
   Timer? _syncTimer;
   StreamSubscription<ConnectivityResult>? _connectivitySubscription;
@@ -49,32 +53,37 @@ class HomeCubit extends Cubit<HomeState> {
     return super.close();
   }
 
+  // Initialize current project from storage
+  Future<void> _initializeCurrentProject() async {
+    final currentProjectId = await authService.getCurrentProjectId();
+    if (currentProjectId != null && state.projects.isNotEmpty) {
+      final project = state.projects.firstWhere(
+            (p) => p.id == currentProjectId,
+        orElse: () => state.projects.first,
+      );
+      emit(state.copyWith(selectedProject: project));
+    }
+  }
+
   void _setupConnectivityListener() {
     _connectivitySubscription = connectivity.onConnectivityChanged.listen((result) async {
       if (result != ConnectivityResult.none) {
-        // Internet connection restored, try to sync
         await _checkAndSyncOfflineData();
       }
     });
   }
 
-  // Start periodic sync every 30 seconds
   void _startPeriodicSync() {
     _syncTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
       await _checkAndSyncOfflineData();
     });
   }
 
-  // Check and sync offline data
   Future<void> _checkAndSyncOfflineData() async {
     final isConnected = await _isConnected;
-
-    if (!isConnected) {
-      return; // No internet, no sync
-    }
+    if (!isConnected) return;
 
     try {
-      // Update pending sync count
       final pendingCount = await _getPendingSyncCount();
       emit(state.copyWith(pendingSyncCount: pendingCount));
 
@@ -87,7 +96,6 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  // Get count of pending sync items
   Future<int> _getPendingSyncCount() async {
     try {
       final offlineAnswersBox = await Hive.openBox('offline_answers_box');
@@ -110,7 +118,6 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  // Sync all offline answers
   Future<void> _syncAllOfflineAnswers() async {
     if (state.isSyncing) return;
 
@@ -120,9 +127,6 @@ class HomeCubit extends Cubit<HomeState> {
       totalToSync: 0,
       syncedSoFar: 0,
     ));
-
-
-    emit(state.copyWith(isSyncing: true));
 
     try {
       final offlineAnswersBox = await Hive.openBox('offline_answers_box');
@@ -138,7 +142,6 @@ class HomeCubit extends Cubit<HomeState> {
         }
       }
 
-      // Update pending count after sync
       final newPendingCount = await _getPendingSyncCount();
       emit(state.copyWith(pendingSyncCount: newPendingCount));
 
@@ -156,7 +159,6 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  // Sync offline answers for a specific study
   Future<int> _syncStudyOfflineAnswers(String studyId) async {
     int syncedCount = 0;
 
@@ -167,7 +169,6 @@ class HomeCubit extends Cubit<HomeState> {
         return 0;
       }
 
-      // Update total to sync
       emit(state.copyWith(
         totalToSync: state.totalToSync + offlineAnswers.length,
       ));
@@ -178,7 +179,6 @@ class HomeCubit extends Cubit<HomeState> {
         final answerData = Map<String, dynamic>.from(offlineAnswers[i]);
 
         try {
-          // Handle audio file upload if present
           if (answerData.containsKey('audioFilePath')) {
             final audioFilePath = answerData['audioFilePath'] as String;
             final audioUrl = await _uploadAudioFileForSync(audioFilePath, studyId);
@@ -191,7 +191,6 @@ class HomeCubit extends Cubit<HomeState> {
             }
           }
 
-          // Submit the answer
           final response = await studyService.submitSurveyResponse(
             studyId: studyId,
             responseData: answerData,
@@ -200,7 +199,6 @@ class HomeCubit extends Cubit<HomeState> {
           successfulIndices.add(i);
           syncedCount++;
 
-          // Update progress
           emit(state.copyWith(
             syncedSoFar: state.syncedSoFar + 1,
             syncProgress: state.totalToSync > 0
@@ -213,7 +211,6 @@ class HomeCubit extends Cubit<HomeState> {
         }
       }
 
-      // Remove successfully synced answers
       if (successfulIndices.isNotEmpty) {
         await _removeSyncedAnswers(studyId, successfulIndices);
       }
@@ -225,12 +222,9 @@ class HomeCubit extends Cubit<HomeState> {
     return syncedCount;
   }
 
-  // Upload audio file during sync using FileUploadService
   Future<String?> _uploadAudioFileForSync(String filePath, String studyId) async {
     try {
       final result = await fileUploadService.uploadAudioFile(studyId, filePath);
-
-      // Assuming the response contains a 'filename' field with the URL
       return result['filename'] as String?;
     } catch (e) {
       print('Failed to upload audio during sync: $e');
@@ -238,12 +232,9 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  // Remove synced answers from offline storage
   Future<void> _removeSyncedAnswers(String studyId, List<int> indices) async {
     try {
       final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
-
-      // Sort indices in descending order to avoid index issues when removing
       indices.sort((a, b) => b.compareTo(a));
 
       for (final index in indices) {
@@ -263,7 +254,6 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  // Manual sync trigger (can be called from UI)
   Future<void> manualSync() async {
     final isConnected = await _isConnected;
 
@@ -275,7 +265,6 @@ class HomeCubit extends Cubit<HomeState> {
     await _checkAndSyncOfflineData();
   }
 
-  // Check if there are pending offline answers
   Future<bool> hasPendingOfflineAnswers() async {
     final count = await _getPendingSyncCount();
     return count > 0;
@@ -283,6 +272,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> logout(BuildContext context) async {
     await secureStorage.delete(key: 'session_cookie');
+    await secureStorage.delete(key: 'current_project_id');
     ToastService.showSuccessToast(message: 'Logout successful');
     await Navigator.pushReplacement(
       context,
@@ -306,62 +296,113 @@ class HomeCubit extends Cubit<HomeState> {
       try {
         final response = await projectService.getAllProjects();
 
-        final projects = response.map((json) => Project.fromMap(json)).toList();
+        final projects = response.map((json) {
+          return Project.fromMap(json);
+        }).toList();
 
         await OfflineModeDataRepo().saveAllProjects(projects);
+
+        // Get current project ID and set selected project
+        final currentProjectId = await authService.getCurrentProjectId();
+        Project? selectedProject;
+
+        if (currentProjectId != null && projects.isNotEmpty) {
+          selectedProject = projects.firstWhere(
+                (p) => p.id == currentProjectId,
+            orElse: () => projects.first,
+          );
+        } else if (projects.isNotEmpty) {
+          selectedProject = projects.first;
+        }
 
         emit(
           state.copyWith(
             isLoading: false,
             projects: projects,
-            selectedProject: projects.isNotEmpty ? projects.first : null,
+            selectedProject: selectedProject,
             isOffline: false,
           ),
         );
 
-        // Also check for offline data to sync after fetching projects
         await _checkAndSyncOfflineData();
 
       } catch (e) {
         final projects = await OfflineModeDataRepo().getSavedAllProjects();
+        final currentProjectId = await authService.getCurrentProjectId();
+        Project? selectedProject;
+
+        if (currentProjectId != null && projects.isNotEmpty) {
+          selectedProject = projects.firstWhere(
+                (p) => p.id == currentProjectId,
+          );
+        }
+
         emit(
           state.copyWith(
             isLoading: false,
             projects: projects,
-            selectedProject: projects.isNotEmpty ? projects.first : null,
+            selectedProject: selectedProject,
             isOffline: true,
           ),
         );
       }
     } else {
       final projects = await OfflineModeDataRepo().getSavedAllProjects();
+      final currentProjectId = await authService.getCurrentProjectId();
+      Project? selectedProject;
+
+      if (currentProjectId != null && projects.isNotEmpty) {
+        selectedProject = projects.firstWhere(
+              (p) => p.id == currentProjectId,
+        );
+      }
+
       emit(
         state.copyWith(
           isLoading: false,
           projects: projects,
-          selectedProject: projects.isNotEmpty ? projects.first : null,
+          selectedProject: selectedProject,
           isOffline: true,
         ),
       );
     }
   }
 
-  // Check internet connectivity
+  Future<void> switchProject(Project project) async {
+    emit(state.copyWith(isLoading: true));
+
+    try {
+      // Call API to switch project on server
+      await authService.switchProject(project.id);
+
+      // Update selected project in state
+      emit(state.copyWith(
+        selectedProject: project,
+        isLoading: false,
+      ));
+
+      ToastService.showSuccessToast(message: 'Switched to ${project.slug}');
+
+    } catch (e) {
+      emit(state.copyWith(isLoading: false));
+      ToastService.showErrorToast(message: 'Failed to switch project: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  void selectProject(Project project) {
+    emit(state.copyWith(selectedProject: project));
+  }
+
   Future<bool> get _isConnected async {
     try {
       final result = await connectivity.checkConnectivity();
       return result != ConnectivityResult.none;
     } catch (e) {
-      return false; // Assume offline if connectivity check fails
+      return false;
     }
   }
 
-  // Select a project
-  void selectProject(Project project) {
-    emit(state.copyWith(selectedProject: project));
-  }
-
-  // Refresh data (pull-to-refresh)
   Future<void> refreshData() async {
     final bool isOnline = await _isConnected;
     if (isOnline) {

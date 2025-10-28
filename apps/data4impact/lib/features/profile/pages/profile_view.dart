@@ -596,9 +596,9 @@ class _ProfilePageState extends State<ProfileView> {
       context: context,
       builder: (dialogContext) => BlocProvider.value(
         value: context.read<ProfileCubit>(),
-        child: EditProfileDialog(
+        child: state.user!=null? EditProfileDialog(
           user: state.user!,
-        ),
+        ):const SizedBox(),
       ),
     );
   }

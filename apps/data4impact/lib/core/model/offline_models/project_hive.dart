@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 
 part 'project_hive.g.dart';
 
-@HiveType(typeId: 0)
+@HiveType(typeId: 0) // Changed typeId to 1 (use unique typeId for each model)
 class ProjectHive {
   @HiveField(0)
   final String id;
@@ -36,7 +36,7 @@ class ProjectHive {
   final String visibility;
 
   @HiveField(10)
-  final String priority;
+  final String? priority; // Made nullable
 
   @HiveField(11)
   final String? country;
@@ -61,7 +61,7 @@ class ProjectHive {
     required this.contributorsCount,
     required this.description,
     required this.visibility,
-    required this.priority,
+    this.priority, // Now nullable
     this.country,
     this.sector,
     required this.createdAt,
@@ -80,7 +80,7 @@ class ProjectHive {
       contributorsCount: project.contributorsCount,
       description: project.description,
       visibility: project.visibility,
-      priority: project.priority,
+      priority: project.priority, // Can be null
       country: project.country,
       sector: project.sector,
       createdAt: project.createdAt,
@@ -100,7 +100,7 @@ class ProjectHive {
       contributorsCount: contributorsCount,
       description: description,
       visibility: visibility,
-      priority: priority,
+      priority: priority ?? 'medium', // Provide default value if null
       country: country,
       sector: sector,
       createdAt: createdAt,
@@ -110,6 +110,6 @@ class ProjectHive {
 
   @override
   String toString() {
-    return 'ProjectHive(id: $id, title: $title, organization: $organization)';
+    return 'ProjectHive(id: $id, title: $title, organization: $organization, priority: $priority)';
   }
 }

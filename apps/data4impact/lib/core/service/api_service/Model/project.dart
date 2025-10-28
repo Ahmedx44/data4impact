@@ -11,7 +11,7 @@ class Project {
   final int contributorsCount;
   final String description;
   final String visibility;
-  final String priority;
+  final String? priority; // Make priority nullable
   final String? country;
   final String? sector;
   final DateTime createdAt;
@@ -28,7 +28,7 @@ class Project {
     required this.contributorsCount,
     required this.description,
     required this.visibility,
-    required this.priority,
+    this.priority, // Now nullable
     this.country,
     this.sector,
     required this.createdAt,
@@ -36,27 +36,54 @@ class Project {
   });
 
   factory Project.fromMap(Map<String, dynamic> map) {
-    return Project(
-      id: map['_id'] as String,
-      slug: map['slug'] as String,
-      title: map['title'] as String,
-      organization: map['organization'] as String,
-      userId: map['userId'] as String,
-      status: map['status'] as String,
-      studiesCount: map['studiesCount'] as int,
-      contributorsCount: map['contributorsCount'] as int,
-      description: map['description'] as String,
-      visibility: map['visibility'] as String,
-      priority: map['priority'] as String,
-      country: map['country'] as String?,
-      sector: map['sector'] as String?,
-      createdAt: DateTime.parse(map['createdAt'] as String),
-      updatedAt: DateTime.parse(map['updatedAt'] as String),
-    );
+    print('debug Project.fromMap: Creating project from $map');
+    try {
+      // Safe parsing with null checks and default values
+      String safeString(String key) => map[key]?.toString() ?? '';
+      int safeInt(String key) => (map[key] as num?)?.toInt() ?? 0;
+      String? nullableString(String key) => map[key]?.toString();
+
+      // Handle DateTime parsing safely
+      DateTime safeDateTime(String key) {
+        try {
+          return DateTime.parse(map[key]?.toString() ?? '');
+        } catch (e) {
+          print('debug Project.fromMap: Error parsing $key, using current time');
+          return DateTime.now();
+        }
+      }
+
+      return Project(
+        id: safeString('_id'),
+        slug: safeString('slug'),
+        title: safeString('title'),
+        organization: safeString('organization'),
+        userId: safeString('userId'),
+        status: safeString('status'),
+        studiesCount: safeInt('studiesCount'),
+        contributorsCount: safeInt('contributorsCount'),
+        description: safeString('description'),
+        visibility: safeString('visibility'),
+        priority: nullableString('priority'), // Can be null
+        country: nullableString('country'),
+        sector: nullableString('sector'),
+        createdAt: safeDateTime('createdAt'),
+        updatedAt: safeDateTime('updatedAt'),
+      );
+    } catch (e) {
+      print('debug Project.fromMap: Error creating project - $e');
+      rethrow;
+    }
   }
 
-  factory Project.fromJson(String source) =>
-      Project.fromMap(json.decode(source)as Map<String,dynamic>);
+  factory Project.fromJson(String source) {
+    try {
+      return Project.fromMap(json.decode(source) as Map<String, dynamic>);
+    } catch (e) {
+      print('debug Project.fromJson: Error parsing JSON - $e');
+      rethrow;
+    }
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -70,7 +97,7 @@ class Project {
       'contributorsCount': contributorsCount,
       'description': description,
       'visibility': visibility,
-      'priority': priority,
+      'priority': priority, // Can be null
       'country': country,
       'sector': sector,
       'createdAt': createdAt.toIso8601String(),

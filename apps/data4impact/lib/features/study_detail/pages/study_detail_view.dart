@@ -83,7 +83,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
               currentResponses: currentResponses as int,
               totalResponses: totalResponses,
               daysRemaining: daysRemaining,
-              progress: progress as double,
+              progress: progress as int,
             ),
           ),
           SliverPadding(
@@ -230,7 +230,7 @@ class ProgressTimelineWidget extends StatelessWidget {
   final int currentResponses;
   final int totalResponses;
   final int daysRemaining;
-  final double progress;
+  final int progress;
 
   const ProgressTimelineWidget({
     super.key,
@@ -269,7 +269,7 @@ class ProgressTimelineWidget extends StatelessWidget {
                           height: 40,
                           width: 40,
                           child: CircularProgressIndicator(
-                            value: progress,
+                            value: double.tryParse(progress.toString()),
                             strokeWidth: 4,
                             valueColor: AlwaysStoppedAnimation<Color>(
                                 theme.colorScheme.primary),

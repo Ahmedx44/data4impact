@@ -1,7 +1,7 @@
+// core/service/api_service/study_service.dart
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 
 class StudyService {
   final ApiClient apiClient;
@@ -25,10 +25,8 @@ class StudyService {
         }),
       );
 
-      // More explicit type checking and conversion
       if (response.data is List) {
         final list = response.data as List;
-        // Convert each item to Map<String, dynamic>
         return list.map((item) => item as Map<String, dynamic>).toList();
       } else {
         throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
@@ -39,6 +37,7 @@ class StudyService {
     }
   }
 
+  // Other methods remain the same but will now work with the switched project
   Future<Map<String, dynamic>> getStudyDetails(String studyId) async {
     try {
       final cookie = await secureStorage.read(key: 'session_cookie');

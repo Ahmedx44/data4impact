@@ -1,4 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/api_service/file_upload_service.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/api_service/segment_service.dart';
@@ -16,6 +17,7 @@ class CollectorsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => HomeCubit(
+        authService: context.read<AuthService>(),
         segmentService: context.read<SegmentService>(),
         secureStorage: context.read<FlutterSecureStorage>(),
         projectService: context.read<ProjectService>(),
