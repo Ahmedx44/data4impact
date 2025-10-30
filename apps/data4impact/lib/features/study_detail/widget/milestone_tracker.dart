@@ -136,7 +136,7 @@ class MilestoneTrackingWidget extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         LinearProgressIndicator(
-          value: progress as double,
+          value: double.tryParse(progress.toString()),
           backgroundColor: colorScheme.surfaceVariant,
           color: colorScheme.primary,
           minHeight: 8,
@@ -192,7 +192,7 @@ class MilestoneTrackingWidget extends StatelessWidget {
       final milestoneProgress = progress;
       MilestoneStatus milestoneStatus;
 
-      if (milestoneProgress as double >= threshold) {
+      if (milestoneProgress as int >= threshold) {
         milestoneStatus = MilestoneStatus.completed;
       } else if (threshold == 0.75 && milestoneProgress > 0.5) {
         milestoneStatus = MilestoneStatus.inProgress;

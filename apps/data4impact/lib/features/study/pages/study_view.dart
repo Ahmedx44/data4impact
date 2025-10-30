@@ -223,12 +223,6 @@ class _StudyViewState extends State<StudyView>
       builder: (context, homeState) {
         return BlocBuilder<StudyCubit, StudyState>(
           builder: (context, studyState) {
-            // Debug prints
-            print('🎯 Old Studies Tab State:');
-            print('   - isInitial: ${studyState.isInitial}');
-            print('   - isLoading: ${studyState.isLoading}');
-            print('   - hasError: ${studyState.hasError}');
-            print('   - studies count: ${studyState.studies.length}');
 
             // Handle initial state - fetch studies if we have a project
             if (studyState.isInitial) {

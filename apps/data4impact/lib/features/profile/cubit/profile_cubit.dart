@@ -25,41 +25,55 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<void> fetchCurrentUser() async {
+    print('DEBUG: fetchCurrentUser() called');
     emit(state.copyWith(isLoading: true));
-    final connected = InternetConnectionMonitor(
-      checkOnInterval: false,
-    );
 
+    final connected = InternetConnectionMonitor(checkOnInterval: false);
+    print('DEBUG: Checking internet connection...');
     final isConnected = await connected.hasInternetConnection();
+    print('DEBUG: Internet connection status: $isConnected');
+
     if (isConnected) {
       try {
+        print('DEBUG: Connected to internet, fetching current user...');
         final currentUser = await authService.getCurrentUser();
+        print('DEBUG: Current user fetched: $currentUser');
+
         await OfflineModeDataRepo().saveCurrentUser(currentUser);
-        emit(
-          state.copyWith(
-            user: currentUser,
-            isLoading: false,
-          ),
-        );
-      } catch (e) {
-        // Handle offline case when online request fails
-        final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
+        print('DEBUG: Current user saved offline successfully');
+
         emit(state.copyWith(
-          user: currentUser, // This can be null now
+          user: currentUser,
           isLoading: false,
         ));
+        print('DEBUG: State emitted with online user data');
+      } catch (e) {
+        print('DEBUG: Error fetching user online: $e');
+        print('DEBUG: Attempting to load user from offline data...');
+        final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
+        print('DEBUG: Offline current user fetched: $currentUser');
+
+        emit(state.copyWith(
+          user: currentUser,
+          isLoading: false,
+        ));
+        print('DEBUG: State emitted with offline user data (fallback)');
       }
     } else {
-      // Offline case
+      print('DEBUG: No internet connection, loading offline user...');
       final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
-      emit(
-        state.copyWith(
-          user: currentUser, // This can be null now
-          isLoading: false,
-        ),
-      );
+      print('DEBUG: Offline current user fetched: $currentUser');
+
+      emit(state.copyWith(
+        user: currentUser,
+        isLoading: false,
+      ));
+      print('DEBUG: State emitted with offline user data');
     }
+
+    print('DEBUG: fetchCurrentUser() completed');
   }
+
 
   Future<void> refreshUserData() async {
     await fetchCurrentUser();

@@ -36,15 +36,15 @@ class CurrentUser {
       firstName: json['firstName'] as String,
       middleName: json['middleName'] as String?,
       lastName: json['lastName'] as String,
-      role: json['role'] as String,
+      role: (json['role'] ?? (json['roles'] != null && json['roles']!='' ? json['roles'][0] : 'user')) as String,
       phone: json['phone'] as String?,
       email: json['email'] as String,
-      emailVerified: json['emailVerified'] as bool,
-      imageUrl: json['imageUrl'] as String?, // Now handles null
-      active: json['active'] as bool,
-      systemOwner: json['systemOwner'] as bool, // Changed to bool
-      createdAt: json['createdAt'] as String,
-      updatedAt: json['updatedAt'] as String,
+      emailVerified: json['emailVerified'] as bool? ?? false,
+      imageUrl: json['imageUrl'] as String?,
+      active: json['active'] as bool? ?? false,
+      systemOwner: json['systemOwner'] as bool? ?? false, // safe fallback
+      createdAt: json['createdAt'] as String? ?? '',
+      updatedAt: json['updatedAt'] as String? ?? '',
     );
   }
 

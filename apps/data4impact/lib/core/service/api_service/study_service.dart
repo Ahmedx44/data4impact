@@ -102,10 +102,9 @@ class StudyService {
       }
       throw Exception('Unexpected response format');
     } on DioException catch (e) {
-      print('Error submitting survey response: ${e.message}');
       if (e.response != null) {
-        print('Response status: ${e.response!.statusCode}');
-        print('Response data: ${e.response!.data}');
+        print('Error submitting survey response: ${e.response?.data}');
+
       }
       rethrow;
     }

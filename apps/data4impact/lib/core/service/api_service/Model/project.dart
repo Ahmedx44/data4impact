@@ -48,7 +48,6 @@ class Project {
         try {
           return DateTime.parse(map[key]?.toString() ?? '');
         } catch (e) {
-          print('debug Project.fromMap: Error parsing $key, using current time');
           return DateTime.now();
         }
       }
@@ -71,7 +70,6 @@ class Project {
         updatedAt: safeDateTime('updatedAt'),
       );
     } catch (e) {
-      print('debug Project.fromMap: Error creating project - $e');
       rethrow;
     }
   }
@@ -80,7 +78,6 @@ class Project {
     try {
       return Project.fromMap(json.decode(source) as Map<String, dynamic>);
     } catch (e) {
-      print('debug Project.fromJson: Error parsing JSON - $e');
       rethrow;
     }
   }

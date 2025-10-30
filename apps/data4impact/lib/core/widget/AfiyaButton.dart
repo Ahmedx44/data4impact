@@ -20,7 +20,7 @@ class CustomButton extends StatelessWidget {
       onPressed: onTap,
       style: ButtonStyle(
         padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 20),
+          EdgeInsets.symmetric(vertical: 10),
         ),
         backgroundColor: WidgetStateProperty.all(
           theme.colorScheme.primary,

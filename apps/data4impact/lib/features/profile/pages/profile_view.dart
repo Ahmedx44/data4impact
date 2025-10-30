@@ -77,9 +77,19 @@ class _ProfilePageState extends State<ProfileView> {
               child: _buildPersonalInfoSection(context, state),
             ),
 
-            // Experience Section
+            // Organization Section
             SliverToBoxAdapter(
-              child: _buildExperienceSection(context),
+              child: _buildOrganizationSection(context, state),
+            ),
+
+            // Security Overview Section
+            SliverToBoxAdapter(
+              child: _buildSecurityOverviewSection(context),
+            ),
+
+            // Logout Button Section
+            SliverToBoxAdapter(
+              child: _buildLogoutButton(context),
             ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -294,6 +304,11 @@ class _ProfilePageState extends State<ProfileView> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    // Format the member since date
+    String formatMemberSince(DateTime date) {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -321,9 +336,300 @@ class _ProfilePageState extends State<ProfileView> {
               value: user.phone ?? 'Not provided',
             ),
             const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              icon: Icons.calendar_today_outlined,
+              label: 'Member Since',
+              value: formatMemberSince(DateTime.parse(user.createdAt)),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildOrganizationSection(BuildContext context, ProfileState state) {
+    final theme = Theme.of(context);
+    final user = state.user;
+
+    if (user == null) return const SizedBox();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Text(
+              'Organization',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          _buildOrganizationCard(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrganizationCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildInfoRow(
+              context,
+              icon: Icons.business_outlined,
+              label: 'Organization',
+              value: 'Data4Impact Ethiopia',
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              icon: Icons.work_outline,
+              label: 'Department',
+              value: 'Research & Analytics',
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              icon: Icons.badge_outlined,
+              label: 'Employee ID',
+              value: 'D4I-ET-001',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecurityOverviewSection(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Text(
+              'Security Overview',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          _buildSecurityCard(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecurityCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildSecurityItem(
+              context,
+              icon: Icons.lock_outlined,
+              title: 'Change Password',
+              subtitle: 'Last changed 3 months ago',
+              onTap: () {
+                _showChangePasswordDialog(context);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildSecurityItem(
+              context,
+              icon: Icons.security_outlined,
+              title: 'Two-Factor Authentication',
+              subtitle: 'Not enabled',
+              onTap: () {
+                // Handle 2FA enablement
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildSecurityItem(
+              context,
+              icon: Icons.devices_outlined,
+              title: 'Active Sessions',
+              subtitle: '2 devices active',
+              onTap: () {
+                // Handle active sessions
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: ElevatedButton(
+        onPressed: () {
+          _showLogoutConfirmationDialog(context);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red.withOpacity(0.1),
+          foregroundColor: Colors.red,
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Colors.red.withOpacity(0.8),
+              width: 1.5,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.logout,
+              size: 20,
+              color: Colors.red,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Logout',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Logout',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to logout?',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Add your logout logic here
+                _performLogout(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performLogout(BuildContext context) {
+    // Add your logout logic here
+    // For example:
+    // context.read<AuthCubit>().logout();
+    // Navigator.pushAndRemoveUntil(...);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Logging out...'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  Widget _buildSecurityItem(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        required VoidCallback onTap,
+      }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: colorScheme.primary),
+      ),
+      title: Text(
+        title,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: colorScheme.onSurface.withOpacity(0.5),
+      ),
+      onTap: onTap,
+      contentPadding: EdgeInsets.zero,
     );
   }
 
@@ -397,192 +703,6 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  Widget _buildExperienceSection(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Work Experience',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.add, color: theme.colorScheme.primary),
-                  onPressed: () {
-                    // Handle add experience
-                  },
-                ),
-              ],
-            ),
-          ),
-          _buildExperienceList(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExperienceList(BuildContext context) {
-    final experiences = [
-      {
-        'company': 'Impact Makers',
-        'role': 'Lead Research Analyst',
-        'period': 'May 2016 - Present',
-        'duration': '4 years 8 months',
-        'description': 'Specializations: Survey Design, Consumer Research\nManaged team of 15 researchers',
-      },
-      {
-        'company': 'Data Insights Co.',
-        'role': 'Senior Research Associate',
-        'period': 'Jan 2014 - Apr 2016',
-        'duration': '2 years 4 months',
-        'description': 'Specializations: Data Analysis, Market Research\nLed client presentations and reports',
-      },
-    ];
-
-    return Column(
-      children: [
-        ...experiences.map((exp) => _buildExperienceItem(context, exp)),
-        _buildExperienceSummary(context),
-      ],
-    );
-  }
-
-  Widget _buildExperienceItem(BuildContext context, Map<String, String> experience) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.1)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Company Avatar
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  experience['company']!.substring(0, 2).toUpperCase(),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        experience['company']!,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.more_vert, size: 18),
-                        onPressed: () {
-                          // Handle menu options
-                        },
-                      ),
-                    ],
-                  ),
-                  Text(
-                    experience['role']!,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_today, size: 12, color: colorScheme.onSurface.withOpacity(0.5)),
-                      const SizedBox(width: 4),
-                      Text(
-                        experience['period']!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(Icons.access_time, size: 12, color: colorScheme.onSurface.withOpacity(0.5)),
-                      const SizedBox(width: 2),
-                      Text(
-                        experience['duration']!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 10,
-                          color: colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    experience['description']!,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExperienceSummary(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.work_history, size: 16, color: colorScheme.primary),
-          const SizedBox(width: 8),
-          Text(
-            'Total: 8 years of professional experience',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _pickProfileImage(BuildContext context) async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -596,10 +716,17 @@ class _ProfilePageState extends State<ProfileView> {
       context: context,
       builder: (dialogContext) => BlocProvider.value(
         value: context.read<ProfileCubit>(),
-        child: state.user!=null? EditProfileDialog(
+        child: state.user != null ? EditProfileDialog(
           user: state.user!,
-        ):const SizedBox(),
+        ) : const SizedBox(),
       ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => ChangePasswordDialog(),
     );
   }
 }
@@ -741,6 +868,119 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       ),
       keyboardType: keyboardType,
       onChanged: onChanged,
+    );
+  }
+}
+
+class ChangePasswordDialog extends StatefulWidget {
+  const ChangePasswordDialog({Key? key}) : super(key: key);
+
+  @override
+  State<ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
+  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Dialog(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Change Password',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Current Password
+            TextField(
+              controller: _currentPasswordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Current Password',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // New Password
+            TextField(
+              controller: _newPasswordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'New Password',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Confirm New Password
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Confirm New Password',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Handle password change logic here
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Password changed successfully')),
+                      );
+                    },
+                    child: const Text('Update'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

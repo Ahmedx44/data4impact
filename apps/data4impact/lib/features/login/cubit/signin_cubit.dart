@@ -52,7 +52,6 @@ class SigninCubit extends Cubit<SigninState> {
         isSuccess: false,
       ));
     } catch (e, stack) {
-      print('debug:: ${e}');
       const errorMessage = 'An unexpected error occurred. Please try again.';
       ToastService.showErrorToast(message: errorMessage);
       emit(state.copyWith(

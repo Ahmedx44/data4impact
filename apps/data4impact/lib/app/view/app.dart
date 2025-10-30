@@ -7,10 +7,12 @@ import 'package:data4impact/core/service/api_service/profile_service.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/api_service/segment_service.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
+import 'package:data4impact/core/service/api_service/team_service.dart';
 import 'package:data4impact/core/service/app_global_context.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
 import 'package:data4impact/core/theme/theme.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
+import 'package:data4impact/features/profile/cubit/profile_cubit.dart';
 import 'package:data4impact/features/splash/page/splash_page.dart';
 import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:data4impact/l10n/arb/app_localizations.dart';
@@ -38,6 +40,8 @@ class App extends StatelessWidget {
         StudyService(apiClient: apiClient, secureStorage: secureStorage);
     final projectService =
         ProjectService(apiClient: apiClient, secureStorage: secureStorage);
+    final teamService =
+        TeamService(apiClient: apiClient, secureStorage: secureStorage);
     final fileUploadService = FileUploadService(
       dio: apiClient.dio,
       secureStorage: secureStorage,
@@ -59,12 +63,19 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: fileUploadService),
         RepositoryProvider.value(value: connectivity),
         RepositoryProvider.value(value: profileService),
-        RepositoryProvider.value(value: invitationService)
+        RepositoryProvider.value(value: invitationService),
+        RepositoryProvider.value(value: teamService)
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
             create: (_) => ThemeCubit(),
+          ),
+          BlocProvider(
+            create: (_) => ProfileCubit(
+                authService: authService,
+                profileService: profileService,
+                secureStorage: secureStorage),
           ),
           BlocProvider(
             create: (_) => HomeCubit(

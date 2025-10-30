@@ -336,7 +336,7 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                         state.currentStep == 2 ? 'Reset Password' : 'Continue',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
