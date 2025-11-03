@@ -1,3 +1,4 @@
+// features/data_collect/cubit/data_collet_state.dart
 import 'package:data4impact/core/service/api_service/Model/study.dart';
 import 'package:equatable/equatable.dart';
 
@@ -42,6 +43,13 @@ class DataCollectState extends Equatable {
   final Map<String, dynamic>? submissionResult;
   final int maxRecordingDuration;
 
+  // Interview specific properties
+  final List<Map<String, dynamic>> respondents;
+  final Map<String, dynamic>? selectedRespondent;
+  final bool isManagingRespondents;
+  final bool isCreatingRespondent;
+  final Map<String, dynamic> newRespondentData;
+
   const DataCollectState({
     this.study,
     this.isLoading = false,
@@ -82,6 +90,13 @@ class DataCollectState extends Equatable {
     this.isSubmitting = false,
     this.submissionResult,
     this.maxRecordingDuration = 180,
+
+    // Interview specific defaults
+    this.respondents = const [],
+    this.selectedRespondent,
+    this.isManagingRespondents = true,
+    this.isCreatingRespondent = false,
+    this.newRespondentData = const {},
   });
 
   DataCollectState copyWith({
@@ -124,6 +139,13 @@ class DataCollectState extends Equatable {
     bool? isSubmitting,
     Map<String, dynamic>? submissionResult,
     int? maxRecordingDuration,
+
+    // Interview specific copyWith parameters
+    List<Map<String, dynamic>>? respondents,
+    Map<String, dynamic>? selectedRespondent,
+    bool? isManagingRespondents,
+    bool? isCreatingRespondent,
+    Map<String, dynamic>? newRespondentData,
   }) {
     return DataCollectState(
       study: study ?? this.study,
@@ -165,6 +187,13 @@ class DataCollectState extends Equatable {
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submissionResult: submissionResult ?? this.submissionResult,
       maxRecordingDuration: maxRecordingDuration ?? this.maxRecordingDuration,
+
+      // Interview specific copyWith
+      respondents: respondents ?? this.respondents,
+      selectedRespondent: selectedRespondent ?? this.selectedRespondent,
+      isManagingRespondents: isManagingRespondents ?? this.isManagingRespondents,
+      isCreatingRespondent: isCreatingRespondent ?? this.isCreatingRespondent,
+      newRespondentData: newRespondentData ?? this.newRespondentData,
     );
   }
 
@@ -197,6 +226,11 @@ class DataCollectState extends Equatable {
     isSubmitting,
     submissionResult,
     maxRecordingDuration,
+    respondents,
+    selectedRespondent,
+    isManagingRespondents,
+    isCreatingRespondent,
+    newRespondentData,
   ];
 
   @override

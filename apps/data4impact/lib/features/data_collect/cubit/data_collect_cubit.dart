@@ -295,6 +295,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
         await _processStudyData(study);
 
+        // For interview studies, load respondents
+        if (study.methodology == 'interview') {
+          await loadStudyRespondents(studyId);
+        }
+
       } on FormatException catch (e) {
         emit(state.copyWith(
           isLoading: false,
@@ -331,10 +336,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
-
-
-
-// Helper method to process study data (extracted from both online and offline flows)
+  // Helper method to process study data (extracted from both online and offline flows)
   Future<void> _processStudyData(Study study) async {
     final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
     final isLocationRequired = study.responseValidation?.requiredLocation ?? false;
@@ -355,6 +357,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       isLocationRequired: isLocationRequired,
       maxRecordingDuration: voiceDuration, // Set the max duration
       hasSeenWelcome: false,
+      // Reset interview specific state
+      respondents: const [],
+      selectedRespondent: null,
+      isManagingRespondents: study.methodology == 'interview',
+      isCreatingRespondent: false,
+      newRespondentData: {},
     ));
 
     if (isLocationRequired) {
@@ -852,6 +860,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         case ApiQuestionType.multipleChoiceMulti:
           return answer != null && (answer as List).isNotEmpty;
         case ApiQuestionType.openText:
+        case ApiQuestionType.longText: // Added longText type
           return answer != null && (answer as String).trim().isNotEmpty;
         case ApiQuestionType.ranking:
           return answer != null &&
@@ -880,6 +889,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       case ApiQuestionType.multipleChoiceMulti:
         return answer != null && (answer as List).isNotEmpty;
       case ApiQuestionType.openText:
+      case ApiQuestionType.longText: // Added longText type
         return answer != null && (answer as String).trim().isNotEmpty;
       case ApiQuestionType.ranking:
         return answer != null &&
@@ -991,7 +1001,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     // Build base submission data
     final submissionData = {
       "study": studyId,
-      "respondent": null,
+      "respondent": state.selectedRespondent?['_id'],
       "duration": recordingDuration,
       "data": formattedAnswers,
       "finished": true,
@@ -1052,14 +1062,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             message: 'Response saved offline. Will sync when internet is available.'
         );
 
-
         emit(
           state.copyWith(
             isSubmitting: false,
             submissionResult: {'status': 'saved_offline'},
           ),
         );
-
 
       } catch (e) {
         ToastService.showErrorToast(message: 'Failed to save offline: $e');
@@ -1068,5 +1076,100 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         ));
       }
     }
+  }
+
+  // Interview specific methods
+  Future<void> loadStudyRespondents(String studyId) async {
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final respondents = await studyService.getStudyRespondents(studyId);
+      emit(state.copyWith(
+        isLoading: false,
+        respondents: respondents,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to load respondents: ${e.toString()}',
+      ));
+    }
+  }
+
+  Future<void> createRespondent(String studyId, Map<String, dynamic> respondentData) async {
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final result = await studyService.createStudyRespondent(
+        studyId: studyId,
+        respondentData: respondentData,
+      );
+
+      // Reload respondents to include the new one
+      final respondents = await studyService.getStudyRespondents(studyId);
+
+      emit(state.copyWith(
+        isLoading: false,
+        respondents: respondents,
+        isCreatingRespondent: false,
+        newRespondentData: {},
+      ));
+
+      ToastService.showSuccessToast(message: 'Respondent created successfully');
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to create respondent: ${e.toString()}',
+      ));
+    }
+  }
+
+  void selectRespondent(Map<String, dynamic> respondent) {
+    emit(state.copyWith(
+      selectedRespondent: respondent,
+      isManagingRespondents: false,
+    ));
+  }
+
+  void startInterview() {
+    if (state.selectedRespondent == null) {
+      ToastService.showErrorToast(message: 'Please select a respondent first');
+      return;
+    }
+
+    emit(state.copyWith(
+      currentQuestionIndex: 0,
+      answers: {},
+      isManagingRespondents: false,
+    ));
+  }
+
+  void backToRespondentManagement() {
+    emit(state.copyWith(
+      isManagingRespondents: true,
+      selectedRespondent: null,
+      currentQuestionIndex: 0,
+      answers: {},
+    ));
+  }
+
+  void showCreateRespondentForm() {
+    emit(state.copyWith(
+      isCreatingRespondent: true,
+      newRespondentData: {},
+    ));
+  }
+
+  void cancelCreateRespondent() {
+    emit(state.copyWith(
+      isCreatingRespondent: false,
+      newRespondentData: {},
+    ));
+  }
+
+  void updateNewRespondentData(String key, dynamic value) {
+    final newData = Map<String, dynamic>.from(state.newRespondentData);
+    newData[key] = value;
+    emit(state.copyWith(newRespondentData: newData));
   }
 }

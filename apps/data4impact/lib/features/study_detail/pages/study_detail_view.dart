@@ -38,6 +38,28 @@ class _StudyDetailViewState extends State<StudyDetailView>
     super.dispose();
   }
 
+  // Helper method to extract study type from methodology
+  String _getStudyType() {
+    return widget.studyData['methodology'] as String? ?? 'survey';
+  }
+
+  // Helper method to get display name for study type
+  String _getStudyTypeDisplayName() {
+    final studyType = _getStudyType();
+    switch (studyType) {
+      case 'survey':
+        return 'Survey';
+      case 'interview':
+        return 'Interview';
+      case 'discussion':
+        return 'Group Discussion';
+      case 'longitudinal':
+        return 'Longitudinal Study';
+      default:
+        return 'Survey';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -185,7 +207,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                 width: double.infinity,
                 height: 50,
                 child: Text(
-                  'Continue Collecting',
+                  'Continue ${_getStudyTypeDisplayName()}',
                   style: GoogleFonts.lexendDeca(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -196,7 +218,10 @@ class _StudyDetailViewState extends State<StudyDetailView>
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute<Widget>(
-                      builder: (context) => DataCollectionPage(studyId: widget.studyId),
+                      builder: (context) => DataCollectionPage(
+                        studyId: widget.studyId,
+                        studyType: _getStudyType(),
+                      ),
                     ),
                   );
                 },

@@ -13,12 +13,14 @@ class Study {
   final List<Map<String, dynamic>> languages;
   final int questionCount;
   final int responseCount;
-  final String design;
-  final String approach;
   final String methodology;
+  final String approach;
+  final String design;
   final int sampleSize;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final Map<String, dynamic>? homogeneity; // Added for interview studies
+  final Map<String, dynamic>? subject; // Added for longitudinal studies
 
   Study({
     required this.id,
@@ -33,12 +35,14 @@ class Study {
     this.languages = const [],
     this.questionCount = 0,
     this.responseCount = 0,
-    this.design = 'crossSectional',
+    required this.methodology,
     this.approach = 'quantitative',
-    this.methodology = 'survey',
+    this.design = 'crossSectional',
     this.sampleSize = 0,
     required this.createdAt,
     required this.updatedAt,
+    this.homogeneity, // Added
+    this.subject, // Added
   });
 
   factory Study.fromJson(Map<String, dynamic> json) {
@@ -61,6 +65,27 @@ class Study {
     List<Map<String, dynamic>> languages = [];
     if (json['languages'] is List<dynamic>) {
       languages = (json['languages'] as List).whereType<Map<String, dynamic>>().toList();
+    }
+
+    // Parse methodology - this is now the primary study type
+    String methodology = json['methodology'] as String? ?? 'survey';
+
+    // Parse design type for backward compatibility
+    String designType = 'crossSectional';
+    if (json['design'] is Map<String, dynamic>) {
+      designType = (json['design']['type'] as String?) ?? 'crossSectional';
+    }
+
+    // Parse homogeneity data for interview studies
+    Map<String, dynamic>? homogeneity;
+    if (json['homogeneity'] is Map<String, dynamic>) {
+      homogeneity = json['homogeneity'] as Map<String, dynamic>;
+    }
+
+    // Parse subject data for longitudinal studies
+    Map<String, dynamic>? subject;
+    if (json['subject'] is Map<String, dynamic>) {
+      subject = json['subject'] as Map<String, dynamic>;
     }
 
     // Parse dates
@@ -87,16 +112,62 @@ class Study {
       languages: languages,
       questionCount: (json['questionCount'] as num?)?.toInt() ?? 0,
       responseCount: (json['responseCount'] as num?)?.toInt() ?? 0,
-      design: json['design']?['type'] as String? ?? 'crossSectional',
+      methodology: methodology,
       approach: json['approach'] as String? ?? 'quantitative',
-      methodology: json['methodology'] as String? ?? 'survey',
+      design: designType,
       sampleSize: (json['sampleSize'] as num?)?.toInt() ?? 0,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      homogeneity: homogeneity, // Added
+      subject: subject, // Added
     );
   }
 
-  // Helper method to get welcome headline in specified language
+  // Get study type based on methodology
+  String get studyType {
+    return methodology;
+  }
+
+  // Check if this is an interview study
+  bool get isInterviewStudy {
+    return methodology == 'interview';
+  }
+
+  // Check if this is a group discussion study
+  bool get isGroupDiscussionStudy {
+    return methodology == 'discussion';
+  }
+
+  // Check if this is a longitudinal study
+  bool get isLongitudinalStudy {
+    return methodology == 'longitudinal';
+  }
+
+  // Get homogeneity groups for interview studies
+  List<dynamic> get homogeneityGroups {
+    if (homogeneity != null && homogeneity!['groups'] is List) {
+      return homogeneity!['groups'] as List<dynamic>;
+    }
+    return [];
+  }
+
+  // Get homogeneity fields for interview studies
+  List<dynamic> get homogeneityFields {
+    if (homogeneity != null && homogeneity!['fields'] is List) {
+      return homogeneity!['fields'] as List<dynamic>;
+    }
+    return [];
+  }
+
+  // Get subject fields for longitudinal studies
+  List<dynamic> get subjectFields {
+    if (subject != null && subject!['fields'] is List) {
+      return subject!['fields'] as List<dynamic>;
+    }
+    return [];
+  }
+
+  // ... rest of your Study class methods remain the same
   String getWelcomeHeadline(String languageCode) {
     final headline = welcomeCard['headline'];
     if (headline is Map<String, dynamic>) {
@@ -108,7 +179,6 @@ class Study {
     return 'Welcome';
   }
 
-  // Helper method to get welcome HTML content in specified language
   String getWelcomeHtml(String languageCode) {
     final html = welcomeCard['html'];
     if (html is Map<String, dynamic>) {
@@ -120,7 +190,6 @@ class Study {
     return '';
   }
 
-  // Helper method to get ending headline in specified language
   String getEndingHeadline(String languageCode) {
     final headline = ending['headline'];
     if (headline is Map<String, dynamic>) {
@@ -132,7 +201,6 @@ class Study {
     return 'Thank you!';
   }
 
-  // Helper method to get ending subheader in specified language
   String getEndingSubheader(String languageCode) {
     final subheader = ending['subheader'];
     if (subheader is Map<String, dynamic>) {
@@ -144,12 +212,10 @@ class Study {
     return 'Your response has been recorded.';
   }
 
-  // Check if welcome card is enabled
   bool get isWelcomeCardEnabled {
     return welcomeCard['enabled'] as bool? ?? true;
   }
 
-  // Check if ending button should be shown
   bool get showEndingButton {
     return ending['showButton'] as bool? ?? true;
   }

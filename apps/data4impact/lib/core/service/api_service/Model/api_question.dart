@@ -8,6 +8,7 @@ enum ApiQuestionType {
   rating,
   date,
   cascade,
+  longText, // Added longText type for interviews
   unknown
 }
 
@@ -30,6 +31,8 @@ ApiQuestionType parseQuestionType(String type) {
       return ApiQuestionType.date;
     case 'cascade':
       return ApiQuestionType.cascade;
+    case 'longText': // Handle longText type for interviews
+      return ApiQuestionType.longText;
     default:
       return ApiQuestionType.unknown;
   }
@@ -53,6 +56,9 @@ class ApiQuestion {
   final Map<String, dynamic>? upperLabel;
   final List<dynamic>? logic;
   final Map<String, dynamic>? charLimit;
+  final List<dynamic>? probings; // Added for interview questions
+  final Map<String, dynamic>? buttonLabel; // Added for navigation
+  final Map<String, dynamic>? backButtonLabel; // Added for navigation
 
   ApiQuestion({
     required this.id,
@@ -72,6 +78,9 @@ class ApiQuestion {
     this.upperLabel,
     this.logic,
     this.charLimit,
+    this.probings, // Added
+    this.buttonLabel, // Added
+    this.backButtonLabel, // Added
   });
 
   factory ApiQuestion.fromJson(Map<String, dynamic> json) {
@@ -112,6 +121,15 @@ class ApiQuestion {
       null,
       charLimit: json['charLimit'] is Map ?
       (json['charLimit'] as Map<String, dynamic>) :
+      null,
+      probings: json['probings'] is List ? // Added
+      (json['probings'] as List<dynamic>) :
+      null,
+      buttonLabel: json['buttonLabel'] is Map ? // Added
+      (json['buttonLabel'] as Map<String, dynamic>) :
+      null,
+      backButtonLabel: json['backButtonLabel'] is Map ? // Added
+      (json['backButtonLabel'] as Map<String, dynamic>) :
       null,
     );
   }
@@ -215,5 +233,39 @@ class ApiQuestion {
       return name['default'] as String? ?? 'Item';
     }
     return 'Item';
+  }
+
+  // Get button label text
+  String getButtonLabelText(String languageCode) {
+    if (buttonLabel != null) {
+      if (buttonLabel!.containsKey(languageCode)) {
+        return buttonLabel![languageCode] as String? ?? buttonLabel!['default'] as String? ?? 'Next';
+      }
+      return buttonLabel!['default'] as String? ?? 'Next';
+    }
+    return 'Next';
+  }
+
+  // Get back button label text
+  String getBackButtonLabelText(String languageCode) {
+    if (backButtonLabel != null) {
+      if (backButtonLabel!.containsKey(languageCode)) {
+        return backButtonLabel![languageCode] as String? ?? backButtonLabel!['default'] as String? ?? 'Back';
+      }
+      return backButtonLabel!['default'] as String? ?? 'Back';
+    }
+    return 'Back';
+  }
+
+  // Get probing question text
+  String getProbingLabel(Map<String, dynamic> probing, String languageCode) {
+    final label = probing['label'];
+    if (label is Map<String, dynamic>) {
+      if (label.containsKey(languageCode)) {
+        return label[languageCode] as String? ?? label['default'] as String? ?? '';
+      }
+      return label['default'] as String? ?? '';
+    }
+    return label?.toString() ?? '';
   }
 }
