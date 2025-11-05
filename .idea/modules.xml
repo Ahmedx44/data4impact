@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/data4impact_app.iml" filepath="$PROJECT_DIR$/.idea/data4impact_app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/apps/data4impact/melos_data4impact.iml" filepath="$PROJECT_DIR$/apps/data4impact/melos_data4impact.iml" />
+      <module fileurl="file://$PROJECT_DIR$/melos_data4impact_app.iml" filepath="$PROJECT_DIR$/melos_data4impact_app.iml" />
     </modules>
   </component>
 </project>

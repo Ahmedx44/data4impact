@@ -205,7 +205,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
               padding: const EdgeInsets.all(8),
               child: CustomButton(
                 width: double.infinity,
-                height: 50,
+                height: 100,
                 child: Text(
                   'Continue ${_getStudyTypeDisplayName()}',
                   style: GoogleFonts.lexendDeca(

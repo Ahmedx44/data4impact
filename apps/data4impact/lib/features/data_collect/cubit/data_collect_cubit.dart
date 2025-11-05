@@ -995,31 +995,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
-    final formattedAnswers = _formatAnswersForSubmission();
-    final recordingDuration = state.recordingDuration;
-
-    // Build base submission data
-    final submissionData = {
-      "study": studyId,
-      "respondent": state.selectedRespondent?['_id'],
-      "duration": recordingDuration,
-      "data": formattedAnswers,
-      "finished": true,
-      "deviceType": "mobile",
-      "geolocation": state.locationData?.toJson() ?? {},
-      "submittedAt": DateTime.now().toIso8601String(),
-    };
-
-    // Add audio URL or file path
-    if (audioUrl != null) {
-      if (audioUrl!.startsWith('/')) {
-        // This is a file path (offline mode)
-        submissionData["audioFilePath"] = audioUrl;
-      } else {
-        // This is a URL (online mode)
-        submissionData["audioUrl"] = audioUrl;
-      }
-    }
+    // Format the response data according to API specification
+    final responseData = _formatResponseForSubmission(studyId, audioUrl);
 
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
@@ -1030,12 +1007,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     if (isConnected) {
       // Online mode - submit directly
-      print('Survey submission (online): $submissionData');
+      print('Survey submission (online): $responseData');
 
       try {
         final response = await studyService.submitSurveyResponse(
           studyId: studyId,
-          responseData: submissionData,
+          responseData: responseData[0],
         );
 
         ToastService.showSuccessToast(message: 'Response submitted successfully');
@@ -1056,7 +1033,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     } else {
       // Offline mode - store for later sync
       try {
-        await OfflineModeDataRepo().saveOfflineAnswer(studyId, submissionData);
+        await OfflineModeDataRepo().saveOfflineAnswer(studyId, responseData[0]);
 
         ToastService.showSuccessToast(
             message: 'Response saved offline. Will sync when internet is available.'
@@ -1075,6 +1052,88 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           isSubmitting: false,
         ));
       }
+    }
+  }
+
+  List<Map<String, dynamic>> _formatResponseForSubmission(String studyId, String? audioUrl) {
+    final study = state.study;
+    if (study == null) return [];
+
+    // Convert answers to the required data format
+    final List<Map<String, dynamic>> questionResponses = [];
+
+    for (final question in study.questions) {
+      final answer = state.answers[question.id];
+      if (answer != null) {
+        // Create the question response object
+        final questionResponse = {
+          "response": _formatAnswerValue(answer, question.type),
+          "questionId": question.id,
+          "questionVariable": question.variable,
+          "questionType": question.type.toString().replaceAll('ApiQuestionType.', ''),
+          "timestamp": DateTime.now().toIso8601String(),
+        };
+
+        questionResponses.add(questionResponse);
+      }
+    }
+
+    // Build the main response object
+    final submission = {
+      "study": studyId,
+      "duration": state.recordingDuration,
+      "data": questionResponses, // This is the array of question responses
+      "finished": true,
+      "deviceType": "mobile",
+      "respondent": state.selectedRespondent?['_id'],
+      "geolocation": state.locationData?.toJson() ?? {},
+      "submittedAt": DateTime.now().toIso8601String(),
+    };
+
+    // Add audio URL if available
+    if (audioUrl != null) {
+      if (audioUrl.startsWith('/')) {
+        submission["audioFilePath"] = audioUrl;
+      } else {
+        submission["audioUrl"] = audioUrl;
+      }
+    }
+
+    // Add optional fields if available
+    if (state.selectedRespondent != null) {
+      final respondent = state.selectedRespondent!;
+      submission["group"] = respondent['group'];
+      submission["wave"] = respondent['wave'];
+      submission["cohort"] = respondent['cohort'];
+      submission["subject"] = respondent['subject'];
+    }
+
+    // Return as array with one response object (as per API spec)
+    return [submission]; // This is the key - wrap in array
+  }
+
+  dynamic _formatAnswerValue(dynamic answer, ApiQuestionType questionType) {
+    switch (questionType) {
+      case ApiQuestionType.multipleChoiceSingle:
+        return answer; // Single choice ID
+      case ApiQuestionType.multipleChoiceMulti:
+        return answer is List ? answer : [answer]; // Array of choice IDs
+      case ApiQuestionType.rating:
+        return answer is int ? answer : int.tryParse(answer.toString());
+      case ApiQuestionType.openText:
+      case ApiQuestionType.longText:
+        return answer.toString();
+      case ApiQuestionType.date:
+        return answer is DateTime ? answer.toIso8601String() : answer.toString();
+      case ApiQuestionType.ranking:
+        return answer is List ? answer : [answer]; // Array in ranked order
+      case ApiQuestionType.matrix:
+      // For matrix questions, format as map of rowId -> columnId/value
+        return answer is Map ? answer : {'value': answer};
+      case ApiQuestionType.cascade:
+        return answer is List ? answer : [answer]; // Array of selected cascade values
+      default:
+        return answer.toString();
     }
   }
 
