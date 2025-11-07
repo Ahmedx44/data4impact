@@ -8,7 +8,15 @@ class StudyTypeFactory {
   static Widget getStudyCollectionWidget({
     required String studyType,
     required String studyId,
+    required String designType, // Add design type parameter
+    required String approach, // Add approach parameter (quantitative/qualitative)
   }) {
+    // First check the design type
+    if (designType.toLowerCase() == 'longitudinal') {
+      return LongitudinalDataCollection(studyId: studyId);
+    }
+
+    // Then check the study type/methodology
     switch (studyType.toLowerCase()) {
       case 'survey':
         return CrossSectionalDataCollection(studyId: studyId);
@@ -24,7 +32,12 @@ class StudyTypeFactory {
     }
   }
 
-  static String getStudyTypeDisplayName(String studyType) {
+  static String getStudyTypeDisplayName(String studyType, String designType, String approach) {
+    // Prioritize design type for display
+    if (designType.toLowerCase() == 'longitudinal') {
+      return 'Longitudinal Study';
+    }
+
     switch (studyType.toLowerCase()) {
       case 'survey':
         return 'Survey';

@@ -50,6 +50,21 @@ class DataCollectState extends Equatable {
   final bool isCreatingRespondent;
   final Map<String, dynamic> newRespondentData;
 
+  // Longitudinal study properties
+  final List<Map<String, dynamic>> cohorts;
+  final Map<String, dynamic>? selectedCohort;
+  final List<Map<String, dynamic>> waves;
+  final Map<String, dynamic>? selectedWave;
+  final List<Map<String, dynamic>> subjects;
+  final Map<String, dynamic>? selectedSubject;
+  final bool isManagingCohorts;
+  final bool isManagingWaves;
+  final bool isManagingSubjects;
+  final bool isCreatingWave;
+  final bool isCreatingSubject;
+  final Map<String, dynamic> newWaveData;
+  final Map<String, dynamic> newSubjectData;
+
   const DataCollectState({
     this.study,
     this.isLoading = false,
@@ -97,6 +112,21 @@ class DataCollectState extends Equatable {
     this.isManagingRespondents = true,
     this.isCreatingRespondent = false,
     this.newRespondentData = const {},
+
+    // Longitudinal study defaults
+    this.cohorts = const [],
+    this.selectedCohort,
+    this.waves = const [],
+    this.selectedWave,
+    this.subjects = const [],
+    this.selectedSubject,
+    this.isManagingCohorts = true,
+    this.isManagingWaves = false,
+    this.isManagingSubjects = false,
+    this.isCreatingWave = false,
+    this.isCreatingSubject = false,
+    this.newWaveData = const {},
+    this.newSubjectData = const {},
   });
 
   DataCollectState copyWith({
@@ -146,6 +176,21 @@ class DataCollectState extends Equatable {
     bool? isManagingRespondents,
     bool? isCreatingRespondent,
     Map<String, dynamic>? newRespondentData,
+
+    // Longitudinal study copyWith parameters
+    List<Map<String, dynamic>>? cohorts,
+    Map<String, dynamic>? selectedCohort,
+    List<Map<String, dynamic>>? waves,
+    Map<String, dynamic>? selectedWave,
+    List<Map<String, dynamic>>? subjects,
+    Map<String, dynamic>? selectedSubject,
+    bool? isManagingCohorts,
+    bool? isManagingWaves,
+    bool? isManagingSubjects,
+    bool? isCreatingWave,
+    bool? isCreatingSubject,
+    Map<String, dynamic>? newWaveData,
+    Map<String, dynamic>? newSubjectData,
   }) {
     return DataCollectState(
       study: study ?? this.study,
@@ -194,6 +239,21 @@ class DataCollectState extends Equatable {
       isManagingRespondents: isManagingRespondents ?? this.isManagingRespondents,
       isCreatingRespondent: isCreatingRespondent ?? this.isCreatingRespondent,
       newRespondentData: newRespondentData ?? this.newRespondentData,
+
+      // Longitudinal study copyWith
+      cohorts: cohorts ?? this.cohorts,
+      selectedCohort: selectedCohort ?? this.selectedCohort,
+      waves: waves ?? this.waves,
+      selectedWave: selectedWave ?? this.selectedWave,
+      subjects: subjects ?? this.subjects,
+      selectedSubject: selectedSubject ?? this.selectedSubject,
+      isManagingCohorts: isManagingCohorts ?? this.isManagingCohorts,
+      isManagingWaves: isManagingWaves ?? this.isManagingWaves,
+      isManagingSubjects: isManagingSubjects ?? this.isManagingSubjects,
+      isCreatingWave: isCreatingWave ?? this.isCreatingWave,
+      isCreatingSubject: isCreatingSubject ?? this.isCreatingSubject,
+      newWaveData: newWaveData ?? this.newWaveData,
+      newSubjectData: newSubjectData ?? this.newSubjectData,
     );
   }
 
@@ -231,6 +291,20 @@ class DataCollectState extends Equatable {
     isManagingRespondents,
     isCreatingRespondent,
     newRespondentData,
+    // Longitudinal study props
+    cohorts,
+    selectedCohort,
+    waves,
+    selectedWave,
+    subjects,
+    selectedSubject,
+    isManagingCohorts,
+    isManagingWaves,
+    isManagingSubjects,
+    isCreatingWave,
+    isCreatingSubject,
+    newWaveData,
+    newSubjectData,
   ];
 
   @override

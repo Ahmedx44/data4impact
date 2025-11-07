@@ -1231,4 +1231,263 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     newData[key] = value;
     emit(state.copyWith(newRespondentData: newData));
   }
+
+
+  Future<void> loadStudyCohorts(String studyId) async {
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final cohorts = await studyService.getStudyCohorts(studyId);
+      emit(state.copyWith(
+        isLoading: false,
+        cohorts: cohorts,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to load cohorts: ${e.toString()}',
+      ));
+    }
+  }
+
+  void selectCohort(Map<String, dynamic> cohort) {
+    emit(state.copyWith(
+      selectedCohort: cohort,
+      selectedWave: null,
+      selectedSubject: null,
+    ));
+  }
+
+  Future<void> loadStudyWaves(String studyId) async {
+    if (state.selectedCohort == null) return;
+
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final waves = await studyService.getStudyWaves(studyId);
+      emit(state.copyWith(
+        isLoading: false,
+        waves: waves,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to load waves: ${e.toString()}',
+      ));
+    }
+  }
+
+  Future<void> createNewWave(String studyId, Map<String, dynamic> waveData) async {
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final result = await studyService.createStudyWave(
+        studyId: studyId,
+        cohortId: state.selectedCohort!['_id'] as String,
+        waveData: waveData,
+      );
+
+      // Reload waves to include the new one
+      final waves = await studyService.getStudyWaves(studyId);
+
+      emit(state.copyWith(
+        isLoading: false,
+        waves: waves,
+        isCreatingWave: false,
+        newWaveData: {},
+      ));
+
+      ToastService.showSuccessToast(message: 'Wave created successfully');
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to create wave: ${e.toString()}',
+      ));
+    }
+  }
+
+  void selectWave(Map<String, dynamic> wave) {
+    print('Selecting wave: ${wave['name']}, setting isManagingWaves: false, isManagingSubjects: true');
+    emit(state.copyWith(
+      selectedWave: wave,
+      selectedSubject: null,
+      isManagingWaves: false, // This is crucial!
+      isManagingSubjects: true,
+    ));
+  }
+
+  Future<void> loadStudySubjects(String studyId) async {
+    if (state.selectedCohort == null) return;
+
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final subjects = await studyService.getStudySubjects(
+        studyId,
+        state.selectedCohort!['_id'] as String, // Pass cohort ID instead of wave ID
+      );
+
+      emit(state.copyWith(
+        isLoading: false,
+        subjects: subjects,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to load subjects: ${e.toString()}',
+      ));
+    }
+  }
+
+
+  Future<void> createNewSubject(String studyId, Map<String, dynamic> subjectData) async {
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final result = await studyService.createStudySubject(
+        studyId: studyId,
+        cohortId: state.selectedCohort!['_id'] as String,
+        waveId: state.selectedWave!['_id'] as String,
+        subjectData: subjectData,
+      );
+
+      // Reload subjects to include the new one
+      final subjects = await studyService.getStudySubjects(
+        studyId,
+        state.selectedCohort!['_id'] as String,
+      );
+
+      emit(state.copyWith(
+        isLoading: false,
+        subjects: subjects,
+        isCreatingSubject: false,
+        newSubjectData: {},
+      ));
+
+      ToastService.showSuccessToast(message: 'Subject created successfully');
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to create subject: ${e.toString()}',
+      ));
+    }
+  }
+
+  void selectCohortAndShowWaves(Map<String, dynamic> cohort) {
+    print('Selecting cohort: ${cohort['name']}, setting isManagingCohorts: false, isManagingWaves: true');
+    emit(state.copyWith(
+      selectedCohort: cohort,
+      selectedWave: null,
+      selectedSubject: null,
+      isManagingCohorts: false,
+      isManagingWaves: true,
+      isManagingSubjects: false,
+    ));
+  }
+
+  void selectSubject(Map<String, dynamic> subject) {
+    print('Selecting subject: ${subject['name']}, setting isManagingSubjects: false');
+    emit(state.copyWith(
+      selectedSubject: subject,
+      isManagingSubjects: false, // This is crucial!
+      currentQuestionIndex: 0,
+      answers: {},
+      navigationHistory: const [],
+      logicJumps: const {},
+      jumpTarget: null,
+    ));
+  }
+
+// Longitudinal flow navigation
+  void startLongitudinalFlow() {
+    emit(state.copyWith(
+      isLoading: true,
+      cohorts: const [],
+      selectedCohort: null,
+      waves: const [],
+      selectedWave: null,
+      subjects: const [],
+      selectedSubject: null,
+      isManagingCohorts: true,
+      isCreatingWave: false,
+      isCreatingSubject: false,
+      newWaveData: {},
+      newSubjectData: {},
+    ));
+  }
+
+  void backToCohortSelection() {
+    emit(state.copyWith(
+      isManagingCohorts: true,
+      selectedCohort: null,
+      waves: const [],
+      selectedWave: null,
+      subjects: const [],
+      selectedSubject: null,
+    ));
+  }
+
+  void backToWaveSelection() {
+    emit(state.copyWith(
+      isManagingCohorts: false,
+      isManagingWaves: true,
+      selectedWave: null,
+      subjects: const [],
+      selectedSubject: null,
+    ));
+  }
+
+  void backToSubjectSelection() {
+    print('Going back to subject selection, setting isManagingSubjects: true');
+    emit(state.copyWith(
+      isManagingCohorts: false,
+      isManagingWaves: false,
+      isManagingSubjects: true,
+      selectedSubject: null,
+      currentQuestionIndex: 0,
+      answers: {},
+      navigationHistory: const [],
+      logicJumps: const {},
+    ));
+  }
+
+  void showCreateWaveForm() {
+    emit(state.copyWith(
+      isCreatingWave: true,
+      newWaveData: {},
+    ));
+  }
+
+  void cancelCreateWave() {
+    emit(state.copyWith(
+      isCreatingWave: false,
+      newWaveData: {},
+    ));
+  }
+
+  void showCreateSubjectForm() {
+    emit(state.copyWith(
+      isCreatingSubject: true,
+      newSubjectData: {},
+    ));
+  }
+
+  void cancelCreateSubject() {
+    emit(state.copyWith(
+      isCreatingSubject: false,
+      newSubjectData: {},
+    ));
+  }
+
+  void updateNewWaveData(String key, dynamic value) {
+    final newData = Map<String, dynamic>.from(state.newWaveData);
+    newData[key] = value;
+    emit(state.copyWith(newWaveData: newData));
+  }
+
+  void updateNewSubjectData(String key, dynamic value) {
+    final newData = Map<String, dynamic>.from(state.newSubjectData);
+    newData[key] = value;
+    emit(state.copyWith(newSubjectData: newData));
+  }
 }

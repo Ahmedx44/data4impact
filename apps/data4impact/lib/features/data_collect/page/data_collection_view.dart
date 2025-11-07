@@ -8,11 +8,15 @@ import '../cubit/data_collect_cubit.dart';
 class DataCollectionView extends StatefulWidget {
   final String studyId;
   final String studyType;
+  final String approach;
+  final String designType;
 
   const DataCollectionView({
     super.key,
     required this.studyId,
     required this.studyType,
+    required this.approach,
+    required this.designType,
   });
 
   @override
@@ -34,6 +38,8 @@ class _DataCollectionViewState extends State<DataCollectionView> {
         return StudyTypeFactory.getStudyCollectionWidget(
           studyType: widget.studyType,
           studyId: widget.studyId,
+          approach: widget.approach,
+          designType: widget.designType,
         );
       },
     );

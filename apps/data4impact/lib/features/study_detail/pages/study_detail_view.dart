@@ -221,6 +221,8 @@ class _StudyDetailViewState extends State<StudyDetailView>
                       builder: (context) => DataCollectionPage(
                         studyId: widget.studyId,
                         studyType: _getStudyType(),
+                        approach: widget.studyData['approach'].toString(),
+                        designType: widget.studyData['design']['type'].toString(),
                       ),
                     ),
                   );

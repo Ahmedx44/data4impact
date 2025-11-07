@@ -10,10 +10,14 @@ class DataCollectionPage extends StatelessWidget {
   const DataCollectionPage({
     super.key,
     required this.studyId,
-    required this.studyType
+    required this.studyType,
+    required this.approach,
+    required this.designType,
   });
   final String studyId;
   final String studyType;
+  final String approach;
+  final String designType;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +29,8 @@ class DataCollectionPage extends StatelessWidget {
       child: DataCollectionView(
         studyId: studyId,
         studyType: studyType,
+        approach: approach,
+        designType: designType,
       ),
     );
   }

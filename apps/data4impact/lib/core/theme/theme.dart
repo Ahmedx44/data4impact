@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 import 'color.dart';
 
 final ThemeData lightTheme = ThemeData(
+  pageTransitionsTheme: const PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: CupertinoPageTransitionsBuilder(), // Default Android
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),       // Default iOS
+    },
+  ),
   brightness: Brightness.light,
   colorScheme: const ColorScheme.light(
     primary: AppColors.primary,
@@ -36,6 +42,12 @@ final ThemeData lightTheme = ThemeData(
 );
 
 final ThemeData darkTheme = ThemeData(
+  pageTransitionsTheme: const PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: CupertinoPageTransitionsBuilder(), // Default Android
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),       // Default iOS
+    },
+  ),
   brightness: Brightness.dark,
   colorScheme: const ColorScheme.dark(
     primary: AppColors.primary,

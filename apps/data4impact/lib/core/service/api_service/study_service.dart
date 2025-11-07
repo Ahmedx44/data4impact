@@ -160,4 +160,135 @@ class StudyService {
       rethrow;
     }
   }
+
+
+  Future<List<Map<String, dynamic>>> getStudyCohorts(String studyId) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) throw Exception('No authentication cookie found');
+
+      final response = await apiClient.get(
+        '/studies/$studyId/cohorts',
+        options: Options(headers: {'Cookie': cookie}),
+      );
+
+      if (response.data is List) {
+        final list = response.data as List;
+        return list.map((item) => item as Map<String, dynamic>).toList();
+      } else {
+        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+      }
+    } on DioException catch (e) {
+      print('Error fetching cohorts: ${e.message}');
+      rethrow;
+    }
+  }
+
+// Get study waves
+  Future<List<Map<String, dynamic>>> getStudyWaves(String studyId) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) throw Exception('No authentication cookie found');
+
+      final response = await apiClient.get(
+        '/studies/$studyId/waves',
+        options: Options(headers: {'Cookie': cookie}),
+      );
+
+      if (response.data is List) {
+        final list = response.data as List;
+        return list.map((item) => item as Map<String, dynamic>).toList();
+      } else {
+        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+      }
+    } on DioException catch (e) {
+      print('Error fetching waves: ${e.message}');
+      rethrow;
+    }
+  }
+
+// Create study wave
+  Future<Map<String, dynamic>> createStudyWave({
+    required String studyId,
+    required String cohortId,
+    required Map<String, dynamic> waveData,
+  }) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) throw Exception('No authentication cookie found');
+
+      final response = await apiClient.post(
+        '/studies/$studyId/cohorts/$cohortId/waves',
+        data: waveData,
+        options: Options(
+          headers: {
+            'Cookie': cookie,
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      throw Exception('Unexpected response format');
+    } on DioException catch (e) {
+      print('Error creating wave: ${e.response?.data}');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getStudySubjects(String studyId, String waveId) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) throw Exception('No authentication cookie found');
+
+      final response = await apiClient.get(
+        '/studies/$studyId/subjects',
+        options: Options(headers: {'Cookie': cookie}),
+      );
+
+      if (response.data is List) {
+        final list = response.data as List;
+        return list.map((item) => item as Map<String, dynamic>).toList();
+      } else {
+        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+      }
+    } on DioException catch (e) {
+      print('Error fetching subjects: ${e.message}');
+      rethrow;
+    }
+  }
+
+// Create study subject
+  Future<Map<String, dynamic>> createStudySubject({
+    required String studyId,
+    required String cohortId,
+    required String waveId,
+    required Map<String, dynamic> subjectData,
+  }) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) throw Exception('No authentication cookie found');
+
+      final response = await apiClient.post(
+        '/studies/$studyId/cohorts/$cohortId/waves/$waveId/subjects',
+        data: subjectData,
+        options: Options(
+          headers: {
+            'Cookie': cookie,
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      throw Exception('Unexpected response format');
+    } on DioException catch (e) {
+      print('Error creating subject: ${e.response?.data}');
+      rethrow;
+    }
+  }
 }
