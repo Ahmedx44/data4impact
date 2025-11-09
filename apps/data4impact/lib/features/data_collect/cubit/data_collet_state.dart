@@ -65,6 +65,17 @@ class DataCollectState extends Equatable {
   final Map<String, dynamic> newWaveData;
   final Map<String, dynamic> newSubjectData;
 
+  // Group discussion properties
+  final List<Map<String, dynamic>> groups;
+  final Map<String, dynamic>? selectedGroup;
+  final bool isManagingGroups;
+  final bool isCreatingGroup;
+  final Map<String, dynamic> newGroupData;
+  final List<Map<String, dynamic>> groupRespondents;
+  final List<Map<String, dynamic>> selectedGroupRespondents;
+  final int currentRespondentIndex;
+  final bool isSelectingRespondents;
+
   const DataCollectState({
     this.study,
     this.isLoading = false,
@@ -127,6 +138,17 @@ class DataCollectState extends Equatable {
     this.isCreatingSubject = false,
     this.newWaveData = const {},
     this.newSubjectData = const {},
+
+    // Group discussion defaults
+    this.groups = const [],
+    this.selectedGroup,
+    this.isManagingGroups = false,
+    this.isCreatingGroup = false,
+    this.newGroupData = const {},
+    this.groupRespondents = const [],
+    this.selectedGroupRespondents = const [],
+    this.currentRespondentIndex = 0,
+    this.isSelectingRespondents = false,
   });
 
   DataCollectState copyWith({
@@ -191,6 +213,17 @@ class DataCollectState extends Equatable {
     bool? isCreatingSubject,
     Map<String, dynamic>? newWaveData,
     Map<String, dynamic>? newSubjectData,
+
+    // Group discussion copyWith parameters
+    List<Map<String, dynamic>>? groups,
+    Map<String, dynamic>? selectedGroup,
+    bool? isManagingGroups,
+    bool? isCreatingGroup,
+    Map<String, dynamic>? newGroupData,
+    List<Map<String, dynamic>>? groupRespondents,
+    List<Map<String, dynamic>>? selectedGroupRespondents,
+    int? currentRespondentIndex,
+    bool? isSelectingRespondents,
   }) {
     return DataCollectState(
       study: study ?? this.study,
@@ -254,6 +287,17 @@ class DataCollectState extends Equatable {
       isCreatingSubject: isCreatingSubject ?? this.isCreatingSubject,
       newWaveData: newWaveData ?? this.newWaveData,
       newSubjectData: newSubjectData ?? this.newSubjectData,
+
+      // Group discussion copyWith
+      groups: groups ?? this.groups,
+      selectedGroup: selectedGroup ?? this.selectedGroup,
+      isManagingGroups: isManagingGroups ?? this.isManagingGroups,
+      isCreatingGroup: isCreatingGroup ?? this.isCreatingGroup,
+      newGroupData: newGroupData ?? this.newGroupData,
+      groupRespondents: groupRespondents ?? this.groupRespondents,
+      selectedGroupRespondents: selectedGroupRespondents ?? this.selectedGroupRespondents,
+      currentRespondentIndex: currentRespondentIndex ?? this.currentRespondentIndex,
+      isSelectingRespondents: isSelectingRespondents ?? this.isSelectingRespondents,
     );
   }
 
@@ -305,6 +349,16 @@ class DataCollectState extends Equatable {
     isCreatingSubject,
     newWaveData,
     newSubjectData,
+    // Group discussion props
+    groups,
+    selectedGroup,
+    isManagingGroups,
+    isCreatingGroup,
+    newGroupData,
+    groupRespondents,
+    selectedGroupRespondents,
+    currentRespondentIndex,
+    isSelectingRespondents,
   ];
 
   @override

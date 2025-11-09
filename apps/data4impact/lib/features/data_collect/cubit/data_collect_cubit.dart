@@ -1065,7 +1065,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     for (final question in study.questions) {
       final answer = state.answers[question.id];
       if (answer != null) {
-        // Create the question response object
         final questionResponse = {
           "response": _formatAnswerValue(answer, question.type),
           "questionId": question.id,
@@ -1078,17 +1077,28 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
+    // Get current respondent for group discussion
+    final currentRespondent = state.currentRespondentIndex < state.selectedGroupRespondents.length
+        ? state.selectedGroupRespondents[state.currentRespondentIndex]
+        : null;
+
     // Build the main response object
     final submission = {
       "study": studyId,
       "duration": state.recordingDuration,
-      "data": questionResponses, // This is the array of question responses
-      "finished": true,
+      "data": questionResponses,
+      "finished": state.currentRespondentIndex >= state.selectedGroupRespondents.length - 1,
       "deviceType": "mobile",
-      "respondent": state.selectedRespondent?['_id'],
+      "respondent": currentRespondent?['_id'],
       "geolocation": state.locationData?.toJson() ?? {},
       "submittedAt": DateTime.now().toIso8601String(),
     };
+
+    // Add group context
+    if (state.selectedGroup != null) {
+      submission["group"] = state.selectedGroup!['_id'];
+      submission["groupName"] = state.selectedGroup!['name'];
+    }
 
     // Add audio URL if available
     if (audioUrl != null) {
@@ -1099,17 +1109,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
-    // Add optional fields if available
-    if (state.selectedRespondent != null) {
-      final respondent = state.selectedRespondent!;
-      submission["group"] = respondent['group'];
-      submission["wave"] = respondent['wave'];
-      submission["cohort"] = respondent['cohort'];
-      submission["subject"] = respondent['subject'];
-    }
-
-    // Return as array with one response object (as per API spec)
-    return [submission]; // This is the key - wrap in array
+    return [submission];
   }
 
   dynamic _formatAnswerValue(dynamic answer, ApiQuestionType questionType) {
@@ -1489,5 +1489,192 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final newData = Map<String, dynamic>.from(state.newSubjectData);
     newData[key] = value;
     emit(state.copyWith(newSubjectData: newData));
+  }
+
+  void startGroupDiscussionFlow() {
+    emit(state.copyWith(
+      isLoading: true,
+      groups: const [],
+      selectedGroup: null,
+      groupRespondents: const [],
+      selectedGroupRespondents: const [],
+      currentRespondentIndex: 0,
+      isManagingGroups: true,
+      isCreatingGroup: false,
+      isSelectingRespondents: false,
+      newGroupData: {},
+    ));
+  }
+
+// Load study groups
+  Future<void> loadStudyGroups(String studyId) async {
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final groups = await studyService.getStudyGroups(studyId);
+      emit(state.copyWith(
+        isLoading: false,
+        groups: groups,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to load groups: ${e.toString()}',
+      ));
+    }
+  }
+
+// Create study group
+  Future<void> createStudyGroup(String studyId, Map<String, dynamic> groupData) async {
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final result = await studyService.createStudyGroup(
+        studyId: studyId,
+        groupData: groupData,
+      );
+
+      // Reload groups to include the new one
+      final groups = await studyService.getStudyGroups(studyId);
+
+      emit(state.copyWith(
+        isLoading: false,
+        groups: groups,
+        isCreatingGroup: false,
+        newGroupData: {},
+      ));
+
+      ToastService.showSuccessToast(message: 'Group created successfully');
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to create group: ${e.toString()}',
+      ));
+    }
+  }
+
+// Select group and move to respondent selection
+  void selectGroup(Map<String, dynamic> group) {
+    emit(state.copyWith(
+      selectedGroup: group,
+      isManagingGroups: false,
+      isSelectingRespondents: true,
+      selectedGroupRespondents: const [],
+      currentRespondentIndex: 0,
+    ));
+  }
+
+// Load respondents for group discussion
+  Future<void> loadGroupRespondents(String studyId) async {
+    emit(state.copyWith(isLoading: true, error: null));
+
+    try {
+      final respondents = await studyService.getStudyRespondents(studyId);
+      // Filter respondents by selected group if needed
+      final groupRespondents = respondents.where((respondent) {
+        return respondent['group'] == state.selectedGroup?['_id'];
+      }).toList();
+
+      emit(state.copyWith(
+        isLoading: false,
+        groupRespondents: respondents, // Show all respondents for selection
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to load respondents: ${e.toString()}',
+      ));
+    }
+  }
+
+// Select respondents for group discussion
+  void toggleRespondentSelection(Map<String, dynamic> respondent) {
+    final currentSelected = List<Map<String, dynamic>>.from(state.selectedGroupRespondents);
+    final isSelected = currentSelected.any((r) => r['_id'] == respondent['_id']);
+
+    if (isSelected) {
+      currentSelected.removeWhere((r) => r['_id'] == respondent['_id']);
+    } else {
+      currentSelected.add(respondent);
+    }
+
+    emit(state.copyWith(selectedGroupRespondents: currentSelected));
+  }
+
+// Start group discussion with selected respondents
+  void startGroupDiscussion() {
+    if (state.selectedGroupRespondents.isEmpty) {
+      ToastService.showErrorToast(message: 'Please select at least one respondent');
+      return;
+    }
+
+    emit(state.copyWith(
+      isSelectingRespondents: false,
+      currentRespondentIndex: 0,
+      currentQuestionIndex: 0,
+      answers: {},
+      navigationHistory: const [],
+      logicJumps: const {},
+      jumpTarget: null,
+    ));
+  }
+
+// Move to next respondent in group discussion
+  void nextRespondentInGroup({required String studyId}) {
+    final nextIndex = state.currentRespondentIndex + 1;
+
+    if (nextIndex < state.selectedGroupRespondents.length) {
+      // Move to next respondent
+      emit(state.copyWith(
+        currentRespondentIndex: nextIndex,
+        currentQuestionIndex: 0,
+        answers: {},
+        navigationHistory: const [],
+        logicJumps: const {},
+        jumpTarget: null,
+      ));
+    } else {
+      // All respondents completed, submit final response
+      submitSurvey(studyId: studyId);
+    }
+  }
+
+// Navigation methods for group discussion flow
+  void backToGroupSelection() {
+    emit(state.copyWith(
+      isManagingGroups: true,
+      selectedGroup: null,
+      isSelectingRespondents: false,
+      selectedGroupRespondents: const [],
+    ));
+  }
+
+  void backToRespondentSelection() {
+    emit(state.copyWith(
+      isManagingGroups: false,
+      isSelectingRespondents: true,
+      currentQuestionIndex: 0,
+      answers: {},
+    ));
+  }
+
+  void showCreateGroupForm() {
+    emit(state.copyWith(
+      isCreatingGroup: true,
+      newGroupData: {},
+    ));
+  }
+
+  void cancelCreateGroup() {
+    emit(state.copyWith(
+      isCreatingGroup: false,
+      newGroupData: {},
+    ));
+  }
+
+  void updateNewGroupData(String key, dynamic value) {
+    final newData = Map<String, dynamic>.from(state.newGroupData);
+    newData[key] = value;
+    emit(state.copyWith(newGroupData: newData));
   }
 }

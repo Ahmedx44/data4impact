@@ -291,4 +291,57 @@ class StudyService {
       rethrow;
     }
   }
+
+  Future<List<Map<String, dynamic>>> getStudyGroups(String studyId) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) throw Exception('No authentication cookie found');
+
+      final response = await apiClient.get(
+        '/studies/$studyId/groups',
+        options: Options(headers: {'Cookie': cookie}),
+      );
+
+      if (response.data is List) {
+        final list = response.data as List;
+        return list.map((item) => item as Map<String, dynamic>).toList();
+      } else {
+        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+      }
+    } on DioException catch (e) {
+      print('Error fetching groups: ${e.message}');
+      rethrow;
+    }
+  }
+
+// Create study group
+  Future<Map<String, dynamic>> createStudyGroup({
+    required String studyId,
+    required Map<String, dynamic> groupData,
+  }) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+      if (cookie == null) throw Exception('No authentication cookie found');
+
+      final response = await apiClient.post(
+        '/studies/$studyId/groups',
+        data: groupData,
+        options: Options(
+          headers: {
+            'Cookie': cookie,
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      throw Exception('Unexpected response format');
+    } on DioException catch (e) {
+      print('Error creating group: ${e.response?.data}');
+      rethrow;
+    }
+  }
+
 }

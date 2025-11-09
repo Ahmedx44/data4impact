@@ -11,6 +11,7 @@ import 'package:data4impact/core/service/api_service/team_service.dart';
 import 'package:data4impact/core/service/app_global_context.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
 import 'package:data4impact/core/theme/theme.dart';
+import 'package:data4impact/features/data_collect/cubit/data_collect_cubit.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/profile/cubit/profile_cubit.dart';
 import 'package:data4impact/features/splash/page/splash_page.dart';
@@ -89,6 +90,9 @@ class App extends StatelessWidget {
           ),
           BlocProvider(
             create: (_) => StudyCubit(studyService: studyService),
+          ),
+          BlocProvider(
+            create: (_) => DataCollectCubit(studyService: studyService,fileUploadService: fileUploadService),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(

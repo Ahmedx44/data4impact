@@ -6,8 +6,8 @@ import 'color.dart';
 final ThemeData lightTheme = ThemeData(
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
-      TargetPlatform.android: CupertinoPageTransitionsBuilder(), // Default Android
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),       // Default iOS
+      TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
     },
   ),
   brightness: Brightness.light,
