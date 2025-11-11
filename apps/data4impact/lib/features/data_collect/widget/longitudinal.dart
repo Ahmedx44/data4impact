@@ -1485,6 +1485,8 @@ class _LongitudinalDataCollectionState
             state.selectedLanguage);
       case ApiQuestionType.date:
         return _buildDateInput(question, answer, cubit, isActuallyRequired);
+      case ApiQuestionType.longText:
+        return _buildLongText(question, answer, cubit, isActuallyRequired);
       case ApiQuestionType.cascade:
         return _buildCascade(question, answer, cubit, isActuallyRequired,
             state.selectedLanguage);
@@ -1492,6 +1494,64 @@ class _LongitudinalDataCollectionState
         return Center(
             child: Text('Unsupported question type: ${question.type}'));
     }
+  }
+
+  Widget _buildLongText(ApiQuestion question, dynamic answer, DataCollectCubit cubit, bool isRequired) {
+    final controller = _textControllers.putIfAbsent(question.id, () {
+      return TextEditingController(text: answer?.toString() ?? '');
+    });
+
+    if (answer?.toString() != controller.text) {
+      controller.text = answer?.toString() ?? '';
+    }
+
+    return Column(
+      children: [
+        TextField(
+          controller: controller,
+          onChanged: (value) => cubit.updateAnswer(question.id, value),
+          decoration: InputDecoration(
+            hintText: 'Enter your detailed response...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+            ),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            errorText: isRequired && (answer == null || (answer as String).isEmpty)
+                ? 'This field is required'
+                : null,
+            errorStyle: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          maxLines: null, // Allows infinite lines
+          minLines: 8, // Starts with a larger text area
+          keyboardType: TextInputType.multiline,
+          textInputAction: TextInputAction.newline,
+        ),
+        const SizedBox(height: 8),
+        if (isRequired && (answer == null || (answer as String).isEmpty))
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Text(
+              'This field is required',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 12,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _buildOpenTextInput(ApiQuestion question, dynamic answer,
