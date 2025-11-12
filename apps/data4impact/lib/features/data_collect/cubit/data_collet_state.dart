@@ -40,7 +40,7 @@ class DataCollectState extends Equatable {
 
   // Submission properties
   final bool isSubmitting;
-  final Map<String, dynamic>? submissionResult;
+  final List? submissionResult;
   final int maxRecordingDuration;
 
   // Interview specific properties
@@ -189,7 +189,7 @@ class DataCollectState extends Equatable {
 
     // Submission copyWith parameters
     bool? isSubmitting,
-    Map<String, dynamic>? submissionResult,
+    List? submissionResult,
     int? maxRecordingDuration,
 
     // Interview specific copyWith parameters

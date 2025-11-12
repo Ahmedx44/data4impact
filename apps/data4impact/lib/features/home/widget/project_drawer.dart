@@ -197,14 +197,6 @@ class _ProjectDrawerState extends State<ProjectDrawer> {
                                   color: theme.colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Create your first project to get started',
-                                style: GoogleFonts.lexendDeca(
-                                  fontSize: 14,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.4),
-                                ),
-                              ),
                             ],
                           ),
                         );
@@ -263,7 +255,7 @@ class _ProjectDrawerState extends State<ProjectDrawer> {
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(12),
                                     onTap: () {
-                                      Navigator.pop(context); // Close drawer
+                                      Navigator.pop(context);
 
                                       if (!isSelected) {
                                         try {

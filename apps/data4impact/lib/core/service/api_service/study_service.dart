@@ -125,14 +125,13 @@ class StudyService {
       }
       throw Exception('Unexpected response format');
     } on DioException catch (e) {
-      print('Error creating respondent: ${e.response?.data}');
       rethrow;
     }
   }
 
-  Future<Map<String, dynamic>> submitSurveyResponse({
+  Future<List<dynamic>> submitSurveyResponse({
     required String studyId,
-    required Map<String, dynamic> responseData,
+    required List responseData,
   }) async {
     try {
       final cookie = await secureStorage.read(key: 'session_cookie');
@@ -149,18 +148,30 @@ class StudyService {
         ),
       );
 
-      if (response.data is Map<String, dynamic>) {
-        return response.data as Map<String, dynamic>;
+      if (response.data is List) {
+        return response.data as List;
       }
-      throw Exception('Unexpected response format');
+
+      if (response.data is Map<String, dynamic>) {
+        final responseMap = response.data as Map<String, dynamic>;
+        if (responseMap.containsKey('data') && responseMap['data'] is List) {
+          return responseMap['data'] as List;
+        }
+        if (responseMap.containsKey('_id')) {
+          return [responseMap];
+        }
+      }
+
+      throw Exception('Unexpected response format: ${response.data.runtimeType}');
     } on DioException catch (e) {
       if (e.response != null) {
-        print('Error submitting survey response: ${e.response?.data}');
       }
+      rethrow;
+    } catch (e) {
+
       rethrow;
     }
   }
-
 
   Future<List<Map<String, dynamic>>> getStudyCohorts(String studyId) async {
     try {

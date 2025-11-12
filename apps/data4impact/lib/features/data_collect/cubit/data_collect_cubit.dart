@@ -312,7 +312,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         ));
       }
     } else {
-      // Offline mode - try to load from local storage
       try {
         final savedData = await OfflineModeDataRepo().getSavedStudyQuestions(studyId);
 
@@ -336,11 +335,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
-  // Helper method to process study data (extracted from both online and offline flows)
   Future<void> _processStudyData(Study study) async {
     final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
     final isLocationRequired = study.responseValidation?.requiredLocation ?? false;
-    final voiceDuration = study.responseValidation?.voiceDuration ?? 180; // Get duration from API, default to 180
+    final voiceDuration = study.responseValidation?.voiceDuration ?? 180;
 
     // Reset all state including hasSeenWelcome
     emit(state.copyWith(
@@ -355,9 +353,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       logicJumps: {},
       availableLanguages: study.languages ?? [],
       isLocationRequired: isLocationRequired,
-      maxRecordingDuration: voiceDuration, // Set the max duration
+      maxRecordingDuration: voiceDuration,
       hasSeenWelcome: false,
-      // Reset interview specific state
       respondents: const [],
       selectedRespondent: null,
       isManagingRespondents: study.methodology == 'interview',
@@ -511,7 +508,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
                 );
 
                 if (conditionResult) {
-                  return true; // This path leads to our target question
+                  return true;
                 }
               }
             }
@@ -520,7 +517,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
-    // No satisfied conditions lead to this question, so it should be skipped
     return false;
   }
 
@@ -843,7 +839,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool canProceed(ApiQuestion question) {
-    // Don't allow proceeding if location is still loading
     if (state.isLocationLoading) {
       return false;
     }
@@ -909,40 +904,13 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
-  Map<String, dynamic> _formatAnswersForSubmission() {
-    final Map<String, dynamic> formattedData = {};
+  Future<void> submitSurvey({required String studyId}) async {
+
     final study = state.study;
-
-    if (study == null) return formattedData;
-
-    for (final question in study.questions) {
-      final answer = state.answers[question.id];
-      if (answer != null) {
-        // For multiple choice questions, we need to handle the answer format
-        if (question.type == ApiQuestionType.multipleChoiceSingle) {
-          // Single choice - store the selected choice ID
-          formattedData[question.variable] = answer;
-        } else if (question.type == ApiQuestionType.multipleChoiceMulti) {
-          // Multiple choice - store list of selected choice IDs
-          formattedData[question.variable] = answer;
-        } else if (question.type == ApiQuestionType.ranking) {
-          // Ranking - store the ordered list of choice IDs
-          formattedData[question.variable] = answer;
-        } else {
-          // For open text, rating, date, etc. - store the value directly
-          formattedData[question.variable] = answer;
-        }
-      }
+    if (study == null) {
+      return;
     }
 
-    return formattedData;
-  }
-
-  Future<void> submitSurvey({required String studyId}) async {
-    final study = state.study;
-    if (study == null) return;
-
-    // Stop recording if it's active
     if (state.isRecording) {
       await stopRecording();
     }
@@ -950,8 +918,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     String? audioUrl;
     final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
 
-    // Handle audio upload if online
     if (isVoiceRequired && state.audioFilePath != null && fileUploadService != null) {
+
+
       final connected = InternetConnectionMonitor(
         checkOnInterval: false,
         checkInterval: const Duration(seconds: 5),
@@ -970,33 +939,27 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
           audioUrl = result['filename'] as String?;
 
-          emit(state.copyWith(
-            audioUploadResult: result,
-          ));
+          emit(state.copyWith(audioUploadResult: result));
 
-          // Clean up local file after successful upload
           final file = File(state.audioFilePath!);
           if (await file.exists()) {
             await file.delete();
+
           }
 
-          // Reset audio file path after successful upload
           emit(state.copyWith(audioFilePath: null));
         } catch (e) {
           ToastService.showErrorToast(message: 'Failed to upload audio: $e');
-          emit(state.copyWith(
-            isSubmitting: false,
-          ));
+          emit(state.copyWith(isSubmitting: false));
           return;
         }
       } else {
-        // In offline mode, we'll store the audio file path for later upload
-        audioUrl = state.audioFilePath; // Store the file path temporarily
+        audioUrl = state.audioFilePath;
       }
+    } else {
     }
 
-    // Format the response data according to API specification
-    final responseData = _formatResponseForSubmission(studyId, audioUrl);
+    final bodyArray = _formatResponseForSubmission(studyId, audioUrl);
 
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
@@ -1006,17 +969,14 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final isConnected = await connected.hasInternetConnection();
 
     if (isConnected) {
-      // Online mode - submit directly
-      print('Survey submission (online): $responseData');
-
       try {
         final response = await studyService.submitSurveyResponse(
           studyId: studyId,
-          responseData: responseData[0],
+          responseData: bodyArray, // ✅ send as array
         );
 
+
         ToastService.showSuccessToast(message: 'Response submitted successfully');
-        print('Response submitted successfully: $response');
 
         emit(
           state.copyWith(
@@ -1026,31 +986,25 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         );
       } catch (e) {
         ToastService.showErrorToast(message: 'Failed to submit survey: $e');
-        emit(state.copyWith(
-          isSubmitting: false,
-        ));
+        emit(state.copyWith(isSubmitting: false));
       }
     } else {
-      // Offline mode - store for later sync
       try {
-        await OfflineModeDataRepo().saveOfflineAnswer(studyId, responseData[0]);
+        await OfflineModeDataRepo().saveOfflineAnswer(studyId, bodyArray[0]);
 
         ToastService.showSuccessToast(
-            message: 'Response saved offline. Will sync when internet is available.'
+          message: 'Response saved offline. Will sync when internet is available.',
         );
 
         emit(
           state.copyWith(
             isSubmitting: false,
-            submissionResult: {'status': 'saved_offline'},
           ),
         );
 
       } catch (e) {
         ToastService.showErrorToast(message: 'Failed to save offline: $e');
-        emit(state.copyWith(
-          isSubmitting: false,
-        ));
+        emit(state.copyWith(isSubmitting: false));
       }
     }
   }
@@ -1059,30 +1013,28 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final study = state.study;
     if (study == null) return [];
 
-    // Convert answers to the required data format
+    // Convert answers to the required format
     final List<Map<String, dynamic>> questionResponses = [];
 
     for (final question in study.questions) {
       final answer = state.answers[question.id];
       if (answer != null) {
-        final questionResponse = {
+        questionResponses.add({
           "response": _formatAnswerValue(answer, question.type),
           "questionId": question.id,
           "questionVariable": question.variable,
           "questionType": question.type.toString().replaceAll('ApiQuestionType.', ''),
           "timestamp": DateTime.now().toIso8601String(),
-        };
-
-        questionResponses.add(questionResponse);
+        });
       }
     }
 
-    // Get current respondent for group discussion
+    // Current respondent (for interview methodology)
     final currentRespondent = state.currentRespondentIndex < state.selectedGroupRespondents.length
         ? state.selectedGroupRespondents[state.currentRespondentIndex]
         : null;
 
-    // Build the main response object
+    // Main response object
     final submission = {
       "study": studyId,
       "duration": state.recordingDuration,
@@ -1094,13 +1046,29 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       "submittedAt": DateTime.now().toIso8601String(),
     };
 
-    // Add group context
-    if (state.selectedGroup != null) {
-      submission["group"] = state.selectedGroup!['_id'];
-      submission["groupName"] = state.selectedGroup!['name'];
+    // 🔹 ADD COHORT INFORMATION
+    if (state.selectedCohort != null) {
+      submission["cohort"] = state.selectedCohort!['_id'];
+
     }
 
-    // Add audio URL if available
+    // 🔹 ADD WAVE INFORMATION (if available)
+    if (state.selectedWave != null) {
+      submission["wave"] = state.selectedWave!['_id'];
+    }
+
+    // 🔹 ADD SUBJECT INFORMATION (if available)
+    if (state.selectedSubject != null) {
+      submission["subject"] = state.selectedSubject!['_id'];
+
+    }
+
+    // Group context (for group discussion methodology)
+    if (state.selectedGroup != null) {
+      submission["group"] = state.selectedGroup!['_id'];
+    }
+
+    // Audio URL or file path
     if (audioUrl != null) {
       if (audioUrl.startsWith('/')) {
         submission["audioFilePath"] = audioUrl;
@@ -1108,16 +1076,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         submission["audioUrl"] = audioUrl;
       }
     }
-
     return [submission];
   }
 
   dynamic _formatAnswerValue(dynamic answer, ApiQuestionType questionType) {
     switch (questionType) {
       case ApiQuestionType.multipleChoiceSingle:
-        return answer; // Single choice ID
+        return answer;
       case ApiQuestionType.multipleChoiceMulti:
-        return answer is List ? answer : [answer]; // Array of choice IDs
+        return answer is List ? answer : [answer];
       case ApiQuestionType.rating:
         return answer is int ? answer : int.tryParse(answer.toString());
       case ApiQuestionType.openText:
@@ -1126,12 +1093,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       case ApiQuestionType.date:
         return answer is DateTime ? answer.toIso8601String() : answer.toString();
       case ApiQuestionType.ranking:
-        return answer is List ? answer : [answer]; // Array in ranked order
+        return answer is List ? answer : [answer];
       case ApiQuestionType.matrix:
-      // For matrix questions, format as map of rowId -> columnId/value
         return answer is Map ? answer : {'value': answer};
       case ApiQuestionType.cascade:
-        return answer is List ? answer : [answer]; // Array of selected cascade values
+        return answer is List ? answer : [answer];
       default:
         return answer.toString();
     }
@@ -1307,11 +1273,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void selectWave(Map<String, dynamic> wave) {
-    print('Selecting wave: ${wave['name']}, setting isManagingWaves: false, isManagingSubjects: true');
     emit(state.copyWith(
       selectedWave: wave,
       selectedSubject: null,
-      isManagingWaves: false, // This is crucial!
+      isManagingWaves: false,
       isManagingSubjects: true,
     ));
   }
@@ -1344,7 +1309,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      final result = await studyService.createStudySubject(
+      await studyService.createStudySubject(
         studyId: studyId,
         cohortId: state.selectedCohort!['_id'] as String,
         waveId: state.selectedWave!['_id'] as String,
@@ -1374,7 +1339,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void selectCohortAndShowWaves(Map<String, dynamic> cohort) {
-    print('Selecting cohort: ${cohort['name']}, setting isManagingCohorts: false, isManagingWaves: true');
     emit(state.copyWith(
       selectedCohort: cohort,
       selectedWave: null,
@@ -1386,10 +1350,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void selectSubject(Map<String, dynamic> subject) {
-    print('Selecting subject: ${subject['name']}, setting isManagingSubjects: false');
     emit(state.copyWith(
       selectedSubject: subject,
-      isManagingSubjects: false, // This is crucial!
+      isManagingSubjects: false,
       currentQuestionIndex: 0,
       answers: {},
       navigationHistory: const [],
@@ -1438,7 +1401,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void backToSubjectSelection() {
-    print('Going back to subject selection, setting isManagingSubjects: true');
     emit(state.copyWith(
       isManagingCohorts: false,
       isManagingWaves: false,

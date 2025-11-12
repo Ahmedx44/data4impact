@@ -94,11 +94,9 @@ class HomeCubit extends Cubit<HomeState> {
       emit(state.copyWith(pendingSyncCount: pendingCount));
 
       if (pendingCount > 0) {
-        print('Found $pendingCount offline responses, attempting sync...');
         await _syncAllOfflineAnswers();
       }
     } catch (e) {
-      print('Error checking for offline data: $e');
     }
   }
 
@@ -199,7 +197,7 @@ class HomeCubit extends Cubit<HomeState> {
 
           final response = await studyService.submitSurveyResponse(
             studyId: studyId,
-            responseData: answerData,
+            responseData: answerData as List,
           );
 
           successfulIndices.add(i);
@@ -306,6 +304,8 @@ class HomeCubit extends Cubit<HomeState> {
         final projects = response.map((json) {
           return Project.fromMap(json);
         }).toList();
+
+        await switchProject(projects[0]);
 
         await OfflineModeDataRepo().saveAllProjects(projects);
 
