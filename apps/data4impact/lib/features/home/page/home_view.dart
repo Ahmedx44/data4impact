@@ -20,10 +20,21 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  final RefreshController _refreshController = RefreshController();
+
   @override
   void initState() {
     super.initState();
     context.read<HomeCubit>().fetchAllProjects();
+  }
+
+  Future<void> _onRefresh() async {
+    try {
+      await context.read<HomeCubit>().fetchAllProjects();
+      _refreshController.refreshCompleted();
+    } catch (e) {
+      _refreshController.refreshFailed();
+    }
   }
 
   @override
@@ -34,10 +45,9 @@ class _HomeViewState extends State<HomeView> {
           return previous.selectedProject != current.selectedProject;
         },
         listener: (context, state) {
-
-            context
-                .read<StudyCubit>()
-                .fetchStudies(state.selectedProject!.slug);
+          context
+              .read<StudyCubit>()
+              .fetchStudies(state.selectedProject!.slug);
         },
         child: Scaffold(
           backgroundColor: theme.colorScheme.surface,
@@ -99,12 +109,12 @@ class _HomeViewState extends State<HomeView> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     backgroundColor:
-                        Theme.of(context).colorScheme.primary.withAlpha(100),
+                    Theme.of(context).colorScheme.primary.withAlpha(100),
                     foregroundColor: Theme.of(context).colorScheme.primary,
                     textStyle: const TextStyle(
                       fontSize: 14,
@@ -131,7 +141,6 @@ class _HomeViewState extends State<HomeView> {
           body: BlocConsumer<HomeCubit, HomeState>(
             listener: (context, state) {},
             builder: (context, state) {
-              // Prepare fake data for skeleton when loading
               final fakeTitles = [
                 'Active Assignments',
                 'Completed Assignments',
@@ -152,198 +161,205 @@ class _HomeViewState extends State<HomeView> {
 
               return Stack(
                 children: [
-                  CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      // Offline Banner
-                      if (state.isOffline)
-                        SliverToBoxAdapter(
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 16),
-                            color: Colors.orange[100],
-                            child: Row(
-                              children: [
-                                const Icon(Icons.wifi_off,
-                                    size: 16, color: Colors.orange),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Offline Mode',
-                                  style: TextStyle(
-                                    color: Colors.orange[800],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Responses will be synced when online',
+                  RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    displacement: 40.0,
+                    edgeOffset: 0.0,
+                    color: Theme.of(context).colorScheme.primary,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    child: CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        // Offline Banner
+                        if (state.isOffline)
+                          SliverToBoxAdapter(
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 16),
+                              color: Colors.orange[100],
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.wifi_off,
+                                      size: 16, color: Colors.orange),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Offline Mode',
                                     style: TextStyle(
-                                      color: Colors.orange[700],
-                                      fontSize: 12,
+                                      color: Colors.orange[800],
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                      // Error Message
-                      if (state.errorMessage != null && !state.isLoading)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              'Error: ${state.errorMessage}',
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ),
-
-                      // Main Content with Skeletonizer
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            Skeletonizer(
-                              enabled: state.isLoading,
-                              child: DefaultTabController(
-                                length: 2,
-                                child: Column(
-                                  children: [
-                                    // Grid Cards Section
-                                    GridView.builder(
-                                      physics:
-                                          const NeverScrollableScrollPhysics(),
-                                      shrinkWrap: true,
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        mainAxisSpacing: 10,
-                                        crossAxisSpacing: 5,
-                                        childAspectRatio: 1.3,
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Responses will be synced when online',
+                                      style: TextStyle(
+                                        color: Colors.orange[700],
+                                        fontSize: 12,
                                       ),
-                                      itemCount: state.isLoading
-                                          ? 6
-                                          : fakeTitles
-                                              .length, // Use fake count when loading
-                                      itemBuilder: (context, index) {
-                                        // Use fake data when loading, real data otherwise
-                                        final titles = state.isLoading
-                                            ? fakeTitles
-                                            : [
-                                                'Active Assignments',
-                                                'Completed Assignments',
-                                                'New Assignments',
-                                                'Overdue Study',
-                                                'Study Involved',
-                                                'Pending Reviews',
-                                              ];
-                                        final values = state.isLoading
-                                            ? fakeValues
-                                            : [120, 5400, 2800, 4, 35, 89];
-                                        final subtitles = state.isLoading
-                                            ? fakeSubtitles
-                                            : [
-                                                '2 Completed',
-                                                'This month',
-                                                'Across all projects',
-                                                'All tracks',
-                                                'Across all projects',
-                                                'Needs attention',
-                                              ];
-
-                                        return AnimationConfiguration
-                                            .staggeredGrid(
-                                          position: index,
-                                          duration:
-                                              const Duration(milliseconds: 300),
-                                          columnCount: 2,
-                                          child: FadeInAnimation(
-                                            child: ActivityCard(
-                                              title: titles[index],
-                                              value: values[index],
-                                              subtitle: subtitles[index],
-                                            ),
-                                          ),
-                                        );
-                                      },
                                     ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
 
-                                    // Tab Bar Section
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surface,
-                                        borderRadius: BorderRadius.circular(12),
+                        // Error Message
+                        if (state.errorMessage != null && !state.isLoading)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                'Error: ${state.errorMessage}',
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ),
+
+                        // Main Content with Skeletonizer
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 8),
+                          sliver: SliverList(
+                            delegate: SliverChildListDelegate([
+                              Skeletonizer(
+                                enabled: state.isLoading,
+                                child: DefaultTabController(
+                                  length: 2,
+                                  child: Column(
+                                    children: [
+                                      // Grid Cards Section
+                                      GridView.builder(
+                                        physics:
+                                        const NeverScrollableScrollPhysics(),
+                                        shrinkWrap: true,
+                                        gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          mainAxisSpacing: 10,
+                                          crossAxisSpacing: 5,
+                                          childAspectRatio: 1.3,
+                                        ),
+                                        itemCount: state.isLoading
+                                            ? 6
+                                            : fakeTitles
+                                            .length, // Use fake count when loading
+                                        itemBuilder: (context, index) {
+                                          // Use fake data when loading, real data otherwise
+                                          final titles = state.isLoading
+                                              ? fakeTitles
+                                              : [
+                                            'Active Assignments',
+                                            'Completed Assignments',
+                                            'New Assignments',
+                                            'Overdue Study',
+                                            'Study Involved',
+                                            'Pending Reviews',
+                                          ];
+                                          final values = state.isLoading
+                                              ? fakeValues
+                                              : [120, 5400, 2800, 4, 35, 89];
+                                          final subtitles = state.isLoading
+                                              ? fakeSubtitles
+                                              : [
+                                            '2 Completed',
+                                            'This month',
+                                            'Across all projects',
+                                            'All tracks',
+                                            'Across all projects',
+                                            'Needs attention',
+                                          ];
+
+                                          return AnimationConfiguration
+                                              .staggeredGrid(
+                                            position: index,
+                                            duration:
+                                            const Duration(milliseconds: 300),
+                                            columnCount: 2,
+                                            child: FadeInAnimation(
+                                              child: ActivityCard(
+                                                title: titles[index],
+                                                value: values[index],
+                                                subtitle: subtitles[index],
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
-                                      margin: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      child: TabBar(
-                                        indicator: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+
+                                      // Tab Bar Section
+                                      Container(
+                                        decoration: BoxDecoration(
                                           color: Theme.of(context)
                                               .colorScheme
-                                              .primary
-                                              .withOpacity(0.2),
+                                              .surface,
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
-                                        splashFactory: NoSplash.splashFactory,
-                                        indicatorSize: TabBarIndicatorSize.tab,
-                                        indicatorPadding:
-                                            const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                          vertical: 6,
-                                        ),
-                                        labelColor: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        unselectedLabelColor: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withAlpha(255),
-                                        labelStyle: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        unselectedLabelStyle: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.normal,
-                                        ),
-                                        dividerColor: Colors.transparent,
-                                        dividerHeight: 0,
-                                        tabs: const [
-                                          Tab(text: 'Assignment'),
-                                          Tab(text: 'Performance'),
-                                        ],
-                                      ),
-                                    ),
-
-                                    // Tab Content
-                                    const SizedBox(
-                                      height: 510,
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8),
-                                        child: TabBarView(
-                                          children: [
-                                            AssignmentView(),
-                                            PerformanceView(),
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 8),
+                                        child: TabBar(
+                                          indicator: BoxDecoration(
+                                            borderRadius:
+                                            BorderRadius.circular(8),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withOpacity(0.2),
+                                          ),
+                                          splashFactory: NoSplash.splashFactory,
+                                          indicatorSize: TabBarIndicatorSize.tab,
+                                          indicatorPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 6,
+                                          ),
+                                          labelColor: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          unselectedLabelColor: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withAlpha(255),
+                                          labelStyle: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          unselectedLabelStyle: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.normal,
+                                          ),
+                                          dividerColor: Colors.transparent,
+                                          dividerHeight: 0,
+                                          tabs: const [
+                                            Tab(text: 'Assignment'),
+                                            Tab(text: 'Performance'),
                                           ],
                                         ),
                                       ),
-                                    ),
-                                  ],
+
+                                      // Tab Content
+                                      const SizedBox(
+                                        height: 510,
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8),
+                                          child: TabBarView(
+                                            children: [
+                                              AssignmentView(),
+                                              PerformanceView(),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ]),
+                            ]),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
                   // Sync Progress Overlay
@@ -484,5 +500,20 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
     );
+  }
+}
+
+// RefreshController class for managing refresh state
+class RefreshController {
+  bool _isRefreshing = false;
+
+  bool get isRefreshing => _isRefreshing;
+
+  void refreshCompleted() {
+    _isRefreshing = false;
+  }
+
+  void refreshFailed() {
+    _isRefreshing = false;
   }
 }

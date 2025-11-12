@@ -1577,7 +1577,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
       emit(state.copyWith(
         isLoading: false,
-        groupRespondents: respondents, // Show all respondents for selection
+        groupRespondents: groupRespondents,
       ));
     } catch (e) {
       emit(state.copyWith(

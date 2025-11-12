@@ -81,6 +81,12 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> _checkAndSyncOfflineData() async {
     final isConnected = await _isConnected;
+
+    // Update offline status based on current connectivity
+    if (state.isOffline != !isConnected) {
+      emit(state.copyWith(isOffline: !isConnected));
+    }
+
     if (!isConnected) return;
 
     try {
@@ -292,6 +298,7 @@ class HomeCubit extends Cubit<HomeState> {
 
     final isConnected = await connected.hasInternetConnection();
 
+    // Always update the offline status based on current connectivity
     if (isConnected) {
       try {
         final response = await projectService.getAllProjects();
@@ -320,13 +327,14 @@ class HomeCubit extends Cubit<HomeState> {
             isLoading: false,
             projects: projects,
             selectedProject: selectedProject,
-            isOffline: false,
+            isOffline: false, // Explicitly set to false when online
           ),
         );
 
         await _checkAndSyncOfflineData();
 
       } catch (e) {
+        // Even if API fails, we're technically online
         final projects = await OfflineModeDataRepo().getSavedAllProjects();
         final currentProjectId = await authService.getCurrentProjectId();
         Project? selectedProject;
@@ -342,7 +350,7 @@ class HomeCubit extends Cubit<HomeState> {
             isLoading: false,
             projects: projects,
             selectedProject: selectedProject,
-            isOffline: true,
+            isOffline: false, // Still set to false because we have connectivity
           ),
         );
       }
@@ -362,7 +370,7 @@ class HomeCubit extends Cubit<HomeState> {
           isLoading: false,
           projects: projects,
           selectedProject: selectedProject,
-          isOffline: true,
+          isOffline: true, // Only set to true when definitely offline
         ),
       );
     }
@@ -405,10 +413,32 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> refreshData() async {
     final bool isOnline = await _isConnected;
+
+    // Update offline status immediately
+    emit(state.copyWith(isOffline: !isOnline));
+
     if (isOnline) {
       await fetchAllProjects();
     } else {
       ToastService.showInfoToast(message: 'No internet connection available');
+      // Even when offline, we can refresh from local storage
+      final projects = await OfflineModeDataRepo().getSavedAllProjects();
+      final currentProjectId = await authService.getCurrentProjectId();
+      Project? selectedProject;
+
+      if (currentProjectId != null && projects.isNotEmpty) {
+        selectedProject = projects.firstWhere(
+              (p) => p.id == currentProjectId,
+        );
+      }
+
+      emit(
+        state.copyWith(
+          projects: projects,
+          selectedProject: selectedProject,
+          isOffline: true,
+        ),
+      );
     }
   }
 
