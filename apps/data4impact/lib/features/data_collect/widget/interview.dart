@@ -174,15 +174,6 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
-        actions: [
-          if (!state.isCreatingRespondent)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                context.read<DataCollectCubit>().loadStudyRespondents(widget.studyId);
-              },
-            ),
-        ],
       ),
       body: state.isCreatingRespondent
           ? _buildCreateRespondentForm(state)
@@ -206,36 +197,94 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
       child: Column(
         children: [
           // Study Info Card
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                  Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    state.study!.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.record_voice_over_rounded,
+                          size: 30,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              state.study!.name,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Interview Session',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    state.study!.description,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Total Questions: ${state.study!.questions.length}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                      fontSize: 14,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          state.study!.description,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Total Questions: ${state.study!.questions.length}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -285,47 +334,69 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text('${index + 1}'),
+                    leading: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
                     ),
                     title: Text(
                       respondent['name']?.toString() ?? 'Unnamed Respondent',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          'Code: ${respondent['code']?.toString() ?? 'N/A'}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        if (respondent['group'] != null) ...[
-                          const SizedBox(height: 2),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'Group: ${respondent['group']}',
+                            'Code: ${respondent['code']?.toString() ?? 'N/A'}',
                             style: TextStyle(
                               fontSize: 14,
                               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                             ),
                           ),
-                        ],
-                        if (respondent['age'] != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            'Age: ${respondent['age']}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          if (respondent['group'] != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Group: ${respondent['group']}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              ),
                             ),
-                          ),
+                          ],
+                          if (respondent['age'] != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Age: ${respondent['age']}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                     trailing: ElevatedButton(
                       onPressed: () {
@@ -334,14 +405,18 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                         ),
+                        elevation: 0,
                       ),
-                      child: const Text('Start Interview'),
+                      child: const Text(
+                        'Start Interview',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   ),
                 );
               },
@@ -406,35 +481,6 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Homogeneity Group
-                /*DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Select Homogeneity Group',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                  ),
-                  items: [
-                    const DropdownMenuItem<String>(
-                      value: null,
-                      child: Text('No Group'),
-                    ),
-                    ...homogeneityGroups.map<DropdownMenuItem<String>>((group) {
-                      return DropdownMenuItem<String>(
-                        value: group['name']?.toString(),
-                        child: Text(group['name']?.toString() ?? 'Unnamed Group'),
-                      );
-                    }).toList(),
-                  ],
-                  onChanged: (value) {
-                    context.read<DataCollectCubit>().updateNewRespondentData('group', value);
-                  },
-                ),*/
-                const SizedBox(height: 16),
-
                 // Age
                 TextFormField(
                   decoration: InputDecoration(
