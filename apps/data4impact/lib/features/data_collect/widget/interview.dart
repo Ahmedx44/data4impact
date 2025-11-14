@@ -589,8 +589,8 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
     final study = state.study!;
     final currentQuestionIndex = state.currentQuestionIndex;
 
-    if (currentQuestionIndex >= study.questions.length) {
-      return _buildCompletionScreen(study, state);
+    if (state.isSubmitting) {
+      DialogLoading.show(context);
     }
 
     final question = study.questions[currentQuestionIndex];
@@ -654,328 +654,318 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(20),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight,
-              ),
-              child: IntrinsicHeight(
-                child: Column(
-                  children: [
-                    // Progress bar
-                    LinearProgressIndicator(
-                      value: (currentQuestionIndex + 1) / study.questions.length,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).colorScheme.primary,
-                      ),
-                      minHeight: 8,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    const SizedBox(height: 16),
+      body: BlocListener<DataCollectCubit, DataCollectState>(
+        listener: (context, state) {
+          // Handle loading state changes
+          if (state.isSubmitting) {
+            DialogLoading.show(context);
+          } else {
+            DialogLoading.hide(context);
+          }
 
-                    // Respondent info card
-                    Card(
-                      elevation: 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+          // Handle submission result
+          if (state.submissionResult != null) {
+            // Navigate away or show success message
+            Navigator.pop(context);
+          }
+
+          // Handle errors
+          if (state.error != null) {
+            ToastService.showErrorToast(message: state.error!);
+            context.read<DataCollectCubit>().clearError();
+          }
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      // Progress bar
+                      LinearProgressIndicator(
+                        value: (currentQuestionIndex + 1) / study.questions.length,
+                        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
+                        ),
+                        minHeight: 8,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                              foregroundColor: Theme.of(context).colorScheme.primary,
-                              child: Text(
-                                state.selectedRespondent?['code']?.toString().substring(4) ?? '?',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                      const SizedBox(height: 16),
+
+                      // Respondent info card
+                      Card(
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                foregroundColor: Theme.of(context).colorScheme.primary,
+                                child: Text(
+                                  state.selectedRespondent?['code']?.toString().substring(4) ?? '?',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      state.selectedRespondent?['name']?.toString() ?? 'Unnamed Respondent',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if (state.selectedRespondent?['group'] != null)
+                                      Text(
+                                        'Group: ${state.selectedRespondent?['group']}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                        ),
+                                      ),
+                                    if (state.selectedRespondent?['age'] != null)
+                                      Text(
+                                        'Age: ${state.selectedRespondent?['age']}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Question content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Question title
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    question.getTitle(state.selectedLanguage),
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                                if (question.required)
+                                  Text(
+                                    '*',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
+                            const SizedBox(height: 8),
+
+                            // Question subtitle
+                            if (question.getSubtitle(state.selectedLanguage) != null)
+                              Text(
+                                question.getSubtitle(state.selectedLanguage)!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            const SizedBox(height: 24),
+
+                            // Probing questions
+                            if (question.probings != null && question.probings!.isNotEmpty)
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    state.selectedRespondent?['name']?.toString() ?? 'Unnamed Respondent',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
+                                    'Probing Questions:',
+                                    style: TextStyle(
                                       fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  if (state.selectedRespondent?['group'] != null)
-                                    Text(
-                                      'Group: ${state.selectedRespondent?['group']}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                  const SizedBox(height: 8),
+                                  ...question.probings!.map((probing) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 4),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '•',
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              probing['label']?[state.selectedLanguage].toString() ??
+                                                  probing['label']?['default'].toString() ?? '',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  if (state.selectedRespondent?['age'] != null)
-                                    Text(
-                                      'Age: ${state.selectedRespondent?['age']}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                      ),
-                                    ),
+                                    );
+                                  }).toList(),
+                                  const SizedBox(height: 24),
                                 ],
+                              ),
+
+                            // Answer text field - Made more compact for keyboard
+                            Container(
+                              constraints: BoxConstraints(
+                                minHeight: 150,
+                                maxHeight: MediaQuery.of(context).size.height * 0.4,
+                              ),
+                              child: TextField(
+                                controller: answerController,
+                                onChanged: (value) {
+                                  context.read<DataCollectCubit>().updateAnswer(question.id, value);
+                                },
+                                onTap: _scrollToBottom,
+                                maxLines: null,
+                                minLines: 6,
+                                decoration: InputDecoration(
+                                  labelText: 'Interview Response',
+                                  alignLabelWithHint: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                  errorText: question.required &&
+                                      (state.answers[question.id] == null ||
+                                          (state.answers[question.id] as String).isEmpty)
+                                      ? 'This field is required'
+                                      : null,
+                                  errorStyle: TextStyle(color: Theme.of(context).colorScheme.error),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Question content
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Navigation buttons
+                      Row(
                         children: [
-                          // Question title
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  question.getTitle(state.selectedLanguage),
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                              if (question.required)
-                                Text(
-                                  '*',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Question subtitle
-                          if (question.getSubtitle(state.selectedLanguage) != null)
-                            Text(
-                              question.getSubtitle(state.selectedLanguage)!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontSize: 16,
-                              ),
-                            ),
-                          const SizedBox(height: 24),
-
-                          // Probing questions
-                          if (question.probings != null && question.probings!.isNotEmpty)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Probing Questions:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                ...question.probings!.map((probing) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '•',
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            probing['label']?[state.selectedLanguage].toString() ??
-                                                probing['label']?['default'].toString() ?? '',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                                const SizedBox(height: 24),
-                              ],
-                            ),
-
-                          // Answer text field - Made more compact for keyboard
-                          Container(
-                            constraints: BoxConstraints(
-                              minHeight: 150,
-                              maxHeight: MediaQuery.of(context).size.height * 0.4,
-                            ),
-                            child: TextField(
-                              controller: answerController,
-                              onChanged: (value) {
-                                context.read<DataCollectCubit>().updateAnswer(question.id, value);
+                          // Back to respondents button
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: state.isSubmitting
+                                  ? null
+                                  : () {
+                                context.read<DataCollectCubit>().backToRespondentManagement();
                               },
-                              onTap: _scrollToBottom,
-                              maxLines: null,
-                              minLines: 6,
-                              decoration: InputDecoration(
-                                labelText: 'Interview Response',
-                                alignLabelWithHint: true,
-                                border: OutlineInputBorder(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                enabledBorder: OutlineInputBorder(
+                                side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                              ),
+                              child: const Text('Back to Respondents'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+
+                          // Next/Submit button
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: state.isSubmitting
+                                  ? null
+                                  : context.read<DataCollectCubit>().canProceed(question)
+                                  ? () {
+                                if (currentQuestionIndex == study.questions.length - 1) {
+                                  // Show loading dialog when submitting
+                                  context.read<DataCollectCubit>().submitSurvey(studyId: widget.studyId);
+                                } else {
+                                  context.read<DataCollectCubit>().nextQuestion(studyId: widget.studyId);
+                                }
+                              }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.read<DataCollectCubit>().canProceed(question) && !state.isSubmitting
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.surfaceVariant,
+                                foregroundColor: context.read<DataCollectCubit>().canProceed(question) && !state.isSubmitting
+                                    ? Theme.of(context).colorScheme.onPrimary
+                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                                 ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
+                              ),
+                              child: state.isSubmitting
+                                  ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
-                                filled: true,
-                                fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                                errorText: question.required &&
-                                    (state.answers[question.id] == null ||
-                                        (state.answers[question.id] as String).isEmpty)
-                                    ? 'This field is required'
-                                    : null,
-                                errorStyle: TextStyle(color: Theme.of(context).colorScheme.error),
+                              )
+                                  : Text(
+                                currentQuestionIndex == study.questions.length - 1
+                                    ? 'Submit Interview'
+                                    : 'Next Question',
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Navigation buttons
-                    Row(
-                      children: [
-                        // Back to respondents button
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              context.read<DataCollectCubit>().backToRespondentManagement();
-                            },
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                              foregroundColor: Theme.of(context).colorScheme.onSurface,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              side: BorderSide(color: Theme.of(context).colorScheme.outline),
-                            ),
-                            child: const Text('Back to Respondents'),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-
-                        // Next/Submit button
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: context.read<DataCollectCubit>().canProceed(question)
-                                ? () {
-                              if (currentQuestionIndex == study.questions.length - 1) {
-                                context.read<DataCollectCubit>().submitSurvey(studyId: widget.studyId);
-                              } else {
-                                context.read<DataCollectCubit>().nextQuestion(studyId: widget.studyId);
-                              }
-                            }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: context.read<DataCollectCubit>().canProceed(question)
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.surfaceVariant,
-                              foregroundColor: context.read<DataCollectCubit>().canProceed(question)
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              currentQuestionIndex == study.questions.length - 1
-                                  ? 'Submit Interview'
-                                  : 'Next Question',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCompletionScreen(Study study, DataCollectState state) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.check_circle,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                study.getEndingHeadline(state.selectedLanguage),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                study.getEndingSubheader(state.selectedLanguage),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 32),
-              if (study.showEndingButton)
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    ],
                   ),
-                  child: const Text('Finish'),
                 ),
-            ],
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

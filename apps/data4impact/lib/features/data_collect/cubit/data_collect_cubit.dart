@@ -908,19 +908,68 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   Future<void> submitSurvey({required String studyId}) async {
     final study = state.study;
     if (study == null) {
+      emit(state.copyWith(
+        isSubmitting: false,
+        error: 'No study data available',
+      ));
       return;
     }
 
-    if (state.isRecording) {
-      await stopRecording();
-    }
+    // Start submission process
+    emit(state.copyWith(isSubmitting: true, error: null));
 
-    String? audioUrl;
-    final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
+    try {
+      // Stop recording if active
+      if (state.isRecording) {
+        await stopRecording();
+      }
 
-    if (isVoiceRequired &&
-        state.audioFilePath != null &&
-        fileUploadService != null) {
+      String? audioUrl;
+      final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
+
+      // Handle audio upload if required
+      if (isVoiceRequired && state.audioFilePath != null && fileUploadService != null) {
+        final connected = InternetConnectionMonitor(
+          checkOnInterval: false,
+          checkInterval: const Duration(seconds: 5),
+        );
+
+        final isConnected = await connected.hasInternetConnection();
+
+        if (isConnected) {
+          try {
+            final result = await fileUploadService!.uploadAudioFile(
+              studyId,
+              state.audioFilePath!,
+            );
+
+            audioUrl = result['filename'] as String?;
+            emit(state.copyWith(audioUploadResult: result));
+
+            // Clean up local file after successful upload
+            final file = File(state.audioFilePath!);
+            if (await file.exists()) {
+              await file.delete();
+            }
+            emit(state.copyWith(audioFilePath: null));
+          } catch (e) {
+            emit(state.copyWith(
+              isSubmitting: false,
+              error: 'Failed to upload audio: $e',
+            ));
+            ToastService.showErrorToast(message: 'Failed to upload audio: $e');
+            return;
+          }
+        } else {
+          // Use local file path for offline mode
+          audioUrl = state.audioFilePath;
+        }
+      }
+
+      // Format response for submission
+      final bodyArray = _formatResponseForSubmission(studyId, audioUrl);
+
+      // Check internet connection for submission
       final connected = InternetConnectionMonitor(
         checkOnInterval: false,
         checkInterval: const Duration(seconds: 5),
@@ -929,81 +978,61 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       final isConnected = await connected.hasInternetConnection();
 
       if (isConnected) {
-        emit(state.copyWith(isSubmitting: true));
-
+        // Online submission
         try {
-          final result = await fileUploadService!.uploadAudioFile(
-            studyId,
-            state.audioFilePath!,
+          final response = await studyService.submitSurveyResponse(
+            studyId: studyId,
+            responseData: bodyArray,
           );
 
-          audioUrl = result['filename'] as String?;
-
-          emit(state.copyWith(audioUploadResult: result));
-
-          final file = File(state.audioFilePath!);
-          if (await file.exists()) {
-            await file.delete();
-          }
-
-          emit(state.copyWith(audioFilePath: null));
-        } catch (e) {
-          ToastService.showErrorToast(message: 'Failed to upload audio: $e');
-          emit(state.copyWith(isSubmitting: false));
-          return;
-        }
-      } else {
-        audioUrl = state.audioFilePath;
-      }
-    } else {}
-
-    final bodyArray = _formatResponseForSubmission(studyId, audioUrl);
-
-    final connected = InternetConnectionMonitor(
-      checkOnInterval: false,
-      checkInterval: const Duration(seconds: 5),
-    );
-
-    final isConnected = await connected.hasInternetConnection();
-
-    if (isConnected) {
-      try {
-        final response = await studyService.submitSurveyResponse(
-          studyId: studyId,
-          responseData: bodyArray,
-        );
-
-        ToastService.showSuccessToast(
-            message: 'Response submitted successfully');
-
-        emit(
-          state.copyWith(
+          // Success - update state and show success message
+          emit(state.copyWith(
             isSubmitting: false,
             submissionResult: response,
-          ),
-        );
-      } catch (e) {
-        ToastService.showErrorToast(message: 'Failed to submit survey: $e');
-        emit(state.copyWith(isSubmitting: false));
-      }
-    } else {
-      try {
-        await OfflineModeDataRepo().saveOfflineAnswer(studyId, bodyArray[0]);
+            error: null,
+          ));
 
-        ToastService.showSuccessToast(
-          message:
-              'Response saved offline. Will sync when internet is available.',
-        );
+          ToastService.showSuccessToast(
+            message: 'Response submitted successfully',
+          );
 
-        emit(
-          state.copyWith(
+        } catch (e) {
+          emit(state.copyWith(
             isSubmitting: false,
-          ),
-        );
-      } catch (e) {
-        ToastService.showErrorToast(message: 'Failed to save offline: $e');
-        emit(state.copyWith(isSubmitting: false));
+            error: 'Failed to submit survey: $e',
+          ));
+          ToastService.showErrorToast(message: 'Failed to submit survey: $e');
+        }
+      } else {
+        // Offline submission
+        try {
+          await OfflineModeDataRepo().saveOfflineAnswer(studyId, bodyArray[0]);
+
+          emit(state.copyWith(
+            isSubmitting: false,
+            error: null,
+          ));
+
+          ToastService.showSuccessToast(
+            message: 'Response saved offline. Will sync when internet is available.',
+          );
+
+        } catch (e) {
+          emit(state.copyWith(
+            isSubmitting: false,
+            error: 'Failed to save offline: $e',
+          ));
+          ToastService.showErrorToast(message: 'Failed to save offline: $e');
+        }
       }
+
+    } catch (e) {
+      // Handle any unexpected errors
+      emit(state.copyWith(
+        isSubmitting: false,
+        error: 'Unexpected error during submission: $e',
+      ));
+      ToastService.showErrorToast(message: 'Unexpected error during submission: $e');
     }
   }
 
