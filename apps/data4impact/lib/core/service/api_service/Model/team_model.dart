@@ -1,12 +1,12 @@
-// team_model.dart
-class Team {
+// models/team_model.dart
+class TeamModel {
   final String id;
   final String name;
   final String description;
   final int memberCount;
   final String? project;
 
-  Team({
+  TeamModel({
     required this.id,
     required this.name,
     required this.description,
@@ -14,13 +14,23 @@ class Team {
     this.project,
   });
 
-  factory Team.fromJson(Map<String, dynamic> json) {
-    return Team(
-      id: json['id'] as String ?? '',
-      name: json['name'] as String ?? '',
-      description: json['description'] as String ?? '',
-      memberCount: json['memberCount'] as int ?? 0,
-      project: json['project'] as String,
+  factory TeamModel.fromJson(Map<String, dynamic> json) {
+    return TeamModel(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      memberCount: json['memberCount'] as int? ?? json['members'] as int? ?? 0,
+      project: json['project']?.toString(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'memberCount': memberCount,
+      'project': project,
+    };
   }
 }
