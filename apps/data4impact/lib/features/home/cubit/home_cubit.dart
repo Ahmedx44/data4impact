@@ -183,6 +183,7 @@ class HomeCubit extends Cubit<HomeState> {
         final answerData = Map<String, dynamic>.from(offlineAnswers[i]);
 
         try {
+          // Handle audio file upload if present
           if (answerData.containsKey('audioFilePath')) {
             final audioFilePath = answerData['audioFilePath'] as String;
             final audioUrl = await _uploadAudioFileForSync(audioFilePath, studyId);
@@ -191,13 +192,21 @@ class HomeCubit extends Cubit<HomeState> {
               answerData['audioUrl'] = audioUrl;
               answerData.remove('audioFilePath');
             } else {
+              // Skip this answer if audio upload fails but it's required
               continue;
             }
           }
 
-          final response = await studyService.submitSurveyResponse(
+          final responseData = answerData['data'] as List<dynamic>?;
+
+          if (responseData == null || responseData.isEmpty) {
+            continue;
+          }
+
+
+     await studyService.submitSurveyResponse(
             studyId: studyId,
-            responseData: answerData as List,
+            responseData: responseData,
           );
 
           successfulIndices.add(i);
@@ -206,23 +215,22 @@ class HomeCubit extends Cubit<HomeState> {
           emit(state.copyWith(
             syncedSoFar: state.syncedSoFar + 1,
             syncProgress: state.totalToSync > 0
-                ? state.syncedSoFar / state.totalToSync
+                ? (state.syncedSoFar + 1) / state.totalToSync
                 : 0.0,
           ));
 
         } catch (e) {
-          print('Failed to sync offline answer $i: $e');
+          if (answerData.containsKey('data')) {
+            print('Response data type: ${answerData['data'].runtimeType}');
+          }
         }
       }
-
       if (successfulIndices.isNotEmpty) {
         await _removeSyncedAnswers(studyId, successfulIndices);
       }
-
     } catch (e) {
       print('Error syncing offline answers for study $studyId: $e');
     }
-
     return syncedCount;
   }
 

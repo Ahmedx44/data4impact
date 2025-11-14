@@ -354,5 +354,4 @@ class StudyService {
       rethrow;
     }
   }
-
 }

@@ -335,7 +335,7 @@ class _LongitudinalDataCollectionState
                   final isActive = cohort['isActive'] ?? true;
                   final environment = cohort['environment']?.toString().toLowerCase() ?? 'control';
 
-                  return _buildCohortCard(cohort, index, isActive as bool, environment);
+                  return _buildCohortCard(cohort, index, isActive as bool, environment,widget.studyId);
                 },
               ),
             ),
@@ -345,7 +345,7 @@ class _LongitudinalDataCollectionState
     );
   }
 
-  Widget _buildCohortCard(Map<String, dynamic> cohort, int index, bool isActive, String environment) {
+  Widget _buildCohortCard(Map<String, dynamic> cohort, int index, bool isActive, String environment,String studyId) {
     // Define colors based on environment
     final Color primaryColor;
     final String environmentLabel;
@@ -393,6 +393,7 @@ class _LongitudinalDataCollectionState
             onTap: isActive
                 ? () {
               context.read<DataCollectCubit>().selectCohortAndShowWaves(cohort);
+              context.read<DataCollectCubit>().loadStudySubjects(studyId);
               context.read<DataCollectCubit>().loadStudyWaves(widget.studyId);
             }
                 : null,
@@ -523,7 +524,7 @@ class _LongitudinalDataCollectionState
                                 ),
                                 if (isActive) ...[
                                   const SizedBox(width: 4),
-                                  Icon(
+                                 const Icon(
                                     Icons.arrow_forward_rounded,
                                     size: 12,
                                     color: Colors.white,
@@ -738,10 +739,30 @@ class _LongitudinalDataCollectionState
   }
 
   Widget _buildWaveCard(Map<String, dynamic> wave, int index, bool isActive) {
+    final responsesCount = wave['responsesCount'] as int? ?? 0;
+    final state = context.read<DataCollectCubit>().state;
+    final allStudySubjects = state.subjects;
+    final totalSubjectsCount = allStudySubjects.length;
+
+    final bool allSubjectsResponded = totalSubjectsCount > 0 &&
+        responsesCount >= totalSubjectsCount;
+
+
+    // Determine if the wave is selectable
+    final bool isSelectable = isActive && !allSubjectsResponded;
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: allSubjectsResponded
+              ? Colors.green // Green border for completed waves
+              : isActive
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
+              : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+          width: allSubjectsResponded ? 2 : 1,
+        ),
       ),
       child: Container(
         decoration: BoxDecoration(
@@ -749,7 +770,12 @@ class _LongitudinalDataCollectionState
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: isActive
+            colors: allSubjectsResponded
+                ? [
+              Colors.green.withOpacity(0.05),
+              Colors.green.withOpacity(0.1),
+            ]
+                : isActive
                 ? [
               Theme.of(context).colorScheme.primary.withOpacity(0.05),
               Theme.of(context).colorScheme.primary.withOpacity(0.1),
@@ -764,10 +790,16 @@ class _LongitudinalDataCollectionState
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: isActive
+            onTap: isSelectable
                 ? () {
               context.read<DataCollectCubit>().selectWave(wave);
               context.read<DataCollectCubit>().loadStudySubjects(widget.studyId);
+            }
+                : allSubjectsResponded
+                ? () {
+              ToastService.showInfoToast(
+                message: 'All respondents have already responded to this wave',
+              );
             }
                 : null,
             child: Padding(
@@ -783,13 +815,21 @@ class _LongitudinalDataCollectionState
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: isActive
+                          color: allSubjectsResponded
+                              ? Colors.green.withOpacity(0.15)
+                              : isActive
                               ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
                               : Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
-                          child: Text(
+                          child: allSubjectsResponded
+                              ? Icon(
+                            Icons.check_circle_rounded,
+                            size: 18,
+                            color: Colors.green,
+                          )
+                              : Text(
                             '${index + 1}',
                             style: TextStyle(
                               fontSize: 16,
@@ -801,24 +841,51 @@ class _LongitudinalDataCollectionState
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isActive ? 'Active' : 'Inactive',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: isActive
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: allSubjectsResponded
+                                  ? Colors.green.withOpacity(0.1)
+                                  : isActive
+                                  ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              allSubjectsResponded
+                                  ? 'Completed'
+                                  : isActive
+                                  ? 'Active'
+                                  : 'Inactive',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: allSubjectsResponded
+                                    ? Colors.green
+                                    : isActive
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              ),
+                            ),
                           ),
-                        ),
+                          if (totalSubjectsCount > 0) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              allSubjectsResponded
+                                  ? 'All $totalSubjectsCount responded'
+                                  : '$responsesCount/$totalSubjectsCount responded',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: allSubjectsResponded
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -830,7 +897,9 @@ class _LongitudinalDataCollectionState
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isActive
+                      color: allSubjectsResponded
+                          ? Colors.green
+                          : isActive
                           ? Theme.of(context).colorScheme.onSurface
                           : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                     ),
@@ -845,7 +914,9 @@ class _LongitudinalDataCollectionState
                       wave['description'].toString(),
                       style: TextStyle(
                         fontSize: 12,
-                        color: isActive
+                        color: allSubjectsResponded
+                            ? Colors.green.withOpacity(0.7)
+                            : isActive
                             ? Theme.of(context).colorScheme.onSurface.withOpacity(0.7)
                             : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                       ),
@@ -864,13 +935,15 @@ class _LongitudinalDataCollectionState
                           _buildWaveDetail(
                             Icons.calendar_today_rounded,
                             'Scheduled: ${_formatDate(wave['scheduledDate'] as String)}',
-                            isActive,
+                            isSelectable,
+                            isCompleted: allSubjectsResponded,
                           ),
-                        if (wave['responsesCount'] != null)
+                        if (totalSubjectsCount > 0)
                           _buildWaveDetail(
-                            Icons.assignment_turned_in_rounded,
-                            '${wave['responsesCount']} Responses',
-                            isActive,
+                            Icons.people_rounded,
+                            '$totalSubjectsCount Total Subject(s)',
+                            isSelectable,
+                            isCompleted: allSubjectsResponded,
                           ),
                         const SizedBox(height: 12),
 
@@ -879,19 +952,23 @@ class _LongitudinalDataCollectionState
                           width: double.infinity,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: isActive
+                            color: allSubjectsResponded
+                                ? Colors.green
+                                : isSelectable
                                 ? Theme.of(context).colorScheme.primary
                                 : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Center(
                             child: Text(
-                              'Select Wave',
+                              allSubjectsResponded
+                                  ? 'Completed'
+                                  : 'Select Wave',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: isActive
-                                    ? Theme.of(context).colorScheme.onPrimary
+                                color: allSubjectsResponded || isSelectable
+                                    ? Colors.white
                                     : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                               ),
                             ),
@@ -909,7 +986,7 @@ class _LongitudinalDataCollectionState
     );
   }
 
-  Widget _buildWaveDetail(IconData icon, String text, bool isActive) {
+  Widget _buildWaveDetail(IconData icon, String text, bool isSelectable, {bool isCompleted = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -917,7 +994,9 @@ class _LongitudinalDataCollectionState
           Icon(
             icon,
             size: 12,
-            color: isActive
+            color: isCompleted
+                ? Colors.green
+                : isSelectable
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
           ),
@@ -927,7 +1006,9 @@ class _LongitudinalDataCollectionState
               text,
               style: TextStyle(
                 fontSize: 10,
-                color: isActive
+                color: isCompleted
+                    ? Colors.green.withOpacity(0.8)
+                    : isSelectable
                     ? Theme.of(context).colorScheme.onSurface.withOpacity(0.7)
                     : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
               ),
@@ -944,7 +1025,6 @@ class _LongitudinalDataCollectionState
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-
         title: const Text(
           'Select Subject',
           style: TextStyle(fontWeight: FontWeight.w500),
@@ -1029,6 +1109,21 @@ class _LongitudinalDataCollectionState
                               fontSize: 14,
                             ),
                           ),
+                          // Add wave response count info
+                          if (state.selectedWave?['responsesCount'] != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '${state.selectedWave?['responsesCount']} responses collected',
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -1042,150 +1137,283 @@ class _LongitudinalDataCollectionState
             Expanded(
               child: state.subjects.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.person_outline,
-                            size: 64,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.3),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No Subjects Available',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.5),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Please contact the study administrator',
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.4),
-                            ),
-                          ),
-                        ],
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      size: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Subjects Available',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.5),
                       ),
-                    )
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Please contact the study administrator',
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              )
                   : ListView.builder(
-                      itemCount: state.subjects.length,
-                      itemBuilder: (context, index) {
-                        final subject = state.subjects[index];
-                        final attributes =
-                            subject['attributes'] as Map<String, dynamic>? ??
-                                {};
+                itemCount: state.subjects.length,
+                itemBuilder: (context, index) {
+                  final subject = state.subjects[index];
+                  final attributes =
+                      subject['attributes'] as Map<String, dynamic>? ??
+                          {};
 
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  final selectedWave = state.selectedWave;
+                  final subjects = state.subjects[index];
+                  final waveSubjectIds = List<String>.from(selectedWave!['subjects'] as List);
+
+                  final isSubjectCompleted = waveSubjectIds.contains(subject['_id']);
+
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    elevation: isSubjectCompleted ? 2 : 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: isSubjectCompleted
+                            ? Colors.green
+                            : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                        width: isSubjectCompleted ? 2 : 1,
+                      ),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: isSubjectCompleted
+                            ? Colors.green.withOpacity(0.03)
+                            : null,
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: isSubjectCompleted
+                              ? Colors.green.withOpacity(0.1)
+                              : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          foregroundColor: isSubjectCompleted
+                              ? Colors.green
+                              : Theme.of(context).colorScheme.primary,
+                          radius: 20,
+                          child: isSubjectCompleted
+                              ? const Icon(Icons.check, size: 16)
+                              : Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.1),
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              child: Text('${index + 1}'),
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                subject['name']?.toString() ?? 'Subject ${index + 1}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: isSubjectCompleted
+                                      ? Colors.green
+                                      : Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
                             ),
-                            title: Text(
-                              subject['name']?.toString() ??
-                                  'Subject ${index + 1}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                if (attributes['Participant ID'] != null)
-                                  Text(
-                                    'ID: ${attributes['Participant ID']}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.7),
-                                    ),
+                            if (isSubjectCompleted) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.green.withOpacity(0.3),
                                   ),
-                                if (attributes['Age'] != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Age: ${attributes['Age']}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.7),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle,
+                                      size: 12,
+                                      color: Colors.green,
                                     ),
-                                  ),
-                                ],
-                                if (attributes['Gender'] != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Gender: ${attributes['Gender']}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.7),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Completed',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.green,
+                                      ),
                                     ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 6),
+                            if (attributes['Participant ID'] != null)
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(context).size.width - 120,
+                                ),
+                                child: Text(
+                                  'ID: ${attributes['Participant ID']}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isSubjectCompleted
+                                        ? Colors.green.withOpacity(0.8)
+                                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                   ),
-                                ],
-                                if (attributes['Position / Title'] != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Position: ${attributes['Position / Title']}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.7),
-                                    ),
+                                ),
+                              ),
+                            if (attributes['Age'] != null) ...[
+                              const SizedBox(height: 2),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(context).size.width - 120,
+                                ),
+                                child: Text(
+                                  'Age: ${attributes['Age']}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isSubjectCompleted
+                                        ? Colors.green.withOpacity(0.8)
+                                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                   ),
-                                ],
-                              ],
-                            ),
-                            trailing: ElevatedButton(
+                                ),
+                              ),
+                            ],
+                            if (attributes['Gender'] != null) ...[
+                              const SizedBox(height: 2),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(context).size.width - 120,
+                                ),
+                                child: Text(
+                                  'Gender: ${attributes['Gender']}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isSubjectCompleted
+                                        ? Colors.green.withOpacity(0.8)
+                                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ),
+                            ],
+                            if (attributes['Position / Title'] != null) ...[
+                              const SizedBox(height: 2),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(context).size.width - 120,
+                                ),
+                                child: Text(
+                                  'Position: ${attributes['Position / Title']}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isSubjectCompleted
+                                        ? Colors.green.withOpacity(0.8)
+                                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        trailing: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isSmallScreen = constraints.maxWidth < 400;
+
+                            return isSubjectCompleted
+                                ? ElevatedButton(
+                              onPressed: () {
+                                final subjectName = subject['name']?.toString() ?? 'This subject';
+                                ToastService.showInfoToast(
+                                  message: '$subjectName has already responded to this wave',
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isSmallScreen ? 12 : 16,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              child: Text(
+                                isSmallScreen ? 'Done' : 'Completed',
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 12 : 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                                : ElevatedButton(
                               onPressed: () {
                                 context.read<DataCollectCubit>().selectSubject(subject);
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.primary,
-                                foregroundColor:
-                                    Theme.of(context).colorScheme.onPrimary,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isSmallScreen ? 12 : 16,
+                                  vertical: 8,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                elevation: 0,
+                                visualDensity: VisualDensity.compact,
                               ),
-                              child: const Text('Select'),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                          ),
-                        );
-                      },
+                              child: Text(
+                                'Select',
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 12 : 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      )
                     ),
+                  );
+                },
+              ),
             ),
           ],
         ),

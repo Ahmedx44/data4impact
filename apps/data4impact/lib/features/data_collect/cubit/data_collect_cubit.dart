@@ -35,13 +35,13 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   void _setupAudioPlayerListeners() {
     _audioPositionSubscription =
         audioPlayer.onPositionChanged.listen((position) {
-          emit(state.copyWith(audioPosition: position));
-        });
+      emit(state.copyWith(audioPosition: position));
+    });
 
     _audioDurationSubscription =
         audioPlayer.onDurationChanged.listen((duration) {
-          emit(state.copyWith(audioDuration: duration));
-        });
+      emit(state.copyWith(audioDuration: duration));
+    });
 
     audioPlayer.onPlayerComplete.listen((event) {
       emit(state.copyWith(isPlayingAudio: false));
@@ -299,7 +299,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         if (study.methodology == 'interview') {
           await loadStudyRespondents(studyId);
         }
-
       } on FormatException catch (e) {
         emit(state.copyWith(
           isLoading: false,
@@ -313,7 +312,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     } else {
       try {
-        final savedData = await OfflineModeDataRepo().getSavedStudyQuestions(studyId);
+        final savedData =
+            await OfflineModeDataRepo().getSavedStudyQuestions(studyId);
 
         if (savedData == null) {
           emit(state.copyWith(
@@ -325,7 +325,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
         final study = Study.fromJson(savedData);
         await _processStudyData(study);
-
       } catch (e) {
         emit(state.copyWith(
           isLoading: false,
@@ -337,7 +336,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
   Future<void> _processStudyData(Study study) async {
     final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
-    final isLocationRequired = study.responseValidation?.requiredLocation ?? false;
+    final isLocationRequired =
+        study.responseValidation?.requiredLocation ?? false;
     final voiceDuration = study.responseValidation?.voiceDuration ?? 180;
 
     // Reset all state including hasSeenWelcome
@@ -413,7 +413,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
                 if (result.jumpTarget != null) {
                   final targetIndex = study.questions.indexWhere(
-                        (q) => q.id == result.jumpTarget,
+                    (q) => q.id == result.jumpTarget,
                   );
 
                   if (targetIndex != -1 &&
@@ -438,7 +438,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     );
   }
 
-  Set<String> _determineSkipQuestions(Study study, Map<String, dynamic> answers) {
+  Set<String> _determineSkipQuestions(
+      Study study, Map<String, dynamic> answers) {
     Set<String> questionsToSkip = {};
 
     // Check each question to see if it should be accessible based on current answers
@@ -451,7 +452,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     return questionsToSkip;
   }
 
-  bool _isQuestionAccessible(ApiQuestion targetQuestion, Study study, Map<String, dynamic> answers) {
+  bool _isQuestionAccessible(
+      ApiQuestion targetQuestion, Study study, Map<String, dynamic> answers) {
     // A question is accessible if:
     // 1. There's no logic preventing it, OR
     // 2. There's explicit logic that leads to it
@@ -495,9 +497,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             if (conditions != null && actions != null) {
               // Check if this logic item targets our question
               final targetsOurQuestion = actions.any((action) =>
-              action['objective'] == 'jumpToQuestion' &&
-                  action['target'] == targetQuestion.id
-              );
+                  action['objective'] == 'jumpToQuestion' &&
+                  action['target'] == targetQuestion.id);
 
               if (targetsOurQuestion) {
                 // Check if the condition is satisfied
@@ -521,10 +522,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool _evaluateConditionGroup(
-      Study study,
-      Map<String, dynamic> answers,
-      Map<String, dynamic> conditionGroup,
-      ) {
+    Study study,
+    Map<String, dynamic> answers,
+    Map<String, dynamic> conditionGroup,
+  ) {
     final connector = conditionGroup['connector'] ?? 'and';
     final conditions = conditionGroup['conditions'] as List<dynamic>? ?? [];
 
@@ -548,10 +549,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   bool _evaluateSingleCondition(
-      Study study,
-      Map<String, dynamic> answers,
-      Map<String, dynamic> condition,
-      ) {
+    Study study,
+    Map<String, dynamic> answers,
+    Map<String, dynamic> condition,
+  ) {
     try {
       final leftOperand = condition['leftOperand'];
       final operator = condition['operator'];
@@ -613,16 +614,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   dynamic _getLeftOperandValue(
-      Study study,
-      Map<String, dynamic> answers,
-      Map<String, dynamic> leftOperand,
-      ) {
+    Study study,
+    Map<String, dynamic> answers,
+    Map<String, dynamic> leftOperand,
+  ) {
     final type = leftOperand['type'];
     final value = leftOperand['value'];
 
     if (type == 'question') {
       final question = study.questions.firstWhere(
-            (q) => q.id == value,
+        (q) => q.id == value,
       );
 
       if (question.id.isNotEmpty) {
@@ -633,9 +634,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   dynamic _getRightOperandValue(
-      Map<String, dynamic> answers,
-      Map<String, dynamic> rightOperand,
-      ) {
+    Map<String, dynamic> answers,
+    Map<String, dynamic> rightOperand,
+  ) {
     final type = rightOperand['type'];
     final value = rightOperand['value'];
 
@@ -648,12 +649,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   ({
-  Set<String> requiredQuestionIds,
-  String? jumpTarget,
-  Set<String> skipQuestionIds
+    Set<String> requiredQuestionIds,
+    String? jumpTarget,
+    Set<String> skipQuestionIds
   }) _performActions(
-      List<dynamic> actions,
-      ) {
+    List<dynamic> actions,
+  ) {
     Set<String> requiredQuestionIds = {};
     String? jumpTarget;
     Set<String> skipQuestionIds = {};
@@ -679,9 +680,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
 
     return (
-    requiredQuestionIds: requiredQuestionIds,
-    jumpTarget: jumpTarget,
-    skipQuestionIds: skipQuestionIds,
+      requiredQuestionIds: requiredQuestionIds,
+      jumpTarget: jumpTarget,
+      skipQuestionIds: skipQuestionIds,
     );
   }
 
@@ -706,7 +707,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         return;
       } else {
         final targetIndex = study.questions.indexWhere(
-              (q) => q.id == state.jumpTarget,
+          (q) => q.id == state.jumpTarget,
         );
 
         if (targetIndex == currentIndex) {
@@ -905,7 +906,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   Future<void> submitSurvey({required String studyId}) async {
-
     final study = state.study;
     if (study == null) {
       return;
@@ -918,9 +918,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     String? audioUrl;
     final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
 
-    if (isVoiceRequired && state.audioFilePath != null && fileUploadService != null) {
-
-
+    if (isVoiceRequired &&
+        state.audioFilePath != null &&
+        fileUploadService != null) {
       final connected = InternetConnectionMonitor(
         checkOnInterval: false,
         checkInterval: const Duration(seconds: 5),
@@ -944,7 +944,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           final file = File(state.audioFilePath!);
           if (await file.exists()) {
             await file.delete();
-
           }
 
           emit(state.copyWith(audioFilePath: null));
@@ -956,8 +955,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       } else {
         audioUrl = state.audioFilePath;
       }
-    } else {
-    }
+    } else {}
 
     final bodyArray = _formatResponseForSubmission(studyId, audioUrl);
 
@@ -972,11 +970,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       try {
         final response = await studyService.submitSurveyResponse(
           studyId: studyId,
-          responseData: bodyArray, // ✅ send as array
+          responseData: bodyArray,
         );
 
-
-        ToastService.showSuccessToast(message: 'Response submitted successfully');
+        ToastService.showSuccessToast(
+            message: 'Response submitted successfully');
 
         emit(
           state.copyWith(
@@ -993,7 +991,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         await OfflineModeDataRepo().saveOfflineAnswer(studyId, bodyArray[0]);
 
         ToastService.showSuccessToast(
-          message: 'Response saved offline. Will sync when internet is available.',
+          message:
+              'Response saved offline. Will sync when internet is available.',
         );
 
         emit(
@@ -1001,7 +1000,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             isSubmitting: false,
           ),
         );
-
       } catch (e) {
         ToastService.showErrorToast(message: 'Failed to save offline: $e');
         emit(state.copyWith(isSubmitting: false));
@@ -1009,7 +1007,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
-  List<Map<String, dynamic>> _formatResponseForSubmission(String studyId, String? audioUrl) {
+  List<Map<String, dynamic>> _formatResponseForSubmission(
+      String studyId, String? audioUrl) {
     final study = state.study;
     if (study == null) return [];
 
@@ -1023,52 +1022,71 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           "response": _formatAnswerValue(answer, question.type),
           "questionId": question.id,
           "questionVariable": question.variable,
-          "questionType": question.type.toString().replaceAll('ApiQuestionType.', ''),
+          "questionType":
+              question.type.toString().replaceAll('ApiQuestionType.', ''),
           "timestamp": DateTime.now().toIso8601String(),
         });
       }
     }
 
     // Current respondent (for interview methodology)
-    final currentRespondent = state.currentRespondentIndex < state.selectedGroupRespondents.length
-        ? state.selectedGroupRespondents[state.currentRespondentIndex]
-        : null;
+    final currentRespondent =
+        state.currentRespondentIndex < state.selectedGroupRespondents.length
+            ? state.selectedGroupRespondents[state.currentRespondentIndex]
+            : null;
 
-    // Main response object
+    // Main response object (NO geolocation yet)
     final submission = {
       "study": studyId,
       "duration": state.recordingDuration,
       "data": questionResponses,
-      "finished": state.currentRespondentIndex >= state.selectedGroupRespondents.length - 1,
+      "finished": state.currentRespondentIndex >=
+          state.selectedGroupRespondents.length - 1,
       "deviceType": "mobile",
       "respondent": currentRespondent?['_id'],
-      "geolocation": state.locationData?.toJson() ?? {},
       "submittedAt": DateTime.now().toIso8601String(),
     };
 
-    // 🔹 ADD COHORT INFORMATION
-    if (state.selectedCohort != null) {
-      submission["cohort"] = state.selectedCohort!['_id'];
+    // -------------------------
+    // ✅ Add Geolocation ONLY IF valid
+    // -------------------------
+    final geo = state.locationData?.toJson();
 
+    bool hasValidGeo(Map<String, dynamic>? g) {
+      if (g == null) return false;
+      if (g["lat"] == null || g["lng"] == null) return false;
+      if (g["lat"] == "undefined" || g["lng"] == "undefined") return false;
+      if (g["lat"] is! num || g["lng"] is! num) return false;
+      return true;
     }
 
-    // 🔹 ADD WAVE INFORMATION (if available)
+    if (hasValidGeo(geo)) {
+      submission["geolocation"] = geo;
+    }
+
+    // -------------------------
+    // Filtering Cohort
+    // -------------------------
+    if (state.selectedCohort != null) {
+      submission["cohort"] = state.selectedCohort!['_id'];
+    }
+
+    // Filtering Wave
     if (state.selectedWave != null) {
       submission["wave"] = state.selectedWave!['_id'];
     }
 
-    // 🔹 ADD SUBJECT INFORMATION (if available)
+    // Filtering Subject
     if (state.selectedSubject != null) {
       submission["subject"] = state.selectedSubject!['_id'];
-
     }
 
-    // Group context (for group discussion methodology)
+    // Filtering Group
     if (state.selectedGroup != null) {
       submission["group"] = state.selectedGroup!['_id'];
     }
 
-    // Audio URL or file path
+    // Filtering Audio
     if (audioUrl != null) {
       if (audioUrl.startsWith('/')) {
         submission["audioFilePath"] = audioUrl;
@@ -1076,6 +1094,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         submission["audioUrl"] = audioUrl;
       }
     }
+
     return [submission];
   }
 
@@ -1091,7 +1110,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       case ApiQuestionType.longText:
         return answer.toString();
       case ApiQuestionType.date:
-        return answer is DateTime ? answer.toIso8601String() : answer.toString();
+        return answer is DateTime
+            ? answer.toIso8601String()
+            : answer.toString();
       case ApiQuestionType.ranking:
         return answer is List ? answer : [answer];
       case ApiQuestionType.matrix:
@@ -1107,21 +1128,62 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   Future<void> loadStudyRespondents(String studyId) async {
     emit(state.copyWith(isLoading: true, error: null));
 
-    try {
-      final respondents = await studyService.getStudyRespondents(studyId);
-      emit(state.copyWith(
-        isLoading: false,
-        respondents: respondents,
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Failed to load respondents: ${e.toString()}',
-      ));
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
+
+    final isConnected = await connected.hasInternetConnection();
+
+    if (isConnected) {
+      try {
+        final respondents = await studyService.getStudyRespondents(studyId);
+
+        // Save to offline storage
+        await OfflineModeDataRepo().saveStudyRespondents(studyId, respondents);
+
+        emit(state.copyWith(
+          isLoading: false,
+          respondents: respondents,
+        ));
+      } catch (e) {
+        // Fallback to offline data
+        final offlineRespondents =
+            await OfflineModeDataRepo().getStudyRespondents(studyId);
+        if (offlineRespondents.isNotEmpty) {
+          emit(state.copyWith(
+            isLoading: false,
+            respondents: offlineRespondents,
+          ));
+          ToastService.showInfoToast(message: 'Using offline respondents data');
+        } else {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'Failed to load respondents: ${e.toString()}',
+          ));
+        }
+      }
+    } else {
+      // Offline mode
+      final offlineRespondents =
+          await OfflineModeDataRepo().getStudyRespondents(studyId);
+      if (offlineRespondents.isNotEmpty) {
+        emit(state.copyWith(
+          isLoading: false,
+          respondents: offlineRespondents,
+        ));
+        ToastService.showInfoToast(message: 'Using offline respondents data');
+      } else {
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'No offline respondents data available',
+        ));
+      }
     }
   }
 
-  Future<void> createRespondent(String studyId, Map<String, dynamic> respondentData) async {
+  Future<void> createRespondent(
+      String studyId, Map<String, dynamic> respondentData) async {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
@@ -1198,21 +1260,60 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(newRespondentData: newData));
   }
 
-
   Future<void> loadStudyCohorts(String studyId) async {
     emit(state.copyWith(isLoading: true, error: null));
 
-    try {
-      final cohorts = await studyService.getStudyCohorts(studyId);
-      emit(state.copyWith(
-        isLoading: false,
-        cohorts: cohorts,
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Failed to load cohorts: ${e.toString()}',
-      ));
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
+
+    final isConnected = await connected.hasInternetConnection();
+
+    if (isConnected) {
+      try {
+        final cohorts = await studyService.getStudyCohorts(studyId);
+
+        // Save to offline storage
+        await OfflineModeDataRepo().saveStudyCohorts(studyId, cohorts);
+
+        emit(state.copyWith(
+          isLoading: false,
+          cohorts: cohorts,
+        ));
+      } catch (e) {
+        // Fallback to offline data
+        final offlineCohorts =
+            await OfflineModeDataRepo().getStudyCohorts(studyId);
+        if (offlineCohorts.isNotEmpty) {
+          emit(state.copyWith(
+            isLoading: false,
+            cohorts: offlineCohorts,
+          ));
+          ToastService.showInfoToast(message: 'Using offline cohorts data');
+        } else {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'Failed to load cohorts: ${e.toString()}',
+          ));
+        }
+      }
+    } else {
+      // Offline mode
+      final offlineCohorts =
+          await OfflineModeDataRepo().getStudyCohorts(studyId);
+      if (offlineCohorts.isNotEmpty) {
+        emit(state.copyWith(
+          isLoading: false,
+          cohorts: offlineCohorts,
+        ));
+        ToastService.showInfoToast(message: 'Using offline cohorts data');
+      } else {
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'No offline cohorts data available',
+        ));
+      }
     }
   }
 
@@ -1229,21 +1330,60 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     emit(state.copyWith(isLoading: true, error: null));
 
-    try {
-      final waves = await studyService.getStudyWaves(studyId);
-      emit(state.copyWith(
-        isLoading: false,
-        waves: waves,
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Failed to load waves: ${e.toString()}',
-      ));
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
+
+    final isConnected = await connected.hasInternetConnection();
+
+    if (isConnected) {
+      try {
+        final waves = await studyService.getStudyWaves(studyId);
+
+        // Save to offline storage
+        await OfflineModeDataRepo().saveStudyWaves(studyId, waves);
+
+        emit(state.copyWith(
+          isLoading: false,
+          waves: waves,
+        ));
+      } catch (e) {
+        // Fallback to offline data
+        final offlineWaves = await OfflineModeDataRepo().getStudyWaves(studyId);
+        if (offlineWaves.isNotEmpty) {
+          emit(state.copyWith(
+            isLoading: false,
+            waves: offlineWaves,
+          ));
+          ToastService.showInfoToast(message: 'Using offline waves data');
+        } else {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'Failed to load waves: ${e.toString()}',
+          ));
+        }
+      }
+    } else {
+      // Offline mode
+      final offlineWaves = await OfflineModeDataRepo().getStudyWaves(studyId);
+      if (offlineWaves.isNotEmpty) {
+        emit(state.copyWith(
+          isLoading: false,
+          waves: offlineWaves,
+        ));
+        ToastService.showInfoToast(message: 'Using offline waves data');
+      } else {
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'No offline waves data available',
+        ));
+      }
     }
   }
 
-  Future<void> createNewWave(String studyId, Map<String, dynamic> waveData) async {
+  Future<void> createNewWave(
+      String studyId, Map<String, dynamic> waveData) async {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
@@ -1286,26 +1426,65 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     emit(state.copyWith(isLoading: true, error: null));
 
-    try {
-      final subjects = await studyService.getStudySubjects(
-        studyId,
-        state.selectedCohort!['_id'] as String, // Pass cohort ID instead of wave ID
-      );
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
 
-      emit(state.copyWith(
-        isLoading: false,
-        subjects: subjects,
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Failed to load subjects: ${e.toString()}',
-      ));
+    final isConnected = await connected.hasInternetConnection();
+
+    if (isConnected) {
+      try {
+        final subjects = await studyService.getStudySubjects(
+          studyId,
+          state.selectedCohort!['_id'] as String,
+        );
+
+        // Save to offline storage
+        await OfflineModeDataRepo().saveStudySubjects(studyId, subjects);
+
+        emit(state.copyWith(
+          isLoading: false,
+          subjects: subjects,
+        ));
+      } catch (e) {
+        // Fallback to offline data
+        final offlineSubjects =
+            await OfflineModeDataRepo().getStudySubjects(studyId);
+        if (offlineSubjects.isNotEmpty) {
+          emit(state.copyWith(
+            isLoading: false,
+            subjects: offlineSubjects,
+          ));
+          ToastService.showInfoToast(message: 'Using offline subjects data');
+        } else {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'Failed to load subjects: ${e.toString()}',
+          ));
+        }
+      }
+    } else {
+      // Offline mode
+      final offlineSubjects =
+          await OfflineModeDataRepo().getStudySubjects(studyId);
+      if (offlineSubjects.isNotEmpty) {
+        emit(state.copyWith(
+          isLoading: false,
+          subjects: offlineSubjects,
+        ));
+        ToastService.showInfoToast(message: 'Using offline subjects data');
+      } else {
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'No offline subjects data available',
+        ));
+      }
     }
   }
 
-
-  Future<void> createNewSubject(String studyId, Map<String, dynamic> subjectData) async {
+  Future<void> createNewSubject(
+      String studyId, Map<String, dynamic> subjectData) async {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
@@ -1322,12 +1501,14 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         state.selectedCohort!['_id'] as String,
       );
 
-      emit(state.copyWith(
-        isLoading: false,
-        subjects: subjects,
-        isCreatingSubject: false,
-        newSubjectData: {},
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          subjects: subjects,
+          isCreatingSubject: false,
+          newSubjectData: {},
+        ),
+      );
 
       ToastService.showSuccessToast(message: 'Subject created successfully');
     } catch (e) {
@@ -1394,9 +1575,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(
       isManagingCohorts: false,
       isManagingWaves: true,
-      selectedWave: null,
-      subjects: const [],
       selectedSubject: null,
+      currentQuestionIndex: 0,
+      answers: {},
+      navigationHistory: const [],
+      logicJumps: {},
     ));
   }
 
@@ -1472,22 +1655,62 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   Future<void> loadStudyGroups(String studyId) async {
     emit(state.copyWith(isLoading: true, error: null));
 
-    try {
-      final groups = await studyService.getStudyGroups(studyId);
-      emit(state.copyWith(
-        isLoading: false,
-        groups: groups,
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Failed to load groups: ${e.toString()}',
-      ));
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
+
+    final isConnected = await connected.hasInternetConnection();
+
+    if (isConnected) {
+      try {
+        final groups = await studyService.getStudyGroups(studyId);
+
+        // Save to offline storage
+        await OfflineModeDataRepo().saveStudyGroups(studyId, groups);
+
+        emit(state.copyWith(
+          isLoading: false,
+          groups: groups,
+        ));
+      } catch (e) {
+        // Fallback to offline data
+        final offlineGroups =
+            await OfflineModeDataRepo().getStudyGroups(studyId);
+        if (offlineGroups.isNotEmpty) {
+          emit(state.copyWith(
+            isLoading: false,
+            groups: offlineGroups,
+          ));
+          ToastService.showInfoToast(message: 'Using offline groups data');
+        } else {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'Failed to load groups: ${e.toString()}',
+          ));
+        }
+      }
+    } else {
+      // Offline mode
+      final offlineGroups = await OfflineModeDataRepo().getStudyGroups(studyId);
+      if (offlineGroups.isNotEmpty) {
+        emit(state.copyWith(
+          isLoading: false,
+          groups: offlineGroups,
+        ));
+        ToastService.showInfoToast(message: 'Using offline groups data');
+      } else {
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'No offline groups data available',
+        ));
+      }
     }
   }
 
 // Create study group
-  Future<void> createStudyGroup(String studyId, Map<String, dynamic> groupData) async {
+  Future<void> createStudyGroup(
+      String studyId, Map<String, dynamic> groupData) async {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
@@ -1551,8 +1774,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
 // Select respondents for group discussion
   void toggleRespondentSelection(Map<String, dynamic> respondent) {
-    final currentSelected = List<Map<String, dynamic>>.from(state.selectedGroupRespondents);
-    final isSelected = currentSelected.any((r) => r['_id'] == respondent['_id']);
+    final currentSelected =
+        List<Map<String, dynamic>>.from(state.selectedGroupRespondents);
+    final isSelected =
+        currentSelected.any((r) => r['_id'] == respondent['_id']);
 
     if (isSelected) {
       currentSelected.removeWhere((r) => r['_id'] == respondent['_id']);
@@ -1566,7 +1791,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 // Start group discussion with selected respondents
   void startGroupDiscussion() {
     if (state.selectedGroupRespondents.isEmpty) {
-      ToastService.showErrorToast(message: 'Please select at least one respondent');
+      ToastService.showErrorToast(
+          message: 'Please select at least one respondent');
       return;
     }
 
