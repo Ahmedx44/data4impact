@@ -1,10 +1,9 @@
-import 'package:bloc/bloc.dart';
 import 'package:data4impact/core/service/dialog_loading.dart';
 import 'package:data4impact/core/theme/color.dart';
 import 'package:data4impact/core/widget/AfiyaButton.dart';
 import 'package:data4impact/features/forget_password/page/forget_password_page.dart';
-import 'package:data4impact/features/login/cubit/signin_cubit.dart';
-import 'package:data4impact/features/login/cubit/signin_state.dart';
+import 'package:data4impact/features/login/cubit/login_cubit.dart';
+import 'package:data4impact/features/login/cubit/login_state.dart';
 import 'package:data4impact/features/navigation/page/navigation_page.dart';
 import 'package:data4impact/features/signup/page/sigup_page.dart';
 import 'package:flutter/material.dart';
@@ -39,9 +38,7 @@ class _LoginViewState extends State<LoginView> {
 
   Color _getTextColor(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark
-        ? Colors.white
-        : Colors.grey.shade800;
+    return brightness == Brightness.dark ? Colors.white : Colors.grey.shade800;
   }
 
   Color _getSubtitleColor(BuildContext context) {
@@ -57,7 +54,7 @@ class _LoginViewState extends State<LoginView> {
     final theme = Theme.of(context);
     final brightness = Theme.of(context).brightness;
 
-    return BlocConsumer<SigninCubit, SigninState>(
+    return BlocConsumer<LoginCubit, LoginState>(
       listener: (context, state) {
         if (state.isLoading) {
           DialogLoading.show(context);
@@ -82,39 +79,10 @@ class _LoginViewState extends State<LoginView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(height: height * 0.05),
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.primary.withOpacity(0.8),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'D4I',
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
+                  const Image(
+                    image: AssetImage('assets/image/d4i.png'),
+                    height: 130,
+                    width: 130,
                   ),
                   SizedBox(height: height * 0.02),
                   Text(
@@ -337,10 +305,10 @@ class _LoginViewState extends State<LoginView> {
                     child: CustomButton(
                       height: 60,
                       onTap: () {
-                        context.read<SigninCubit>().login(
-                          email: _emailController.text.trim(),
-                          password: _passwordController.text.trim(),
-                        );
+                        context.read<LoginCubit>().login(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text.trim(),
+                            );
                       },
                       width: double.infinity,
                       child: const Text(
@@ -459,7 +427,7 @@ class _LoginViewState extends State<LoginView> {
                     Buttons.google,
                     text: "Continue with Google",
                     onPressed: () {
-                      context.read<SigninCubit>().signInWithGoogle();
+                      context.read<LoginCubit>().signInWithGoogle();
                     },
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

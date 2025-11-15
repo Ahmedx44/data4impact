@@ -188,39 +188,10 @@ class _ForgotPasswordViewState extends State<ForgetPasswordView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(height: height * 0.05),
-                  Container(
-                    width: 110,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.primary.withOpacity(0.8),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'D4I',
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
+                  const Image(
+                    image: AssetImage('assets/image/d4i.png'),
+                    height: 130,
+                    width: 130,
                   ),
                   SizedBox(height: height * 0.04),
 

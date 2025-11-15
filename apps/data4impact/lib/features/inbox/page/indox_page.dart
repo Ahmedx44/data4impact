@@ -5,14 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class InboxPage extends StatelessWidget {
-  const InboxPage({super.key});
+  const InboxPage({super.key,this.showAppBar});
+  final bool? showAppBar;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) =>
           InboxCubit(invitationService: context.read<InvitationService>()),
-      child: const InboxView(),
+      child:  InboxView(showAppBar: showAppBar),
     );
   }
 }

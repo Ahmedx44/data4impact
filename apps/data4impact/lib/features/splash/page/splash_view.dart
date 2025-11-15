@@ -15,8 +15,7 @@ class SplashView extends StatefulWidget {
 
 class _SplashViewState extends State<SplashView> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
 
   @override
   void initState() {
@@ -24,28 +23,20 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1000),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutBack,
+        curve: Curves.easeIn,
       ),
     );
 
     _controller.forward();
 
-    // Check authentication after a delay
     Timer(
-      const Duration(seconds: 2),
+      const Duration(milliseconds: 1500),
           () {
         context.read<SplashCubit>().checkAuthentication();
       },
@@ -75,61 +66,29 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF0047AB),
+        backgroundColor: Colors.white,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // App icon
-              ScaleTransition(
-                scale: _scaleAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.analytics_outlined,
-                      size: 50,
-                      color: Color(0xFF0047AB),
-                    ),
-                  ),
+          child: FadeTransition(
+            opacity: _opacityAnimation,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/image/d4i.png',
+                  height: 100,
+                  width: 100,
                 ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // App name
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: const Text(
+                const SizedBox(height: 16),
+                const Text(
                   'Data4Impact',
                   style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Tagline
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: const Text(
-                  'Empowering decisions through data',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

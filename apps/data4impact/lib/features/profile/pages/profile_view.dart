@@ -1,11 +1,15 @@
 import 'package:data4impact/core/service/api_service/Model/current_user.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
+import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/profile/cubit/profile_cubit.dart';
 import 'package:data4impact/features/profile/cubit/profile_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive/hive.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({Key? key}) : super(key: key);
@@ -16,11 +20,85 @@ class ProfileView extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfileView> {
   final ImagePicker _picker = ImagePicker();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
     context.read<ProfileCubit>().fetchCurrentUser();
+  }
+
+  // Hive Box Names
+  static const List<String> hiveBoxes = [
+    'projects_box',
+    'studys_box',
+    'current_user_box',
+    'study_questions_box',
+    'offline_answers_box',
+    'study_cohorts_box',
+    'study_waves_box',
+    'study_respondents_box',
+    'study_groups_box',
+    'study_subjects_box',
+  ];
+
+  Future<void> _clearAllHiveData() async {
+    try {
+      for (final boxName in hiveBoxes) {
+        try {
+          final box = await Hive.openBox(boxName);
+          await box.clear();
+          await box.close();
+          print('✅ Cleared Hive box: $boxName');
+        } catch (e) {
+          print('❌ Error clearing box $boxName: $e');
+        }
+      }
+      print('🎉 All Hive data cleared successfully');
+    } catch (e) {
+      print('💥 Critical error clearing Hive data: $e');
+    }
+  }
+
+  void _performLogout() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Clear secure storage
+      await _secureStorage.delete(key: 'session_cookie');
+      await _secureStorage.delete(key: 'current_project_id');
+
+      // Clear ALL Hive data
+      await _clearAllHiveData();
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Navigate to login page using HomeCubit's logout
+      if (context.mounted) {
+        context.read<HomeCubit>().logout(context);
+      }
+    } catch (e) {
+      // Close loading dialog if there's an error
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -495,7 +573,7 @@ class _ProfilePageState extends State<ProfileView> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: ElevatedButton(
         onPressed: () {
-          _showLogoutConfirmationDialog(context);
+          _showLogoutConfirmationDialog();
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red.withOpacity(0.1),
@@ -506,14 +584,14 @@ class _ProfilePageState extends State<ProfileView> {
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
               color: Colors.red.withOpacity(0.8),
-              width: 1.5,
+              width: 1,
             ),
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.logout,
               size: 20,
               color: Colors.red,
@@ -532,62 +610,151 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  void _showLogoutConfirmationDialog(BuildContext context) {
-    showDialog(
+  void _showLogoutConfirmationDialog() {
+    final theme = Theme.of(context).colorScheme;
+
+    showDialog<Widget>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Logout',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.surface,
+              borderRadius: BorderRadius.circular(20),
             ),
-          ),
-          content: Text(
-            'Are you sure you want to logout?',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Cancel',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    HugeIcons.strokeRoundedLogout01,
+                    size: 40,
+                    color: Colors.red,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
+
+                // Title
+                Text(
+                  'Logout?',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: theme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Message
+                Text(
+                  'Are you sure you want to logout from your account? All local data will be cleared.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: theme.onSurface.withOpacity(0.7),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Buttons
+                Row(
+                  children: [
+                    // Cancel Button
+                    Expanded(
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.outline),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Center(
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Logout Button
+                    Expanded(
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.red.shade500,
+                              Colors.red.shade700,
+                            ],
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _performLogout();
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  HugeIcons.strokeRoundedLogout01,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Add your logout logic here
-                _performLogout(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Logout'),
-            ),
-          ],
+          ),
         );
       },
-    );
-  }
-
-  void _performLogout(BuildContext context) {
-    // Add your logout logic here
-    // For example:
-    // context.read<AuthCubit>().logout();
-    // Navigator.pushAndRemoveUntil(...);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Logging out...'),
-        backgroundColor: Colors.red,
-      ),
     );
   }
 
@@ -731,6 +898,7 @@ class _ProfilePageState extends State<ProfileView> {
   }
 }
 
+// ... Rest of your EditProfileDialog and ChangePasswordDialog classes remain the same
 class EditProfileDialog extends StatefulWidget {
   final CurrentUser user;
 

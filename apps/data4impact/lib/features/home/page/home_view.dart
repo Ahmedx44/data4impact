@@ -59,7 +59,7 @@ class _HomeViewState extends State<HomeView> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    context.read<HomeCubit>().logout(context);
+
                   },
                   child: const Text(
                     'Dashboard',

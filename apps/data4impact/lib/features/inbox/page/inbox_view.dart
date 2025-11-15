@@ -4,9 +4,11 @@ import 'package:data4impact/features/inbox/cubit/inbox_state.dart';
 import 'package:data4impact/features/inbox/widget/invitationcard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class InboxView extends StatefulWidget {
-  const InboxView({super.key});
+  const InboxView({super.key, this.showAppBar});
+  final bool? showAppBar;
 
   @override
   _InboxViewState createState() => _InboxViewState();
@@ -35,8 +37,32 @@ class _InboxViewState extends State<InboxView>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      appBar: (widget.showAppBar == true)
+          ? AppBar(
+              leading: Padding(
+                padding: const EdgeInsets.all(5),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(50),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowLeft01,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+
+              title: const Text(
+                'Inbox',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : null,
       backgroundColor: colorScheme.surface,
-      body: BlocListener<InboxCubit,InboxState>(
+      body: BlocListener<InboxCubit, InboxState>(
           listener: (context, state) {
             if (state.isAccepting) {
               DialogLoading.show(context);
@@ -44,7 +70,7 @@ class _InboxViewState extends State<InboxView>
               DialogLoading.hide(context);
             }
           },
-          child:  SafeArea(
+          child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Column(
@@ -59,10 +85,11 @@ class _InboxViewState extends State<InboxView>
                       ),
                       splashFactory: NoSplash.splashFactory,
                       indicatorSize: TabBarIndicatorSize.tab,
-                      indicatorPadding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                      indicatorPadding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 6),
                       labelColor: colorScheme.primary,
-                      unselectedLabelColor: colorScheme.onSurface.withAlpha(255),
+                      unselectedLabelColor:
+                          colorScheme.onSurface.withAlpha(255),
                       labelStyle: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -74,7 +101,7 @@ class _InboxViewState extends State<InboxView>
                       dividerColor: Colors.transparent,
                       dividerHeight: 0,
                       tabs: const [
-                        Tab(text: 'Message'),
+                        Tab(text: 'Notifications'),
                         Tab(text: 'Invitation'),
                       ],
                     ),
@@ -84,7 +111,7 @@ class _InboxViewState extends State<InboxView>
                       controller: _tabController,
                       physics: const BouncingScrollPhysics(),
                       children: [
-                        _buildMessageTab(colorScheme, theme),
+                        _buildNotificationTab(colorScheme, theme),
                         _buildInvitationTab(colorScheme, theme),
                       ],
                     ),
@@ -92,20 +119,15 @@ class _InboxViewState extends State<InboxView>
                 ],
               ),
             ),
-          )
-      ),
+          )),
     );
   }
 
-  Widget _buildMessageTab(ColorScheme colorScheme, ThemeData theme) {
+  Widget _buildNotificationTab(ColorScheme colorScheme, ThemeData theme) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildAnalysisCard(colorScheme, theme),
-        const SizedBox(height: 12),
-        _buildAnalysisCard(colorScheme, theme),
-        const SizedBox(height: 12),
-        _buildAnalysisCard(colorScheme, theme),
+
       ],
     );
   }
@@ -159,10 +181,14 @@ class _InboxViewState extends State<InboxView>
             return InvitationCard(
               invitation: invitation,
               onAccept: () {
-                context.read<InboxCubit>().acceptInviatation(invitationId: invitation.id);
+                context
+                    .read<InboxCubit>()
+                    .acceptInviatation(invitationId: invitation.id);
               },
               onReject: () {
-                context.read<InboxCubit>().declineInvitation(invitationId: invitation.id);
+                context
+                    .read<InboxCubit>()
+                    .declineInvitation(invitationId: invitation.id);
               },
             );
           },
@@ -170,7 +196,6 @@ class _InboxViewState extends State<InboxView>
       },
     );
   }
-
 
   // Message Card
   Widget _buildAnalysisCard(ColorScheme colorScheme, ThemeData theme) {
@@ -230,15 +255,14 @@ class _InboxViewState extends State<InboxView>
           Row(
             children: [
               TextButton(
-                onPressed: () {
-                },
+                onPressed: () {},
                 style: TextButton.styleFrom(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   minimumSize: Size(0, 0),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child:  Text(
+                child: Text(
                   'Mark as Read',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.primary,
@@ -258,7 +282,7 @@ class _InboxViewState extends State<InboxView>
                 ),
                 style: OutlinedButton.styleFrom(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   minimumSize: const Size(0, 0),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   side: BorderSide(color: colorScheme.outline.withOpacity(0.4)),
@@ -270,5 +294,4 @@ class _InboxViewState extends State<InboxView>
       ),
     );
   }
-
 }

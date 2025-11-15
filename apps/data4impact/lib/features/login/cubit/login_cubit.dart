@@ -4,26 +4,31 @@ import 'package:bloc/bloc.dart';
 import 'package:data4impact/core/model/signup/signin/signin_Request_model.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/toast_service.dart';
-import 'package:data4impact/features/login/cubit/signin_state.dart';
+import 'package:data4impact/features/login/cubit/login_state.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
-class SigninCubit extends Cubit<SigninState> {
+class LoginCubit extends Cubit<LoginState> {
   final AuthService authService;
   final String flavor;
   final FlutterSecureStorage secureStorage;
 
-  SigninCubit({
+  LoginCubit({
     required this.authService,
     required this.flavor,
     required this.secureStorage,
-  }) : super(const SigninState());
+  }) : super(const LoginState());
 
   Future<void> login({
     required String email,
     required String password,
   }) async {
+    // Check if cubit is closed before emitting
+    if (isClosed) {
+      return;
+    }
+
     emit(state.copyWith(isLoading: true, isSuccess: false));
 
     try {
@@ -31,33 +36,44 @@ class SigninCubit extends Cubit<SigninState> {
         SignInRequestModel(email: email, password: password),
       );
 
+      print('responseeee 123: ${response}');
       await _storeSessionCookie(response.headers);
 
-      // Fetch and store user data including role - AuthService now handles storage
+      // Check again before emitting success
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            isSuccess: true,
+            user: response.user,
+          ),
+        );
+      }
+
+      // Fetch and store user data including role
       final currentUser = await authService.getCurrentUser();
 
-      emit(state.copyWith(
-        isLoading: false,
-        isSuccess: true,
-        user: response.user,
-      ));
-
-      ToastService.showSuccessToast(message: 'Login successful');
+      if (!isClosed) {
+        ToastService.showSuccessToast(message: 'Login successful');
+      }
     } on DioException catch (e) {
-
-      final errorMessage = _extractErrorMessage(e);
-      ToastService.showErrorToast(message: errorMessage);
-      emit(state.copyWith(
-        isLoading: false,
-        isSuccess: false,
-      ));
+      if (!isClosed) {
+        final errorMessage = _extractErrorMessage(e);
+        ToastService.showErrorToast(message: errorMessage);
+        emit(state.copyWith(
+          isLoading: false,
+          isSuccess: false,
+        ));
+      }
     } catch (e, stack) {
-      const errorMessage = 'An unexpected error occurred. Please try again.';
-      ToastService.showErrorToast(message: errorMessage);
-      emit(state.copyWith(
-        isLoading: false,
-        isSuccess: false,
-      ));
+      if (!isClosed) {
+        const errorMessage = 'An unexpected error occurred. Please try again.';
+        ToastService.showErrorToast(message: errorMessage);
+        emit(state.copyWith(
+          isLoading: false,
+          isSuccess: false,
+        ));
+      }
     }
   }
 
@@ -79,7 +95,7 @@ class SigninCubit extends Cubit<SigninState> {
         break;
       }
     }
-}
+  }
 
   Future<void> signInWithGoogle() async {
     emit(state.copyWith(
@@ -165,7 +181,8 @@ class SigninCubit extends Cubit<SigninState> {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final random = Random.secure();
     return String.fromCharCodes(
-      Iterable.generate(length, (_) => chars.codeUnitAt(random.nextInt(chars.length))),
+      Iterable.generate(
+          length, (_) => chars.codeUnitAt(random.nextInt(chars.length))),
     );
   }
 

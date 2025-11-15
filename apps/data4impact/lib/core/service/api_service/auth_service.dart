@@ -37,6 +37,15 @@ class AuthService {
       data: request.toJson(),
     );
 
+    if (response.statusCode! < 200 || response.statusCode! >= 300) {
+      // Throw DioException so it gets caught in your LoginCubit's DioException catch block
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        error: 'Login failed with status ${response.statusCode}',
+      );
+    }
+
     return (
       user: SignInResponseModel.fromJson(response.data as Map<String, dynamic>),
       headers: response.headers,

@@ -87,9 +87,7 @@ class _SignUpViewState extends State<SignUpView> {
 
   Color _getTextColor(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark
-        ? Colors.white
-        : Colors.grey.shade800;
+    return brightness == Brightness.dark ? Colors.white : Colors.grey.shade800;
   }
 
   Color _getSubtitleColor(BuildContext context) {
@@ -224,8 +222,8 @@ class _SignUpViewState extends State<SignUpView> {
             color: isMet
                 ? Colors.green
                 : (Theme.of(context).brightness == Brightness.dark
-                ? Colors.white70
-                : Colors.grey),
+                    ? Colors.white70
+                    : Colors.grey),
           ),
         ),
       ],
@@ -233,36 +231,10 @@ class _SignUpViewState extends State<SignUpView> {
   }
 
   Widget _buildLogo(ThemeData theme) {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withOpacity(0.8),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: const Center(
-        child: Text(
-          'D4I',
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ),
+    return const Image(
+      image: AssetImage('assets/image/d4i.png'),
+      height: 130,
+      width: 130,
     );
   }
 
@@ -364,16 +336,16 @@ class _SignUpViewState extends State<SignUpView> {
       label: isPassword ? 'Password' : 'Confirm Password',
       icon: Icons.lock_outline,
       obscureText:
-      isPassword ? !_isPasswordVisible : !_isConfirmPasswordVisible,
+          isPassword ? !_isPasswordVisible : !_isConfirmPasswordVisible,
       suffixIcon: IconButton(
         icon: Icon(
           isPassword
               ? _isPasswordVisible
-              ? Icons.visibility
-              : Icons.visibility_off
+                  ? Icons.visibility
+                  : Icons.visibility_off
               : _isConfirmPasswordVisible
-              ? Icons.visibility
-              : Icons.visibility_off,
+                  ? Icons.visibility
+                  : Icons.visibility_off,
           color: _getSubtitleColor(context),
         ),
         onPressed: () {
@@ -388,8 +360,8 @@ class _SignUpViewState extends State<SignUpView> {
       ),
       borderColor: hasText
           ? isPasswordValid
-          ? Colors.green
-          : Colors.red
+              ? Colors.green
+              : Colors.red
           : null,
       validator: (value) {
         if (value?.isEmpty ?? true) return 'Required';
@@ -475,15 +447,11 @@ class _SignUpViewState extends State<SignUpView> {
               color: theme.colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-                icon,
-                color: theme.colorScheme.primary,
-                size: 20
-            ),
+            child: Icon(icon, color: theme.colorScheme.primary, size: 20),
           ),
           suffixIcon: suffixIcon,
           contentPadding:
-          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );
@@ -522,13 +490,13 @@ class _SignUpViewState extends State<SignUpView> {
   void _handleSignup() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<SignupCubit>().signup(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
-        password: _passwordController.text.trim(),
-        middleName: _middleNameController.text.trim(),
-      );
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
+            email: _emailController.text.trim(),
+            phone: _phoneController.text.trim(),
+            password: _passwordController.text.trim(),
+            middleName: _middleNameController.text.trim(),
+          );
     }
   }
 

@@ -48,48 +48,42 @@ class ToastService {
           alignment: Alignment.topCenter,
           margin: const EdgeInsets.only(top: 50, left: 16, right: 16),
           padding: const EdgeInsets.symmetric(
-            vertical: 16,
-            horizontal: 20,
+            vertical: 12,
+            horizontal: 16,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: color.withOpacity(0.15),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
             ),
           ],
           title: Text(
             message,
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
               color: textColor ?? Colors.white,
             ),
           ),
           primaryColor: color,
-          backgroundColor: backgroundColor ?? color.withOpacity(0.95),
-          showProgressBar: true,
-          progressBarTheme: ProgressIndicatorThemeData(
-            color: Colors.white.withOpacity(0.7),
-            linearTrackColor: Colors.white.withOpacity(0.2),
-          ),
-          applyBlurEffect: true,
+          backgroundColor: backgroundColor ?? color,
+          showProgressBar: false,
+          applyBlurEffect: false,
           pauseOnHover: false,
           showIcon: true,
           autoCloseDuration: duration,
-          animationDuration: const Duration(milliseconds: 500),
+          animationDuration: const Duration(milliseconds: 300),
           animationBuilder: (context, animation, alignment, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, -1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.elasticOut,
-              )),
-              child: FadeTransition(
-                opacity: animation,
+            return FadeTransition(
+              opacity: animation,
+              child: SizeTransition(
+                sizeFactor: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOut,
+                ),
                 child: child,
               ),
             );
@@ -112,68 +106,49 @@ class ToastService {
           context: context,
           alignment: Alignment.topCenter,
           margin: const EdgeInsets.only(top: 50, left: 16, right: 16),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          borderRadius: BorderRadius.circular(16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.red.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: Colors.red.withOpacity(0.15),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
             ),
           ],
           title: Text(
             message,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
               color: Colors.white,
             ),
           ),
-          primaryColor: Colors.red,
-          backgroundColor: Colors.red.withOpacity(0.95),
-          showProgressBar: true,
-          progressBarTheme: ProgressIndicatorThemeData(
-            color: Colors.white.withOpacity(0.7),
-            linearTrackColor: Colors.white.withOpacity(0.2),
-          ),
-          applyBlurEffect: true,
+          primaryColor: const Color(0xFFDC2626),
+          backgroundColor: const Color(0xFFDC2626),
+          showProgressBar: false,
+          applyBlurEffect: false,
           pauseOnHover: false,
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.error_outline,
-              color: Colors.white,
-              size: 24,
-            ),
+          icon: Icon(
+            Icons.error_rounded,
+            color: Colors.white,
+            size: 20,
           ),
           showIcon: true,
           autoCloseDuration: duration,
-          animationDuration: const Duration(milliseconds: 500),
+          animationDuration: const Duration(milliseconds: 300),
           animationBuilder: (context, animation, alignment, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, -1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.elasticOut,
-              )),
-              child: ScaleTransition(
-                scale: Tween<double>(
-                  begin: 0.8,
-                  end: 1.0,
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, -0.5),
+                  end: Offset.zero,
                 ).animate(CurvedAnimation(
                   parent: animation,
                   curve: Curves.easeOut,
                 )),
-                child: FadeTransition(
-                  opacity: animation,
-                  child: child,
-                ),
+                child: child,
               ),
             );
           },
@@ -195,68 +170,48 @@ class ToastService {
           context: context,
           alignment: Alignment.topCenter,
           margin: const EdgeInsets.only(top: 50, left: 16, right: 16),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          borderRadius: BorderRadius.circular(16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           boxShadow: [
             BoxShadow(
-              color: Colors.green.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: Colors.green.withOpacity(0.15),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
             ),
           ],
           title: Text(
             message,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
               color: Colors.white,
             ),
           ),
-          primaryColor: Colors.green,
-          backgroundColor: Colors.green.withOpacity(0.95),
-          showProgressBar: true,
-          progressBarTheme: ProgressIndicatorThemeData(
-            color: Colors.white.withOpacity(0.7),
-            linearTrackColor: Colors.white.withOpacity(0.2),
-          ),
-          applyBlurEffect: true,
+          primaryColor: const Color(0xFF16A34A),
+          backgroundColor: const Color(0xFF16A34A),
+          showProgressBar: false,
+          applyBlurEffect: false,
           pauseOnHover: false,
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.check_circle_outline,
-              color: Colors.white,
-              size: 24,
-            ),
+          icon: const Icon(
+            Icons.check_circle_rounded,
+            color: Colors.white,
+            size: 20,
           ),
           showIcon: true,
           autoCloseDuration: duration,
-          animationDuration: const Duration(milliseconds: 500),
+          animationDuration: const Duration(milliseconds: 300),
           animationBuilder: (context, animation, alignment, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, -1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.elasticOut,
-              )),
-              child: ScaleTransition(
-                scale: Tween<double>(
-                  begin: 0.8,
-                  end: 1.0,
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, -0.5),
+                  end: Offset.zero,
                 ).animate(CurvedAnimation(
                   parent: animation,
                   curve: Curves.easeOut,
                 )),
-                child: FadeTransition(
-                  opacity: animation,
-                  child: child,
-                ),
+                child: child,
               ),
             );
           },
@@ -278,68 +233,49 @@ class ToastService {
           context: context,
           alignment: Alignment.topCenter,
           margin: const EdgeInsets.only(top: 50, left: 16, right: 16),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          borderRadius: BorderRadius.circular(16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.orange.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: Colors.orange.withOpacity(0.15),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
             ),
           ],
           title: Text(
             message,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
               color: Colors.white,
             ),
           ),
-          primaryColor: Colors.orange,
-          backgroundColor: Colors.orange.withOpacity(0.95),
-          showProgressBar: true,
-          progressBarTheme: ProgressIndicatorThemeData(
-            color: Colors.white.withOpacity(0.7),
-            linearTrackColor: Colors.white.withOpacity(0.2),
-          ),
-          applyBlurEffect: true,
+          primaryColor: const Color(0xFFEA580C),
+          backgroundColor: const Color(0xFFEA580C),
+          showProgressBar: false,
+          applyBlurEffect: false,
           pauseOnHover: false,
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.warning_outlined,
-              color: Colors.white,
-              size: 24,
-            ),
+          icon: Icon(
+            Icons.warning_rounded,
+            color: Colors.white,
+            size: 20,
           ),
           showIcon: true,
           autoCloseDuration: duration,
-          animationDuration: const Duration(milliseconds: 500),
+          animationDuration: const Duration(milliseconds: 300),
           animationBuilder: (context, animation, alignment, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, -1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.elasticOut,
-              )),
-              child: ScaleTransition(
-                scale: Tween<double>(
-                  begin: 0.8,
-                  end: 1.0,
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, -0.5),
+                  end: Offset.zero,
                 ).animate(CurvedAnimation(
                   parent: animation,
                   curve: Curves.easeOut,
                 )),
-                child: FadeTransition(
-                  opacity: animation,
-                  child: child,
-                ),
+                child: child,
               ),
             );
           },
@@ -361,68 +297,49 @@ class ToastService {
           context: context,
           alignment: Alignment.topCenter,
           margin: const EdgeInsets.only(top: 50, left: 16, right: 16),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          borderRadius: BorderRadius.circular(16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: Colors.blue.withOpacity(0.15),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
             ),
           ],
           title: Text(
             message,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
               color: Colors.white,
             ),
           ),
-          primaryColor: Colors.blue,
-          backgroundColor: Colors.blue.withOpacity(0.95),
-          showProgressBar: true,
-          progressBarTheme: ProgressIndicatorThemeData(
-            color: Colors.white.withOpacity(0.7),
-            linearTrackColor: Colors.white.withOpacity(0.2),
-          ),
-          applyBlurEffect: true,
+          primaryColor: const Color(0xFF2563EB),
+          backgroundColor: const Color(0xFF2563EB),
+          showProgressBar: false,
+          applyBlurEffect: false,
           pauseOnHover: false,
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.info_outline,
-              color: Colors.white,
-              size: 24,
-            ),
+          icon: Icon(
+            Icons.info_rounded,
+            color: Colors.white,
+            size: 20,
           ),
           showIcon: true,
           autoCloseDuration: duration,
-          animationDuration: const Duration(milliseconds: 500),
+          animationDuration: const Duration(milliseconds: 300),
           animationBuilder: (context, animation, alignment, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, -1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.elasticOut,
-              )),
-              child: ScaleTransition(
-                scale: Tween<double>(
-                  begin: 0.8,
-                  end: 1.0,
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, -0.5),
+                  end: Offset.zero,
                 ).animate(CurvedAnimation(
                   parent: animation,
                   curve: Curves.easeOut,
                 )),
-                child: FadeTransition(
-                  opacity: animation,
-                  child: child,
-                ),
+                child: child,
               ),
             );
           },
