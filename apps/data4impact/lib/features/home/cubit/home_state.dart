@@ -13,6 +13,7 @@ class HomeState extends Equatable {
   final int pendingSyncCount;
   final int totalToSync; // Add total items to sync
   final int syncedSoFar; // Add count of synced items
+  final bool fetchingProjects;
 
   const HomeState({
     this.isLoading = false,
@@ -26,6 +27,7 @@ class HomeState extends Equatable {
     this.pendingSyncCount = 0,
     this.totalToSync = 0,
     this.syncedSoFar = 0,
+   this.fetchingProjects=false,
   });
 
   @override
@@ -41,6 +43,7 @@ class HomeState extends Equatable {
     pendingSyncCount,
     totalToSync,
     syncedSoFar,
+    fetchingProjects,
   ];
 
   HomeState copyWith({
@@ -55,6 +58,7 @@ class HomeState extends Equatable {
     int? pendingSyncCount,
     int? totalToSync,
     int? syncedSoFar,
+    bool? fetchingProjects,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
@@ -68,6 +72,7 @@ class HomeState extends Equatable {
       pendingSyncCount: pendingSyncCount ?? this.pendingSyncCount,
       totalToSync: totalToSync ?? this.totalToSync,
       syncedSoFar: syncedSoFar ?? this.syncedSoFar,
+        fetchingProjects:fetchingProjects??this.fetchingProjects,
     );
   }
 }

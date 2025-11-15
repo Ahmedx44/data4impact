@@ -108,9 +108,8 @@ class _NavigationViewState extends State<NavigationView> {
   }
 
   Widget _buildLoadingScreen() {
-    return Scaffold(
-      backgroundColor: Colors.blueGrey[50],
-      body: const Center(
+    return const Scaffold(
+      body:  Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -371,7 +370,7 @@ class _NavigationViewState extends State<NavigationView> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginPage()),
-        (route) => false,
+            (route) => false,
       );
 
       ToastService.showSuccessToast(message: 'Logout successful');
@@ -401,29 +400,32 @@ class _NavigationViewState extends State<NavigationView> {
               _initialLoadCompleted = true;
             });
           }
-        } else {}
+        }
       },
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, homeState) {
           final profileState = context.watch<ProfileCubit>().state;
-          if (homeState.isLoading && !_initialLoadCompleted) {
+
+          // Show loading screen only during initial load when no projects exist
+          if (homeState.fetchingProjects) {
             return _buildLoadingScreen();
           }
 
           final hasSubjects = _hasSubjects(homeState);
+          final hasValidUser = _hasValidUser(profileState);
 
-          if (!hasSubjects) {
+          if (!hasSubjects && !homeState.isLoading) {
             return _buildStaticScreen();
           }
-          final hasValidUser = _hasValidUser(profileState);
-          if (!hasValidUser) {
-            _initializeNavigationItems();
-          } else {
+          // Initialize navigation items based on user role
+          if (hasValidUser) {
             if (_isAdmin(profileState)) {
               _initializeAdminNavigationItems();
             } else {
               _initializeNavigationItems();
             }
+          } else {
+            _initializeNavigationItems();
           }
 
           return Scaffold(

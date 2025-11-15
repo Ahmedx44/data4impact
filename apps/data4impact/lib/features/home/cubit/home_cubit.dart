@@ -299,7 +299,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> fetchAllProjects() async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(fetchingProjects:true,isLoading: true));
 
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
@@ -311,15 +311,13 @@ class HomeCubit extends Cubit<HomeState> {
     if (isConnected) {
       try {
         final response = await projectService.getAllProjects();
-        print('Debug: API response: $response'); // Check what this actually returns
 
-        // FIX: Check if response is actually empty
         if (response.isEmpty) {
-          print('Debug: No projects found in API response');
           emit(
             state.copyWith(
               isLoading: false,
-              projects: [], // Ensure projects is empty
+              fetchingProjects:false,
+              projects: [],
               selectedProject: null,
               isOffline: false,
             ),
@@ -331,15 +329,11 @@ class HomeCubit extends Cubit<HomeState> {
           return Project.fromMap(json);
         }).toList();
 
-        print('Debug: Parsed projects count: ${projects.length}'); // Debug this
-
-        // Only proceed if we actually have projects
         if (projects.isNotEmpty) {
           await switchProject(projects[0]);
           await OfflineModeDataRepo().saveAllProjects(projects);
         }
 
-        // Get current project ID and set selected project
         final currentProjectId = await authService.getCurrentProjectId();
         Project? selectedProject;
 
@@ -355,7 +349,8 @@ class HomeCubit extends Cubit<HomeState> {
         emit(
           state.copyWith(
             isLoading: false,
-            projects: projects, // This should be empty if no projects
+            fetchingProjects:false,
+            projects: projects,
             selectedProject: selectedProject,
             isOffline: false,
           ),
@@ -363,8 +358,6 @@ class HomeCubit extends Cubit<HomeState> {
 
         await _checkAndSyncOfflineData();
       } catch (e) {
-        print('Debug: Error fetching projects: $e');
-        // Even if API fails, we're technically online
         final projects = await OfflineModeDataRepo().getSavedAllProjects();
         final currentProjectId = await authService.getCurrentProjectId();
         Project? selectedProject;
@@ -378,6 +371,7 @@ class HomeCubit extends Cubit<HomeState> {
         emit(
           state.copyWith(
             isLoading: false,
+            fetchingProjects:false,
             projects: projects,
             selectedProject: selectedProject,
             isOffline: false,
@@ -398,6 +392,7 @@ class HomeCubit extends Cubit<HomeState> {
       emit(
         state.copyWith(
           isLoading: false,
+          fetchingProjects:false,
           projects: projects,
           selectedProject: selectedProject,
           isOffline: true,
