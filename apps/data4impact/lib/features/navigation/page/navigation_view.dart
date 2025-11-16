@@ -30,6 +30,7 @@ class _NavigationViewState extends State<NavigationView>
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   String? _sessionToken;
   bool _initialLoadCompleted = false;
+  bool _showStaticScreen = false;
 
   // Track which pages have been initialized and store their state
   final List<bool> _pagesInitialized = [];
@@ -44,17 +45,32 @@ class _NavigationViewState extends State<NavigationView>
     super.initState();
     _initializeNavigationItems();
     _checkToken();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final homeCubit = context.read<HomeCubit>();
-      if (homeCubit.state.projects.isEmpty && !homeCubit.state.isLoading) {
-        homeCubit.fetchAllProjects();
-      }
-    });
+    _checkInitialProjectState();
   }
 
   Future<void> _checkToken() async {
     _sessionToken = await _secureStorage.read(key: 'session_cookie');
     setState(() {});
+  }
+
+  void _checkInitialProjectState() {
+    final homeCubit = context.read<HomeCubit>();
+
+    // Check current project state immediately
+    if (!homeCubit.state.fetchingProjects && homeCubit.state.projects.isEmpty) {
+      _showStaticScreen = true;
+    }
+
+    // Force fetch projects if not already loading
+    if (homeCubit.state.projects.isEmpty && !homeCubit.state.fetchingProjects) {
+      homeCubit.fetchAllProjects().then((_) {
+        if (mounted) {
+          setState(() {
+            _showStaticScreen = homeCubit.state.projects.isEmpty;
+          });
+        }
+      });
+    }
   }
 
   void _initializeNavigationItems() {
@@ -454,38 +470,29 @@ class _NavigationViewState extends State<NavigationView>
 
     return BlocListener<HomeCubit, HomeState>(
       listener: (context, homeState) {
-        if (_hasSubjects(homeState)) {
-          final profileState = context.read<ProfileCubit>().state;
-          if (_hasValidUser(profileState)) {
-            if (_isAdmin(profileState)) {
-              _initializeAdminNavigationItems();
-            } else {
-              _initializeNavigationItems();
-            }
-          }
-
-          if (!_initialLoadCompleted) {
+        if (!homeState.fetchingProjects) {
+          final hasProjects = homeState.projects.isNotEmpty;
+          if (_showStaticScreen != !hasProjects) {
             setState(() {
-              _initialLoadCompleted = true;
+              _showStaticScreen = !hasProjects;
             });
           }
         }
       },
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, homeState) {
-          final profileState = context.watch<ProfileCubit>().state;
+          // Show static screen immediately if no projects
+          if (_showStaticScreen && !homeState.fetchingProjects) {
+            return _buildStaticScreen();
+          }
 
-          // Show loading screen only during initial load when no projects exist
-          if (homeState.fetchingProjects) {
+          // Show loading during initial fetch
+          if (homeState.fetchingProjects && !_initialLoadCompleted) {
             return _buildLoadingScreen();
           }
 
-          final hasSubjects = _hasSubjects(homeState);
+          final profileState = context.watch<ProfileCubit>().state;
           final hasValidUser = _hasValidUser(profileState);
-
-          if (!hasSubjects && !homeState.isLoading) {
-            return _buildStaticScreen();
-          }
 
           // Initialize navigation items based on user role
           if (hasValidUser) {
@@ -505,7 +512,7 @@ class _NavigationViewState extends State<NavigationView>
                 for (int i = 0; i < items.length; i++) _buildPage(i),
               ],
             ),
-            bottomNavigationBar: BottomBarDefault(
+            bottomNavigationBar: _showStaticScreen ? null : BottomBarDefault(
               items: items,
               backgroundColor: theme.surface,
               color: theme.onSurface,
