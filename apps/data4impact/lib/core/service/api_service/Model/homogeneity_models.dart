@@ -1,4 +1,6 @@
 // homogeneity_models.dart
+// In your homogeneity_models.dart file
+
 class Homogeneity {
   final List<HomogeneityField> fields;
   final List<HomogeneityGroup> groups;
@@ -15,13 +17,65 @@ class Homogeneity {
   });
 
   factory Homogeneity.fromJson(Map<String, dynamic> json) {
+    print('=== PARSING HOMOGENEITY JSON ===');
+    print('Homogeneity JSON keys: ${json.keys}');
+    print('Full homogeneity JSON: $json');
+
+    // Parse fields
+    List<HomogeneityField> fields = [];
+    if (json['fields'] is List) {
+      print('Fields is List, length: ${(json['fields'] as List).length}');
+      for (var i = 0; i < (json['fields'] as List).length; i++) {
+        final fieldJson = (json['fields'] as List)[i];
+        print('Field $i: $fieldJson');
+        if (fieldJson is Map<String, dynamic>) {
+          try {
+            final field = HomogeneityField.fromJson(fieldJson);
+            fields.add(field);
+            print('Successfully parsed field: ${field.name}');
+          } catch (e) {
+            print('Error parsing field $i: $e');
+          }
+        } else {
+          print('Field $i is NOT a Map - type: ${fieldJson.runtimeType}');
+        }
+      }
+    } else {
+      print('Fields is NOT a List - type: ${json['fields']?.runtimeType}');
+      print('Fields value: ${json['fields']}');
+    }
+
+    // Parse groups
+    List<HomogeneityGroup> groups = [];
+    if (json['groups'] is List) {
+      print('Groups is List, length: ${(json['groups'] as List).length}');
+      for (var i = 0; i < (json['groups'] as List).length; i++) {
+        final groupJson = (json['groups'] as List)[i];
+        print('Group $i: $groupJson');
+        if (groupJson is Map<String, dynamic>) {
+          try {
+            final group = HomogeneityGroup.fromJson(groupJson);
+            groups.add(group);
+            print('Successfully parsed group: ${group.name}');
+          } catch (e) {
+            print('Error parsing group $i: $e');
+          }
+        } else {
+          print('Group $i is NOT a Map - type: ${groupJson.runtimeType}');
+        }
+      }
+    } else {
+      print('Groups is NOT a List - type: ${json['groups']?.runtimeType}');
+      print('Groups value: ${json['groups']}');
+    }
+
+    print('=== HOMOGENEITY PARSING RESULT ===');
+    print('Parsed ${fields.length} fields and ${groups.length} groups');
+    print('=== END HOMOGENEITY PARSING ===');
+
     return Homogeneity(
-      fields: (json['fields'] as List<dynamic>?)
-          ?.map((field) => HomogeneityField.fromJson(field as Map<String, dynamic>))
-          .toList() ?? [],
-      groups: (json['groups'] as List<dynamic>?)
-          ?.map((group) => HomogeneityGroup.fromJson(group as Map<String, dynamic>))
-          .toList() ?? [],
+      fields: fields,
+      groups: groups,
       sampleGroupSize: (json['sampleGroupSize'] as num?)?.toInt() ?? 0,
       maxGroupSize: (json['maxGroupSize'] as num?)?.toInt() ?? 0,
       minGroupSize: (json['minGroupSize'] as num?)?.toInt() ?? 0,

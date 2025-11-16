@@ -52,6 +52,21 @@ class Study {
       throw FormatException(json['message'] as String ?? 'Study is not available');
     }
 
+    // DEBUG: Check homogeneity data at the start
+    print('=== STUDY PARSING DEBUG START ===');
+    print('Study ID: ${json['_id']}');
+    print('Study Name: ${json['name']}');
+    print('Homogeneity key exists: ${json.containsKey('homogeneity')}');
+    print('Homogeneity data type: ${json['homogeneity']?.runtimeType}');
+    print('Homogeneity data: ${json['homogeneity']}');
+
+    if (json['homogeneity'] != null) {
+      print('Homogeneity is NOT null, proceeding with parsing...');
+    } else {
+      print('Homogeneity IS null - this is the problem!');
+    }
+    print('=== STUDY PARSING DEBUG END ===');
+
     final questions = (json['questions'] as List<dynamic>?)
         ?.map((q) => ApiQuestion.fromJson(q as Map<String,dynamic>))
         .toList() ?? [];
@@ -80,7 +95,16 @@ class Study {
     // Parse homogeneity data for interview studies - CHANGED
     Homogeneity? homogeneity;
     if (json['homogeneity'] is Map<String, dynamic>) {
+      print('=== PARSING HOMOGENEITY DATA ===');
+      print('Homogeneity JSON keys: ${(json['homogeneity'] as Map<String, dynamic>).keys}');
       homogeneity = Homogeneity.fromJson(json['homogeneity'] as Map<String, dynamic>);
+      print('=== HOMOGENEITY PARSING COMPLETE ===');
+      print('Parsed homogeneity - fields: ${homogeneity?.fields.length}');
+      print('Parsed homogeneity - groups: ${homogeneity?.groups.length}');
+    } else {
+      print('=== HOMOGENEITY PARSING FAILED ===');
+      print('Homogeneity is NOT a Map - type: ${json['homogeneity']?.runtimeType}');
+      print('Homogeneity value: ${json['homogeneity']}');
     }
 
     // Parse subject data for longitudinal studies
@@ -99,6 +123,17 @@ class Study {
     if (json['updatedAt'] is String) {
       updatedAt = DateTime.parse(json['updatedAt'] as String);
     }
+
+    // Final debug output
+    print('=== STUDY CREATION SUMMARY ===');
+    print('Study created with:');
+    print('- ${questions.length} questions');
+    print('- Homogeneity: ${homogeneity != null ? "EXISTS" : "NULL"}');
+    if (homogeneity != null) {
+      print('- Homogeneity fields: ${homogeneity!.fields.length}');
+      print('- Homogeneity groups: ${homogeneity!.groups.length}');
+    }
+    print('=== STUDY CREATION COMPLETE ===');
 
     return Study(
       id: json['_id'] as String? ?? '',
@@ -146,12 +181,28 @@ class Study {
 
   // Get homogeneity groups for interview studies - FIXED
   List<HomogeneityGroup> get homogeneityGroups {
-    return homogeneity?.groups ?? [];
+    final groups = homogeneity?.groups ?? [];
+    print('=== HOMOGENEITY GROUPS GETTER ===');
+    print('Homogeneity object: ${homogeneity != null ? "EXISTS" : "NULL"}');
+    print('Returning ${groups.length} groups');
+    for (final group in groups) {
+      print('- Group: ${group.name} (ID: ${group.id})');
+    }
+    print('=== END HOMOGENEITY GROUPS GETTER ===');
+    return groups;
   }
 
   // Get homogeneity fields for interview studies - FIXED
   List<HomogeneityField> get homogeneityFields {
-    return homogeneity?.fields ?? [];
+    final fields = homogeneity?.fields ?? [];
+    print('=== HOMOGENEITY FIELDS GETTER ===');
+    print('Homogeneity object: ${homogeneity != null ? "EXISTS" : "NULL"}');
+    print('Returning ${fields.length} fields');
+    for (final field in fields) {
+      print('- Field: ${field.name} (ID: ${field.id})');
+    }
+    print('=== END HOMOGENEITY FIELDS GETTER ===');
+    return fields;
   }
 
   // Get a specific homogeneity group by ID

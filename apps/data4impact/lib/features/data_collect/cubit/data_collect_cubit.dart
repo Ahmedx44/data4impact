@@ -53,6 +53,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(selectedLanguage: languageCode));
   }
 
+
+// In DataCollectCubit class
+  void startCreateRespondentFlow() {
+    // Initialize any necessary state for creating a respondent
+    emit(state.copyWith(
+      newRespondentData: {},
+      isCreatingRespondent: true,
+    ));
+  }
+
   // Clear error method
   void clearError() {
     emit(state.copyWith(error: null));
@@ -1232,11 +1242,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       ));
 
       ToastService.showSuccessToast(message: 'Respondent created successfully');
+
+      // Return success indicator
+      return;
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         error: 'Failed to create respondent: ${e.toString()}',
       ));
+      // Re-throw the error to handle it in the UI
+      throw e;
     }
   }
 
@@ -1756,7 +1771,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         groups: groups,
         isCreatingGroup: false,
         newGroupData: {},
-      ));
+      ),);
 
       ToastService.showSuccessToast(message: 'Group created successfully');
     } catch (e) {
