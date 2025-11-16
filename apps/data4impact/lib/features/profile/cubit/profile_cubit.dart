@@ -24,56 +24,79 @@ class ProfileCubit extends Cubit<ProfileState> {
     emit(state.copyWith(isDarkMode: !state.isDarkMode));
   }
 
+
+
   Future<void> fetchCurrentUser() async {
-    print('DEBUG: fetchCurrentUser() called');
     emit(state.copyWith(isLoading: true));
 
     final connected = InternetConnectionMonitor(checkOnInterval: false);
-    print('DEBUG: Checking internet connection...');
+
     final isConnected = await connected.hasInternetConnection();
-    print('DEBUG: Internet connection status: $isConnected');
+
 
     if (isConnected) {
       try {
-        print('DEBUG: Connected to internet, fetching current user...');
         final currentUser = await authService.getCurrentUser();
-        print('DEBUG: Current user fetched: $currentUser');
 
         await OfflineModeDataRepo().saveCurrentUser(currentUser);
-        print('DEBUG: Current user saved offline successfully');
+
+        await fetchUserOrganizations();
 
         emit(state.copyWith(
           user: currentUser,
           isLoading: false,
-        ));
-        print('DEBUG: State emitted with online user data');
+        ),);
+
       } catch (e) {
-        print('DEBUG: Error fetching user online: $e');
-        print('DEBUG: Attempting to load user from offline data...');
         final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
-        print('DEBUG: Offline current user fetched: $currentUser');
 
         emit(state.copyWith(
           user: currentUser,
           isLoading: false,
-        ));
-        print('DEBUG: State emitted with offline user data (fallback)');
+        ),);
+
       }
     } else {
-      print('DEBUG: No internet connection, loading offline user...');
+
       final currentUser = await OfflineModeDataRepo().getSavedCurrentUser();
-      print('DEBUG: Offline current user fetched: $currentUser');
+
 
       emit(state.copyWith(
         user: currentUser,
         isLoading: false,
-      ));
-      print('DEBUG: State emitted with offline user data');
+      ),);
     }
 
-    print('DEBUG: fetchCurrentUser() completed');
   }
 
+  Future<void> fetchUserOrganizations() async {
+    try {
+      emit(state.copyWith(loadingOrganizations: true));
+
+      final connected = InternetConnectionMonitor(checkOnInterval: false);
+      final isConnected = await connected.hasInternetConnection();
+
+      if (isConnected) {
+        final organizations = await profileService.getUserOrganizations();
+        emit(state.copyWith(
+          organizations: organizations,
+          loadingOrganizations: false,
+        ),);
+
+      } else {
+
+        emit(state.copyWith(
+          organizations: [],
+          loadingOrganizations: false,
+        ),);
+      }
+    } catch (e) {
+      emit(state.copyWith(
+        organizations: [],
+        loadingOrganizations: false,
+      ),);
+    }
+  }
 
   Future<void> refreshUserData() async {
     await fetchCurrentUser();
@@ -122,7 +145,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(state.copyWith(
         user: updatedUser,
         isLoading: false,
-        tempProfileImage: imageFile, // Keep the temp image for immediate UI update
+        tempProfileImage: imageFile,
       ));
 
     } catch (e) {
@@ -135,13 +158,12 @@ class ProfileCubit extends Cubit<ProfileState> {
     emit(state.copyWith(isLoading: true));
 
     try {
-      // Update profile with edited fields only (no image handling here)
       final updatedUser = await profileService.updateProfile(
         firstName: state.editedFields['firstName'] ?? state.user?.firstName,
         middleName: state.editedFields['middleName'] ?? state.user?.middleName,
         lastName: state.editedFields['lastName'] ?? state.user?.lastName,
         phone: state.editedFields['phone'] ?? state.user?.phone,
-        imageUrl: null, // Image is handled separately via uploadProfileImage
+        imageUrl: null,
       );
 
       emit(state.copyWith(
@@ -161,7 +183,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     } catch (e) {
       emit(state.copyWith(isLoading: false));
 
-      // Show error message
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to update profile: ${e.toString()}')),

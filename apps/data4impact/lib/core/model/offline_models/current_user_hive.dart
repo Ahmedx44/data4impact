@@ -22,27 +22,30 @@ class CurrentUserHive extends HiveObject {
   final String role;
 
   @HiveField(5)
-  final String? phone;
+  final List<Map<String, dynamic>> roles; // Add this field
 
   @HiveField(6)
-  final String email;
+  final String? phone;
 
   @HiveField(7)
-  final bool emailVerified;
+  final String email;
 
   @HiveField(8)
-  final String? imageUrl;
+  final bool emailVerified;
 
   @HiveField(9)
-  final bool active;
+  final String? imageUrl;
 
   @HiveField(10)
-  final bool systemOwner;
+  final bool active;
 
   @HiveField(11)
-  final String createdAt;
+  final bool systemOwner;
 
   @HiveField(12)
+  final String createdAt;
+
+  @HiveField(13)
   final String updatedAt;
 
   CurrentUserHive({
@@ -51,6 +54,7 @@ class CurrentUserHive extends HiveObject {
     this.middleName,
     required this.lastName,
     required this.role,
+    required this.roles, // Add to constructor
     this.phone,
     required this.email,
     required this.emailVerified,
@@ -68,6 +72,7 @@ class CurrentUserHive extends HiveObject {
       middleName: user.middleName,
       lastName: user.lastName,
       role: user.role,
+      roles: user.roles, // Add this
       phone: user.phone,
       email: user.email,
       emailVerified: user.emailVerified,
@@ -86,6 +91,7 @@ class CurrentUserHive extends HiveObject {
       middleName: middleName,
       lastName: lastName,
       role: role,
+      roles: roles, // Add this
       phone: phone,
       email: email,
       emailVerified: emailVerified,

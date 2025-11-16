@@ -22,21 +22,24 @@ class CurrentUserHiveAdapter extends TypeAdapter<CurrentUserHive> {
       middleName: fields[2] as String?,
       lastName: fields[3] as String,
       role: fields[4] as String,
-      phone: fields[5] as String?,
-      email: fields[6] as String,
-      emailVerified: fields[7] as bool,
-      imageUrl: fields[8] as String?,
-      active: fields[9] as bool,
-      systemOwner: fields[10] as bool,
-      createdAt: fields[11] as String,
-      updatedAt: fields[12] as String,
+      roles: (fields[5] as List)
+          .map((dynamic e) => (e as Map).cast<String, dynamic>())
+          .toList(),
+      phone: fields[6] as String?,
+      email: fields[7] as String,
+      emailVerified: fields[8] as bool,
+      imageUrl: fields[9] as String?,
+      active: fields[10] as bool,
+      systemOwner: fields[11] as bool,
+      createdAt: fields[12] as String,
+      updatedAt: fields[13] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, CurrentUserHive obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -48,20 +51,22 @@ class CurrentUserHiveAdapter extends TypeAdapter<CurrentUserHive> {
       ..writeByte(4)
       ..write(obj.role)
       ..writeByte(5)
-      ..write(obj.phone)
+      ..write(obj.roles)
       ..writeByte(6)
-      ..write(obj.email)
+      ..write(obj.phone)
       ..writeByte(7)
-      ..write(obj.emailVerified)
+      ..write(obj.email)
       ..writeByte(8)
-      ..write(obj.imageUrl)
+      ..write(obj.emailVerified)
       ..writeByte(9)
-      ..write(obj.active)
+      ..write(obj.imageUrl)
       ..writeByte(10)
-      ..write(obj.systemOwner)
+      ..write(obj.active)
       ..writeByte(11)
-      ..write(obj.createdAt)
+      ..write(obj.systemOwner)
       ..writeByte(12)
+      ..write(obj.createdAt)
+      ..writeByte(13)
       ..write(obj.updatedAt);
   }
 

@@ -428,7 +428,7 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
   }
 
   Widget _buildCreateRespondentForm(DataCollectState state) {
-    final homogeneityGroups = state.study?.homogeneity?['groups'] ?? [];
+    final homogeneityGroups = state.study?.homogeneity!.groups ?? [];
     final nextCode = _generateNextRespondentCode(state.respondents);
 
     return Padding(

@@ -1,5 +1,6 @@
 // group_discussion.dart
 import 'package:data4impact/core/service/api_service/Model/api_question.dart';
+import 'package:data4impact/core/service/api_service/Model/homogeneity_models.dart';
 import 'package:data4impact/core/service/api_service/Model/study.dart';
 import 'package:data4impact/core/service/dialog_loading.dart';
 import 'package:data4impact/core/service/toast_service.dart';
@@ -21,6 +22,7 @@ class GroupDiscussionDataCollection extends StatefulWidget {
 class _GroupDiscussionDataCollectionState
     extends State<GroupDiscussionDataCollection> {
   final Map<String, TextEditingController> _textControllers = {};
+  final Map<String, TextEditingController> _respondentFieldControllers = {};
   String? _previousError;
 
   @override
@@ -35,6 +37,7 @@ class _GroupDiscussionDataCollectionState
   @override
   void dispose() {
     _textControllers.values.forEach((controller) => controller.dispose());
+    _respondentFieldControllers.values.forEach((controller) => controller.dispose());
     super.dispose();
   }
 
@@ -154,7 +157,7 @@ class _GroupDiscussionDataCollectionState
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color:
-                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    Theme.of(context).colorScheme.outline.withOpacity(0.2),
                   ),
                 ),
                 child: Column(
@@ -381,7 +384,7 @@ class _GroupDiscussionDataCollectionState
                                   Icons.group_work_rounded,
                                   size: 30,
                                   color:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                  Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -467,72 +470,72 @@ class _GroupDiscussionDataCollectionState
                 child: state.groups.isEmpty
                     ? _buildEmptyGroupsState()
                     : Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Available Groups (${state.groups.length})',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '${state.groups.length} Groups',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                            Text(
+                              'Available Groups (${state.groups.length})',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface,
                               ),
                             ),
-                            // Remove Expanded from here and use a fixed height container
                             Container(
-                              constraints: BoxConstraints(
-                                maxHeight:
-                                    MediaQuery.of(context).size.height * 0.5,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: ListView.separated(
-                                physics: const ClampingScrollPhysics(),
-                                itemCount: state.groups.length,
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final group = state.groups[index];
-                                  return _buildGroupCard(group);
-                                },
+                              child: Text(
+                                '${state.groups.length} Groups',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary,
+                                ),
                               ),
                             ),
-                            // Add some bottom padding for better spacing
-                            const SizedBox(height: 20),
                           ],
                         ),
                       ),
+                      // Remove Expanded from here and use a fixed height container
+                      Container(
+                        constraints: BoxConstraints(
+                          maxHeight:
+                          MediaQuery.of(context).size.height * 0.5,
+                        ),
+                        child: ListView.separated(
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: state.groups.length,
+                          separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final group = state.groups[index];
+                            return _buildGroupCard(group);
+                          },
+                        ),
+                      ),
+                      // Add some bottom padding for better spacing
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -541,15 +544,15 @@ class _GroupDiscussionDataCollectionState
       floatingActionButton: state.groups.isEmpty
           ? null
           : FloatingActionButton.extended(
-              onPressed: () {
-                context.read<DataCollectCubit>().showCreateGroupForm();
-                _showCreateGroupDialog();
-              },
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('New Group'),
-            ),
+        onPressed: () {
+          context.read<DataCollectCubit>().showCreateGroupForm();
+          _showCreateGroupDialog();
+        },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('New Group'),
+      ),
     );
   }
 
@@ -695,7 +698,7 @@ class _GroupDiscussionDataCollectionState
                 // Button
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(8),
@@ -836,7 +839,7 @@ class _GroupDiscussionDataCollectionState
                 child: Container(
                   decoration: BoxDecoration(
                     color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: Theme.of(context)
@@ -895,63 +898,63 @@ class _GroupDiscussionDataCollectionState
             child: state.groupRespondents.isEmpty
                 ? _buildEmptyRespondentsState()
                 : Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Available Respondents (${state.groupRespondents.length})',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceVariant,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'Select All',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                            ],
+                        Text(
+                          'Available Respondents (${state.groupRespondents.length})',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color:
+                            Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                        Expanded(
-                          child: ListView.separated(
-                            itemCount: state.groupRespondents.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final respondent = state.groupRespondents[index];
-                              final isSelected = state.selectedGroupRespondents
-                                  .any((r) => r['_id'] == respondent['_id']);
-                              return _buildRespondentCard(
-                                  respondent, isSelected, index);
-                            },
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Select All',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color:
+                              Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: state.groupRespondents.length,
+                      separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final respondent = state.groupRespondents[index];
+                        final isSelected = state.selectedGroupRespondents
+                            .any((r) => r['_id'] == respondent['_id']);
+                        return _buildRespondentCard(
+                            respondent, isSelected, index);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
 
           // Start Discussion Button
@@ -991,14 +994,14 @@ class _GroupDiscussionDataCollectionState
         ],
       ),
       floatingActionButton: (state.selectedGroupRespondents == null ||
-              state.selectedGroupRespondents!.isEmpty)
+          state.selectedGroupRespondents!.isEmpty)
           ? FloatingActionButton.extended(
-              onPressed: _showCreateRespondentDialog,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              icon: const Icon(Icons.person_add_rounded),
-              label: const Text('Add Respondent'),
-            )
+        onPressed: _showCreateRespondentDialog,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        icon: const Icon(Icons.person_add_rounded),
+        label: const Text('Add Respondent'),
+      )
           : null,
     );
   }
@@ -1067,19 +1070,19 @@ class _GroupDiscussionDataCollectionState
         decoration: BoxDecoration(
           gradient: isSelected
               ? LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                    Theme.of(context).colorScheme.primary.withOpacity(0.02),
-                  ],
-                )
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              Theme.of(context).colorScheme.primary.withOpacity(0.02),
+            ],
+          )
               : null,
           borderRadius: BorderRadius.circular(16),
         ),
         child: CheckboxListTile(
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           title: Text(
             respondent['name']?.toString() ?? 'Unnamed Participant',
             style: TextStyle(
@@ -1115,24 +1118,24 @@ class _GroupDiscussionDataCollectionState
             decoration: BoxDecoration(
               gradient: isSelected
                   ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                      ],
-                    )
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                ],
+              )
                   : LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Theme.of(context).colorScheme.surfaceVariant,
-                        Theme.of(context)
-                            .colorScheme
-                            .surfaceVariant
-                            .withOpacity(0.7),
-                      ],
-                    ),
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.surfaceVariant,
+                  Theme.of(context)
+                      .colorScheme
+                      .surfaceVariant
+                      .withOpacity(0.7),
+                ],
+              ),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -1142,9 +1145,9 @@ class _GroupDiscussionDataCollectionState
                   color: isSelected
                       ? Theme.of(context).colorScheme.onPrimary
                       : Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.6),
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -1193,9 +1196,9 @@ class _GroupDiscussionDataCollectionState
   Widget _buildQuestionsScreen(DataCollectState state, Study study) {
     final currentQuestionIndex = state.currentQuestionIndex;
     final currentRespondent =
-        state.currentRespondentIndex < state.selectedGroupRespondents.length
-            ? state.selectedGroupRespondents[state.currentRespondentIndex]
-            : null;
+    state.currentRespondentIndex < state.selectedGroupRespondents.length
+        ? state.selectedGroupRespondents[state.currentRespondentIndex]
+        : null;
 
     if (state.jumpTarget == 'end') {
       return _buildCompletionScreen(study, state);
@@ -1380,7 +1383,7 @@ class _GroupDiscussionDataCollectionState
                                                 .error
                                                 .withOpacity(0.1),
                                             borderRadius:
-                                                BorderRadius.circular(6),
+                                            BorderRadius.circular(6),
                                           ),
                                           child: Text(
                                             'Required',
@@ -1396,7 +1399,7 @@ class _GroupDiscussionDataCollectionState
                                     ],
                                   ),
                                   if (question.getSubtitle(
-                                          state.selectedLanguage) !=
+                                      state.selectedLanguage) !=
                                       null) ...[
                                     const SizedBox(height: 8),
                                     Text(
@@ -1702,12 +1705,12 @@ class _GroupDiscussionDataCollectionState
           child: ElevatedButton(
             onPressed: cubit.canProceed(question)
                 ? () {
-                    if (currentQuestionIndex == study.questions.length - 1) {
-                      cubit.nextQuestion(studyId: widget.studyId);
-                    } else {
-                      cubit.nextQuestion(studyId: widget.studyId);
-                    }
-                  }
+              if (currentQuestionIndex == study.questions.length - 1) {
+                cubit.nextQuestion(studyId: widget.studyId);
+              } else {
+                cubit.nextQuestion(studyId: widget.studyId);
+              }
+            }
                 : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: cubit.canProceed(question)
@@ -1722,7 +1725,7 @@ class _GroupDiscussionDataCollectionState
               ),
               elevation: 2,
               shadowColor:
-                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              Theme.of(context).colorScheme.primary.withOpacity(0.3),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1827,7 +1830,7 @@ class _GroupDiscussionDataCollectionState
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
                 child: const Text('Continue'),
               ),
@@ -1898,7 +1901,7 @@ class _GroupDiscussionDataCollectionState
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
-                  BorderSide(color: Theme.of(context).colorScheme.outline),
+              BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1908,15 +1911,15 @@ class _GroupDiscussionDataCollectionState
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
-                  BorderSide(color: Theme.of(context).colorScheme.error),
+              BorderSide(color: Theme.of(context).colorScheme.error),
             ),
             filled: true,
             fillColor:
-                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
             errorText:
-                isRequired && (answer == null || (answer as String).isEmpty)
-                    ? 'This field is required'
-                    : null,
+            isRequired && (answer == null || (answer as String).isEmpty)
+                ? 'This field is required'
+                : null,
             errorStyle: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
           maxLines: null, // Allows infinite lines
@@ -1955,7 +1958,7 @@ class _GroupDiscussionDataCollectionState
       onChanged: (value) => cubit.updateAnswer(question.id, value),
       decoration: InputDecoration(
         hintText:
-            question.getPlaceholder(languageCode) ?? 'Type your answer here...',
+        question.getPlaceholder(languageCode) ?? 'Type your answer here...',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1972,7 +1975,7 @@ class _GroupDiscussionDataCollectionState
         ),
         filled: true,
         fillColor:
-            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
         errorText: isRequired && (answer == null || (answer as String).isEmpty)
             ? 'This field is required'
             : null,
@@ -2025,7 +2028,7 @@ class _GroupDiscussionDataCollectionState
                         choice as Map<String, dynamic>, languageCode),
                     style: TextStyle(
                       fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurface,
@@ -2091,7 +2094,7 @@ class _GroupDiscussionDataCollectionState
                         choice as Map<String, dynamic>, languageCode),
                     style: TextStyle(
                       fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurface,
@@ -2159,7 +2162,7 @@ class _GroupDiscussionDataCollectionState
                     : 'You rated: $answer/$maxRating',
                 style: TextStyle(
                   color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
               if (question.lowerLabel != null || question.upperLabel != null)
@@ -2247,7 +2250,7 @@ class _GroupDiscussionDataCollectionState
                             selected: isSelected,
                             onSelected: (selected) {
                               final newAnswers =
-                                  Map<String, dynamic>.from(matrixAnswers);
+                              Map<String, dynamic>.from(matrixAnswers);
                               if (selected) {
                                 newAnswers[rowId as String] = columnId;
                               } else if (newAnswers[rowId] == columnId) {
@@ -2259,9 +2262,9 @@ class _GroupDiscussionDataCollectionState
                                 ? Theme.of(context).colorScheme.primary
                                 : Theme.of(context).colorScheme.surfaceVariant,
                             selectedColor:
-                                Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.primary,
                             checkmarkColor:
-                                Theme.of(context).colorScheme.onPrimary,
+                            Theme.of(context).colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                               side: BorderSide(
@@ -2318,7 +2321,7 @@ class _GroupDiscussionDataCollectionState
               final index = entry.key;
               final choiceId = entry.value;
               final choice = choices.firstWhere(
-                (c) => c['id'] == choiceId,
+                    (c) => c['id'] == choiceId,
                 orElse: () => {
                   'label': {'default': 'Unknown'}
                 },
@@ -2331,7 +2334,7 @@ class _GroupDiscussionDataCollectionState
                   height: 40,
                   decoration: BoxDecoration(
                     color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
                         color: Theme.of(context).colorScheme.primary, width: 2),
@@ -2358,7 +2361,7 @@ class _GroupDiscussionDataCollectionState
                       color: Theme.of(context).colorScheme.primary),
                 ),
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               );
             }).toList(),
           ),
@@ -2449,7 +2452,7 @@ class _GroupDiscussionDataCollectionState
         final item = items[index];
         final itemId = item['id'];
         final itemName =
-            question.getCascadeName(item as Map<String, dynamic>, languageCode);
+        question.getCascadeName(item as Map<String, dynamic>, languageCode);
         final hasChildren =
             item['children'] is List && (item['children'] as List).isNotEmpty;
         final isSelected = currentSelection.contains(itemId);
@@ -2466,40 +2469,40 @@ class _GroupDiscussionDataCollectionState
           ),
           leading: !hasChildren
               ? Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline,
-                      width: 2,
-                    ),
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.transparent,
-                  ),
-                  child: isSelected
-                      ? Icon(Icons.check,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.onPrimary)
-                      : null,
-                )
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
+                width: 2,
+              ),
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.transparent,
+            ),
+            child: isSelected
+                ? Icon(Icons.check,
+                size: 14,
+                color: Theme.of(context).colorScheme.onPrimary)
+                : null,
+          )
               : null,
           children: hasChildren
               ? [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 24.0),
-                    child: _buildCascadeTree(
-                        item['children'] as List<dynamic>,
-                        currentSelection,
-                        cubit,
-                        questionId,
-                        languageCode,
-                        question),
-                  )
-                ]
+            Padding(
+              padding: const EdgeInsets.only(left: 24.0),
+              child: _buildCascadeTree(
+                  item['children'] as List<dynamic>,
+                  currentSelection,
+                  cubit,
+                  questionId,
+                  languageCode,
+                  question),
+            )
+          ]
               : [],
           onExpansionChanged: (expanded) {
             if (!hasChildren && !expanded) {
@@ -2556,7 +2559,7 @@ class _GroupDiscussionDataCollectionState
                 style: TextStyle(
                   fontSize: 16,
                   color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -2706,25 +2709,24 @@ class _GroupDiscussionDataCollectionState
       builder: (context) {
         return BlocBuilder<DataCollectCubit, DataCollectState>(
           builder: (context, state) {
+            final homogeneityGroups = state.study?.homogeneity?.groups ?? [];
+
             return Dialog(
               backgroundColor: Theme.of(context).colorScheme.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
               elevation: 8,
-              insetPadding:
-                  const EdgeInsets.all(20), // Add padding for smaller screens
+              insetPadding: const EdgeInsets.all(20),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height *
-                      0.8, // Limit maximum height
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
                 ),
                 child: SingleChildScrollView(
-                  // Wrap in SingleChildScrollView
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min, // Important for scrolling
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Header
@@ -2793,7 +2795,7 @@ class _GroupDiscussionDataCollectionState
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color:
-                                        Theme.of(context).colorScheme.onSurface,
+                                    Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -2813,7 +2815,7 @@ class _GroupDiscussionDataCollectionState
                                       hintText: 'Enter group name...',
                                       border: InputBorder.none,
                                       contentPadding:
-                                          const EdgeInsets.symmetric(
+                                      const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 14,
                                       ),
@@ -2860,7 +2862,7 @@ class _GroupDiscussionDataCollectionState
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color:
-                                        Theme.of(context).colorScheme.onSurface,
+                                    Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -2879,7 +2881,7 @@ class _GroupDiscussionDataCollectionState
                                       hintText: 'Optional group description...',
                                       border: InputBorder.none,
                                       contentPadding:
-                                          const EdgeInsets.symmetric(
+                                      const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 14,
                                       ),
@@ -2897,12 +2899,11 @@ class _GroupDiscussionDataCollectionState
                                       fontSize: 16,
                                     ),
                                     maxLines: 3,
-                                    minLines:
-                                        2, // Set minLines to prevent excessive height
+                                    minLines: 2,
                                     onChanged: (value) => context
                                         .read<DataCollectCubit>()
                                         .updateNewGroupData(
-                                            'description', value),
+                                        'description', value),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -2920,7 +2921,7 @@ class _GroupDiscussionDataCollectionState
                             ),
                             const SizedBox(height: 20),
 
-                            // Homogeneity Group Field
+                            // Homogeneity Group Field - UPDATED
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -2971,38 +2972,35 @@ class _GroupDiscussionDataCollectionState
                                           .withOpacity(0.3),
                                     ),
                                   ),
-                                  child: TextField(
-                                    decoration: InputDecoration(
-                                      hintText:
-                                          'e.g., Age group, location, interests...',
+                                  child: DropdownButtonFormField<String>(
+                                    value: (state.newGroupData['homogeneityGroup'] as String?) ?? '',
+                                    items: [
+                                      const DropdownMenuItem(
+                                        value: null,
+                                        child: Text('Select homogeneity group...'),
+                                      ),
+                                      ...homogeneityGroups.map((group) {
+                                        return DropdownMenuItem(
+                                          value: group.id as String?,
+                                          child: Text(group.name as String? ?? 'Unnamed Group'),
+                                        );
+                                      }).toList(),
+                                    ],
+                                    onChanged: (value) => context
+                                        .read<DataCollectCubit>()
+                                        .updateNewGroupData('homogeneityGroup', value),
+                                    decoration: const InputDecoration(
                                       border: InputBorder.none,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
+                                      contentPadding: EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 14,
                                       ),
-                                      hintStyle: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.4),
-                                      ),
                                     ),
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      fontSize: 16,
-                                    ),
-                                    onChanged: (value) => context
-                                        .read<DataCollectCubit>()
-                                        .updateNewGroupData(
-                                            'homogeneityGroup', value),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Define common characteristics for group homogeneity',
+                                  'Select predefined homogeneity criteria for this group',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Theme.of(context)
@@ -3032,9 +3030,9 @@ class _GroupDiscussionDataCollectionState
                                 style: OutlinedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   foregroundColor:
-                                      Theme.of(context).colorScheme.onSurface,
+                                  Theme.of(context).colorScheme.onSurface,
                                   padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
+                                  const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -3062,7 +3060,7 @@ class _GroupDiscussionDataCollectionState
                                     context
                                         .read<DataCollectCubit>()
                                         .createStudyGroup(
-                                            widget.studyId, state.newGroupData);
+                                        widget.studyId, state.newGroupData);
                                     Navigator.pop(context);
                                   } else {
                                     ToastService.showErrorToast(
@@ -3071,11 +3069,11 @@ class _GroupDiscussionDataCollectionState
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor:
-                                      Theme.of(context).colorScheme.primary,
+                                  Theme.of(context).colorScheme.primary,
                                   foregroundColor:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                  Theme.of(context).colorScheme.onPrimary,
                                   padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
+                                  const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -3110,89 +3108,869 @@ class _GroupDiscussionDataCollectionState
   }
 
   void _showCreateRespondentDialog() {
-    showDialog<Widget>(
+    showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Create New Respondent'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-               const TextField(
-                  decoration:  InputDecoration(
-                    labelText: 'Respondent Name *',
-                    border: OutlineInputBorder(),
+        return BlocBuilder<DataCollectCubit, DataCollectState>(
+          builder: (context, state) {
+            final homogeneityFields = state.study?.homogeneity?.fields ?? [];
+            final selectedGroup = state.selectedGroup;
+            final selectedHomogeneityGroup = selectedGroup != null
+                ? state.study?.homogeneity?.groups?.firstWhere(
+                  (group) => group.id == selectedGroup['homogeneityGroup'],
+            )
+                : null;
+
+            return Dialog(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              elevation: 8,
+              insetPadding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.9,
+                ),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Row(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.person_add_rounded,
+                                size: 24,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Create New Respondent',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Add a new participant to the group',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Basic Information
+                        Text(
+                          'Basic Information',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Respondent Name
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Respondent Name *',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outline
+                                      .withOpacity(0.3),
+                                ),
+                              ),
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  hintText: 'Enter respondent name...',
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  hintStyle: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.4),
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontSize: 16,
+                                ),
+                                onChanged: (value) => context
+                                    .read<DataCollectCubit>()
+                                    .updateNewRespondentData('name', value),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Respondent Code
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Respondent Code',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outline
+                                      .withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                        hintText: 'Auto-generated code...',
+                                        border: InputBorder.none,
+                                        contentPadding:
+                                        const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                        hintStyle: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.4),
+                                        ),
+                                      ),
+                                      style: TextStyle(
+                                        color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                        fontSize: 16,
+                                      ),
+                                      readOnly: true,
+                                      controller: TextEditingController(
+                                          text: _generateRespondentCode()),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.refresh_rounded,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary),
+                                    onPressed: () {
+                                      // Regenerate code logic
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Group Information
+                        Card(
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Group Information',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Group: ${selectedGroup?['name'] ?? 'No group selected'}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.8),
+                                  ),
+                                ),
+                                if (selectedHomogeneityGroup != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Homogeneity: ${selectedHomogeneityGroup.name}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Criteria Validation Section
+                        if (selectedHomogeneityGroup != null) ...[
+                          Text(
+                            'Group Criteria Validation',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Card(
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.warning_rounded,
+                                        size: 16,
+                                        color: Theme.of(context).colorScheme.error,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Must meet group criteria:',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ..._buildCriteriaList(selectedHomogeneityGroup),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Custom Fields Section
+                        Text(
+                          'Custom Fields',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Dynamic Fields based on homogeneity fields
+                        ..._buildDynamicFields(state, homogeneityFields, selectedHomogeneityGroup),
+
+                        const SizedBox(height: 32),
+
+                        // Action Buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor:
+                                  Theme.of(context).colorScheme.onSurface,
+                                  padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  side: BorderSide(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outline
+                                        .withOpacity(0.4),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (_validateRespondentForm(state, selectedHomogeneityGroup)) {
+                                    _createRespondent(state);
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                                  foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
+                                  padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 2,
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.person_add_rounded, size: 18),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Create Respondent',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-               const  TextField(
-                  decoration:  InputDecoration(
-                    labelText: 'Respondent Code',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.refresh),
-                  ),
-                  readOnly: true,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Group: Selected Group Name',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Criteria',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.warning,
-                        color: Theme.of(context).colorScheme.error, size: 16),
-                    const SizedBox(width: 8),
-                    const Text('Age greaterThan 18'),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Age is required',
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.error, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Custom Fields',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                const TextField(
-                  decoration:  InputDecoration(
-                    labelText: 'Age *',
-                    border: OutlineInputBorder(),
-                    errorText: 'Age is required',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Implement create respondent logic
-                ToastService.showSuccessToast(
-                    message: 'Respondent created successfully');
-                Navigator.pop(context);
-              },
-              child: const Text('Create'),
-            ),
-          ],
+              ),
+            );
+          },
         );
       },
     );
+  }
+
+  String _generateRespondentCode() {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return 'R${timestamp.toString().substring(timestamp.toString().length - 6)}';
+  }
+
+  List<Widget> _buildCriteriaList(HomogeneityGroup homogeneityGroup) {
+    final criteria = homogeneityGroup.criteria;
+    return criteria.map((criterion) {
+      final field = criterion.field;
+      final operator = criterion.operator;
+      final value = criterion.value;
+
+      String operatorText = '';
+      switch (operator) {
+        case 'equals':
+          operatorText = '=';
+          break;
+        case 'doesNotEqual':
+          operatorText = '≠';
+          break;
+        case 'greaterThan':
+          operatorText = '>';
+          break;
+        case 'lessThan':
+          operatorText = '<';
+          break;
+        case 'greaterThanOrEqual':
+          operatorText = '≥';
+          break;
+        case 'lessThanOrEqual':
+          operatorText = '≤';
+          break;
+        default:
+          operatorText = operator;
+      }
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(
+          '• ${field.name} $operatorText $value',
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildDynamicFields(
+      DataCollectState state,
+      List<HomogeneityField> fields, // CHANGED: Now using HomogeneityField
+      HomogeneityGroup? homogeneityGroup // CHANGED: Now using HomogeneityGroup
+      ) {
+    final criteriaFields = homogeneityGroup != null
+        ? homogeneityGroup.criteria.map((c) => c.field.id).toList() // CHANGED
+        : [];
+
+    return fields.map((field) {
+      final fieldId = field.id; // CHANGED
+      final fieldName = field.name; // CHANGED
+      final fieldType = field.type; // CHANGED
+      final isRequired = criteriaFields.contains(fieldId);
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  fieldName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                if (isRequired) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '*',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 6),
+            _buildFieldInput(field, isRequired), // CHANGED
+            if (isRequired) ...[
+              const SizedBox(height: 4),
+              _buildFieldValidation(field, state, homogeneityGroup), // CHANGED
+            ],
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildFieldInput(HomogeneityField field, bool isRequired) { // CHANGED
+    final fieldId = field.id; // CHANGED
+    final fieldType = field.type; // CHANGED
+    final options = field.options; // CHANGED
+
+    final controller = _respondentFieldControllers.putIfAbsent(
+        fieldId,
+            () => TextEditingController()
+    );
+
+    switch (fieldType) {
+      case 'text':
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Enter ${field.name}...', // CHANGED
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              errorText: isRequired && controller.text.isEmpty
+                  ? 'This field is required'
+                  : null,
+            ),
+            onChanged: (value) {
+              context.read<DataCollectCubit>().updateNewRespondentData(fieldId, value);
+            },
+          ),
+        );
+
+      case 'number':
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Enter ${field.name}...', // CHANGED
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              errorText: isRequired && controller.text.isEmpty
+                  ? 'This field is required'
+                  : null,
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (value) {
+              context.read<DataCollectCubit>().updateNewRespondentData(fieldId, value);
+            },
+          ),
+        );
+
+      case 'select':
+        final selectedValue = controller.text.isEmpty ? null : controller.text;
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: selectedValue,
+            items: [
+              const DropdownMenuItem(
+                value: null,
+                child: Text('Select...'),
+              ),
+              ...options.map((option) { // CHANGED
+                return DropdownMenuItem(
+                  value: option,
+                  child: Text(option),
+                );
+              }).toList(),
+            ],
+            onChanged: (value) {
+              controller.text = value ?? '';
+              context.read<DataCollectCubit>().updateNewRespondentData(fieldId, value);
+            },
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              errorText: isRequired && selectedValue == null
+                  ? 'This field is required'
+                  : null,
+            ),
+          ),
+        );
+
+      case 'date':
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Select ${field.name}...', // CHANGED
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(Icons.calendar_today_rounded,
+                    color: Theme.of(context).colorScheme.primary),
+                onPressed: () async {
+                  final selectedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (selectedDate != null) {
+                    controller.text = selectedDate.toIso8601String().split('T')[0];
+                    context.read<DataCollectCubit>().updateNewRespondentData(
+                        fieldId,
+                        selectedDate.toIso8601String()
+                    );
+                  }
+                },
+              ),
+              errorText: isRequired && controller.text.isEmpty
+                  ? 'This field is required'
+                  : null,
+            ),
+            readOnly: true,
+          ),
+        );
+
+      case 'boolean':
+        final boolValue = controller.text == 'true';
+        return Row(
+          children: [
+            Switch(
+              value: boolValue,
+              onChanged: (value) {
+                controller.text = value.toString();
+                context.read<DataCollectCubit>().updateNewRespondentData(
+                    fieldId,
+                    value
+                );
+              },
+              activeColor: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              field.name, // CHANGED
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ],
+        );
+
+      default:
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Enter ${field.name}...', // CHANGED
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            onChanged: (value) {
+              context.read<DataCollectCubit>().updateNewRespondentData(fieldId, value);
+            },
+          ),
+        );
+    }
+  }
+
+  Widget _buildFieldValidation(HomogeneityField field, DataCollectState state, HomogeneityGroup? homogeneityGroup) { // CHANGED
+    final fieldId = field.id; // CHANGED
+    final fieldValue = state.newRespondentData[fieldId];
+
+    if (homogeneityGroup == null) return const SizedBox();
+
+    final criterion = homogeneityGroup.criteria.firstWhere( // CHANGED
+          (c) => c.field.id == fieldId, // CHANGED
+      orElse: () => throw Exception('Criterion not found'),
+    );
+
+    final operator = criterion.operator; // CHANGED
+    final expectedValue = criterion.value; // CHANGED
+
+    bool isValid = _validateCriterion(field, fieldValue, operator, expectedValue); // CHANGED
+
+    return Row(
+      children: [
+        Icon(
+          isValid ? Icons.check_circle_rounded : Icons.error_rounded,
+          size: 14,
+          color: isValid
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.error,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          isValid ? 'Valid' : 'Does not meet criteria',
+          style: TextStyle(
+            fontSize: 12,
+            color: isValid
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.error,
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _validateCriterion(
+      HomogeneityField field, // CHANGED: Now using HomogeneityField
+      dynamic actualValue,
+      String operator,
+      String expectedValue
+      ) {
+    if (actualValue == null || actualValue.toString().isEmpty) {
+      return false;
+    }
+
+    final fieldType = field.type; // CHANGED: Now using property access
+
+    switch (fieldType) {
+      case 'number':
+        final actualNum = double.tryParse(actualValue.toString());
+        final expectedNum = double.tryParse(expectedValue);
+
+        if (actualNum == null || expectedNum == null) return false;
+
+        switch (operator) {
+          case 'equals':
+            return actualNum == expectedNum;
+          case 'doesNotEqual':
+            return actualNum != expectedNum;
+          case 'greaterThan':
+            return actualNum > expectedNum;
+          case 'lessThan':
+            return actualNum < expectedNum;
+          case 'greaterThanOrEqual':
+            return actualNum >= expectedNum;
+          case 'lessThanOrEqual':
+            return actualNum <= expectedNum;
+          default:
+            return false;
+        }
+
+      case 'select':
+      case 'text':
+        switch (operator) {
+          case 'equals':
+            return actualValue.toString() == expectedValue;
+          case 'doesNotEqual':
+            return actualValue.toString() != expectedValue;
+          case 'contains':
+            return actualValue.toString().contains(expectedValue);
+          case 'doesNotContain':
+            return !actualValue.toString().contains(expectedValue);
+          default:
+            return false;
+        }
+
+      case 'boolean':
+        final actualBool = actualValue is bool ? actualValue : actualValue.toString() == 'true';
+        final expectedBool = expectedValue == 'true';
+
+        switch (operator) {
+          case 'equals':
+            return actualBool == expectedBool;
+          case 'doesNotEqual':
+            return actualBool != expectedBool;
+          default:
+            return false;
+        }
+
+      default:
+        return actualValue.toString().isNotEmpty;
+    }
+  }
+
+  bool _validateRespondentForm(DataCollectState state, HomogeneityGroup? homogeneityGroup) { // CHANGED
+    final respondentName = state.newRespondentData['name'];
+
+    // Validate required fields
+    if (respondentName == null || respondentName.toString().isEmpty) {
+      ToastService.showErrorToast(message: 'Respondent name is required');
+      return false;
+    }
+
+    // Validate homogeneity criteria if group has criteria
+    if (homogeneityGroup != null) {
+      final criteria = homogeneityGroup.criteria; // CHANGED
+
+      for (final criterion in criteria) {
+        final field = criterion.field; // CHANGED
+        final fieldId = field.id; // CHANGED
+        final fieldValue = state.newRespondentData[fieldId];
+        final operator = criterion.operator; // CHANGED
+        final expectedValue = criterion.value; // CHANGED
+
+        if (!_validateCriterion(field, fieldValue, operator, expectedValue)) { // CHANGED
+          ToastService.showErrorToast(
+              message: '${field.name} does not meet group criteria' // CHANGED
+          );
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  void _createRespondent(DataCollectState state) {
+    final cubit = context.read<DataCollectCubit>();
+    final respondentData = Map<String, dynamic>.from(state.newRespondentData);
+
+    // Add group information
+    respondentData['group'] = state.selectedGroup!['_id'];
+    respondentData['code'] = _generateRespondentCode();
+
+    cubit.createRespondent(widget.studyId, respondentData);
+
+    // Clear field controllers
+    _respondentFieldControllers.clear();
   }
 }

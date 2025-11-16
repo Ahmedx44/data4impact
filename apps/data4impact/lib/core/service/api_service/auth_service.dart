@@ -186,12 +186,6 @@ class AuthService {
     }
   }
 
-  Future<void> _storeCurrentUser(CurrentUser user) async {
-    // Convert CurrentUser to JSON string and store it
-    final userJson = user.toJson().toString();
-    await secureStorage.write(key: 'current_user', value: userJson);
-  }
-
   Future<CurrentUser?> getStoredCurrentUser() async {
     try {
       final userJson = await secureStorage.read(key: 'current_user');

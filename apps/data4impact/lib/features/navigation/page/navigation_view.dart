@@ -23,13 +23,21 @@ class NavigationView extends StatefulWidget {
   State<NavigationView> createState() => _NavigationViewState();
 }
 
-class _NavigationViewState extends State<NavigationView> {
+class _NavigationViewState extends State<NavigationView>
+    with AutomaticKeepAliveClientMixin {
   int visit = 0;
   late List<TabItem> items;
-  late List<Widget> pages;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   String? _sessionToken;
   bool _initialLoadCompleted = false;
+
+  // Track which pages have been initialized and store their state
+  final List<bool> _pagesInitialized = [];
+  final List<Widget> _pages = [];
+  final PageStorageBucket _pageStorageBucket = PageStorageBucket();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -38,10 +46,9 @@ class _NavigationViewState extends State<NavigationView> {
     _checkToken();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final homeCubit = context.read<HomeCubit>();
-
       if (homeCubit.state.projects.isEmpty && !homeCubit.state.isLoading) {
         homeCubit.fetchAllProjects();
-      } else {}
+      }
     });
   }
 
@@ -59,13 +66,13 @@ class _NavigationViewState extends State<NavigationView> {
       TabItem(icon: HugeIcons.strokeRoundedUser, title: 'Profile'),
     ];
 
-    pages = const [
-      HomePage(),
-      InboxPage(),
-      StudyPage(),
-      TeamPage(),
-      ProfilePage(),
-    ];
+    // Initialize with empty pages and mark none as initialized
+    _pages.clear();
+    _pagesInitialized.clear();
+    for (int i = 0; i < items.length; i++) {
+      _pages.add(Container()); // Placeholder
+      _pagesInitialized.add(false);
+    }
   }
 
   void _initializeAdminNavigationItems() {
@@ -79,14 +86,75 @@ class _NavigationViewState extends State<NavigationView> {
       TabItem(icon: HugeIcons.strokeRoundedUser, title: 'Profile'),
     ];
 
-    pages = const [
-      HomePage(),
-      InboxPage(),
-      StudyPage(),
-      CollectorsPage(),
-      TeamPage(),
-      ProfilePage(),
-    ];
+    _pages.clear();
+    _pagesInitialized.clear();
+    for (int i = 0; i < items.length; i++) {
+      _pages.add(Container()); // Placeholder
+      _pagesInitialized.add(false);
+    }
+  }
+
+  Widget _buildPage(int index) {
+    // Initialize page only when it's first accessed
+    if (!_pagesInitialized[index]) {
+      _pagesInitialized[index] = true;
+
+      Widget page;
+      if (items.length == 6) {
+        // Admin layout
+        switch (index) {
+          case 0:
+            page = const HomePage();
+            break;
+          case 1:
+            page = const InboxPage();
+            break;
+          case 2:
+            page = const StudyPage();
+            break;
+          case 3:
+            page = const CollectorsPage();
+            break;
+          case 4:
+            page = const TeamPage();
+            break;
+          case 5:
+            page = const ProfilePage();
+            break;
+          default:
+            page = Container();
+        }
+      } else {
+        // Regular layout
+        switch (index) {
+          case 0:
+            page = const HomePage();
+            break;
+          case 1:
+            page = const InboxPage();
+            break;
+          case 2:
+            page = const StudyPage();
+            break;
+          case 3:
+            page = const TeamPage();
+            break;
+          case 4:
+            page = const ProfilePage();
+            break;
+          default:
+            page = Container();
+        }
+      }
+
+      // Wrap each page with PageStorage to preserve state
+      _pages[index] = PageStorage(
+        bucket: _pageStorageBucket,
+        child: page,
+      );
+    }
+
+    return _pages[index];
   }
 
   bool _isAdmin(ProfileState state) {
@@ -109,7 +177,7 @@ class _NavigationViewState extends State<NavigationView> {
 
   Widget _buildLoadingScreen() {
     return const Scaffold(
-      body:  Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -381,6 +449,7 @@ class _NavigationViewState extends State<NavigationView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context).colorScheme;
 
     return BlocListener<HomeCubit, HomeState>(
@@ -417,6 +486,7 @@ class _NavigationViewState extends State<NavigationView> {
           if (!hasSubjects && !homeState.isLoading) {
             return _buildStaticScreen();
           }
+
           // Initialize navigation items based on user role
           if (hasValidUser) {
             if (_isAdmin(profileState)) {
@@ -431,7 +501,9 @@ class _NavigationViewState extends State<NavigationView> {
           return Scaffold(
             body: IndexedStack(
               index: visit,
-              children: pages,
+              children: [
+                for (int i = 0; i < items.length; i++) _buildPage(i),
+              ],
             ),
             bottomNavigationBar: BottomBarDefault(
               items: items,

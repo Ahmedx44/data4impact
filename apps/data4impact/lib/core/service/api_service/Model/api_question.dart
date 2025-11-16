@@ -38,6 +38,32 @@ ApiQuestionType parseQuestionType(String type) {
   }
 }
 
+// Convert enum to API string
+String questionTypeToString(ApiQuestionType type) {
+  switch (type) {
+    case ApiQuestionType.openText:
+      return 'openText';
+    case ApiQuestionType.multipleChoiceSingle:
+      return 'multipleChoiceSingle';
+    case ApiQuestionType.multipleChoiceMulti:
+      return 'multipleChoiceMulti';
+    case ApiQuestionType.ranking:
+      return 'ranking';
+    case ApiQuestionType.matrix:
+      return 'matrix';
+    case ApiQuestionType.rating:
+      return 'rating';
+    case ApiQuestionType.date:
+      return 'date';
+    case ApiQuestionType.cascade:
+      return 'cascade';
+    case ApiQuestionType.longText:
+      return 'longText';
+    case ApiQuestionType.unknown:
+      return 'unknown';
+  }
+}
+
 class ApiQuestion {
   final String id;
   final int number;
@@ -132,6 +158,32 @@ class ApiQuestion {
       (json['backButtonLabel'] as Map<String, dynamic>) :
       null,
     );
+  }
+
+  // Convert to JSON for serialization
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'number': number,
+      'variable': variable,
+      'type': questionTypeToString(type),
+      'required': required,
+      'headline': headline,
+      if (placeholder != null) 'placeholder': placeholder,
+      if (choices != null) 'choices': choices,
+      if (rows != null) 'rows': rows,
+      if (columns != null) 'columns': columns,
+      if (cascades != null) 'cascades': cascades,
+      if (range != null) 'range': range,
+      if (scale != null) 'scale': scale,
+      if (lowerLabel != null) 'lowerLabel': lowerLabel,
+      if (upperLabel != null) 'upperLabel': upperLabel,
+      if (logic != null) 'logic': logic,
+      if (charLimit != null) 'charLimit': charLimit,
+      if (probings != null) 'probings': probings,
+      if (buttonLabel != null) 'buttonLabel': buttonLabel,
+      if (backButtonLabel != null) 'backButtonLabel': backButtonLabel,
+    };
   }
 
   // Get title in the specified language, fallback to default

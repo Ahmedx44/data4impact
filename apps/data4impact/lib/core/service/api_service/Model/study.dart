@@ -1,4 +1,5 @@
 import 'api_question.dart';
+import 'homogeneity_models.dart'; // Add this import
 
 class Study {
   final String id;
@@ -19,7 +20,7 @@ class Study {
   final int sampleSize;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final Map<String, dynamic>? homogeneity; // Added for interview studies
+  final Homogeneity? homogeneity; // CHANGED: Now using Homogeneity model
   final Map<String, dynamic>? subject; // Added for longitudinal studies
 
   Study({
@@ -41,8 +42,8 @@ class Study {
     this.sampleSize = 0,
     required this.createdAt,
     required this.updatedAt,
-    this.homogeneity, // Added
-    this.subject, // Added
+    this.homogeneity, // CHANGED
+    this.subject,
   });
 
   factory Study.fromJson(Map<String, dynamic> json) {
@@ -76,10 +77,10 @@ class Study {
       designType = (json['design']['type'] as String?) ?? 'crossSectional';
     }
 
-    // Parse homogeneity data for interview studies
-    Map<String, dynamic>? homogeneity;
+    // Parse homogeneity data for interview studies - CHANGED
+    Homogeneity? homogeneity;
     if (json['homogeneity'] is Map<String, dynamic>) {
-      homogeneity = json['homogeneity'] as Map<String, dynamic>;
+      homogeneity = Homogeneity.fromJson(json['homogeneity'] as Map<String, dynamic>);
     }
 
     // Parse subject data for longitudinal studies
@@ -118,8 +119,8 @@ class Study {
       sampleSize: (json['sampleSize'] as num?)?.toInt() ?? 0,
       createdAt: createdAt,
       updatedAt: updatedAt,
-      homogeneity: homogeneity, // Added
-      subject: subject, // Added
+      homogeneity: homogeneity, // CHANGED
+      subject: subject,
     );
   }
 
@@ -143,20 +144,61 @@ class Study {
     return methodology == 'longitudinal';
   }
 
-  // Get homogeneity groups for interview studies
-  List<dynamic> get homogeneityGroups {
-    if (homogeneity != null && homogeneity!['groups'] is List) {
-      return homogeneity!['groups'] as List<dynamic>;
-    }
-    return [];
+  // Get homogeneity groups for interview studies - FIXED
+  List<HomogeneityGroup> get homogeneityGroups {
+    return homogeneity?.groups ?? [];
   }
 
-  // Get homogeneity fields for interview studies
-  List<dynamic> get homogeneityFields {
-    if (homogeneity != null && homogeneity!['fields'] is List) {
-      return homogeneity!['fields'] as List<dynamic>;
+  // Get homogeneity fields for interview studies - FIXED
+  List<HomogeneityField> get homogeneityFields {
+    return homogeneity?.fields ?? [];
+  }
+
+  // Get a specific homogeneity group by ID
+  HomogeneityGroup? getHomogeneityGroupById(String groupId) {
+    return homogeneityGroups.firstWhere(
+          (group) => group.id == groupId,
+      orElse: () => throw Exception('Group not found'),
+    );
+  }
+
+  // Get a specific homogeneity field by ID
+  HomogeneityField? getHomogeneityFieldById(String fieldId) {
+    return homogeneityFields.firstWhere(
+          (field) => field.id == fieldId,
+      orElse: () => throw Exception('Field not found'),
+    );
+  }
+
+  // Get criteria for a specific homogeneity group
+  List<GroupCriterion> getCriteriaForGroup(String groupId) {
+    final group = getHomogeneityGroupById(groupId);
+    return group?.criteria ?? [];
+  }
+
+  // Check if a field is required by any group criteria
+  bool isFieldRequired(String fieldId) {
+    for (final group in homogeneityGroups) {
+      for (final criterion in group.criteria) {
+        if (criterion.field.id == fieldId) {
+          return true;
+        }
+      }
     }
-    return [];
+    return false;
+  }
+
+  // Get all criteria that apply to a specific field
+  List<GroupCriterion> getCriteriaForField(String fieldId) {
+    final List<GroupCriterion> fieldCriteria = [];
+    for (final group in homogeneityGroups) {
+      for (final criterion in group.criteria) {
+        if (criterion.field.id == fieldId) {
+          fieldCriteria.add(criterion);
+        }
+      }
+    }
+    return fieldCriteria;
   }
 
   // Get subject fields for longitudinal studies
@@ -167,7 +209,21 @@ class Study {
     return [];
   }
 
-  // ... rest of your Study class methods remain the same
+  // Get sample group size for discussion studies
+  int get sampleGroupSize {
+    return homogeneity?.sampleGroupSize ?? 0;
+  }
+
+  // Get max group size for discussion studies
+  int get maxGroupSize {
+    return homogeneity?.maxGroupSize ?? 0;
+  }
+
+  // Get min group size for discussion studies
+  int get minGroupSize {
+    return homogeneity?.minGroupSize ?? 0;
+  }
+
   String getWelcomeHeadline(String languageCode) {
     final headline = welcomeCard['headline'];
     if (headline is Map<String, dynamic>) {
@@ -219,6 +275,32 @@ class Study {
   bool get showEndingButton {
     return ending['showButton'] as bool? ?? true;
   }
+
+  // Convert to map for serialization
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'name': name,
+      'description': description,
+      'project': project,
+      'status': status,
+      'questions': questions.map((q) => q.toJson()).toList(),
+      'welcomeCard': welcomeCard,
+      'ending': ending,
+      'responseValidation': responseValidation?.toJson(),
+      'languages': languages,
+      'questionCount': questionCount,
+      'responseCount': responseCount,
+      'methodology': methodology,
+      'approach': approach,
+      'design': design,
+      'sampleSize': sampleSize,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'homogeneity': homogeneity?.toJson(),
+      'subject': subject,
+    };
+  }
 }
 
 class ResponseValidation {
@@ -238,5 +320,13 @@ class ResponseValidation {
       requiredVoice: json['requiredVoice'] as bool? ?? false,
       requiredLocation: json['requiredLocation'] as bool? ?? false,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'voiceDuration': voiceDuration,
+      'requiredVoice': requiredVoice,
+      'requiredLocation': requiredLocation,
+    };
   }
 }

@@ -1,4 +1,5 @@
 import 'package:data4impact/core/service/api_service/Model/current_user.dart';
+import 'package:data4impact/core/service/api_service/Model/organization_model.dart';
 import 'package:data4impact/core/theme/cubit/theme_cubit.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/profile/cubit/profile_cubit.dart';
@@ -49,14 +50,14 @@ class _ProfilePageState extends State<ProfileView> {
           final box = await Hive.openBox(boxName);
           await box.clear();
           await box.close();
-          print('✅ Cleared Hive box: $boxName');
+
         } catch (e) {
-          print('❌ Error clearing box $boxName: $e');
+
         }
       }
-      print('🎉 All Hive data cleared successfully');
+
     } catch (e) {
-      print('💥 Critical error clearing Hive data: $e');
+
     }
   }
 
@@ -113,8 +114,8 @@ class _ProfilePageState extends State<ProfileView> {
             title: Text(
               'Profile',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             actions: [
               IconButton(
@@ -129,7 +130,11 @@ class _ProfilePageState extends State<ProfileView> {
               ),
             ],
           ),
-          body: _buildProfileContent(context, state),
+          body: RefreshIndicator(
+              onRefresh: () async {
+                context.read<ProfileCubit>().fetchCurrentUser();
+              },
+              child: _buildProfileContent(context, state)),
         );
       },
     );
@@ -204,8 +209,11 @@ class _ProfilePageState extends State<ProfileView> {
           Text(
             'Loading your profile...',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
-            ),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onBackground
+                      .withOpacity(0.6),
+                ),
           ),
         ],
       ),
@@ -256,18 +264,18 @@ class _ProfilePageState extends State<ProfileView> {
                 child: ClipOval(
                   child: state.tempProfileImage != null
                       ? Image.file(
-                    state.tempProfileImage!,
-                    fit: BoxFit.cover,
-                  )
+                          state.tempProfileImage!,
+                          fit: BoxFit.cover,
+                        )
                       : user?.imageUrl != null
-                      ? Image.network(
-                    user!.imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildPlaceholderAvatar(colorScheme);
-                    },
-                  )
-                      : _buildPlaceholderAvatar(colorScheme),
+                          ? Image.network(
+                              user!.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildPlaceholderAvatar(colorScheme);
+                              },
+                            )
+                          : _buildPlaceholderAvatar(colorScheme),
                 ),
               ),
               Positioned(
@@ -313,7 +321,9 @@ class _ProfilePageState extends State<ProfileView> {
           const SizedBox(height: 4),
 
           Text(
-            user?.role.toUpperCase() ?? 'LOADING ROLE',
+            user?.roles.isNotEmpty == true
+                ? (user!.roles.first['name'] as String?)?.toUpperCase() ?? 'USER'
+                : 'USER',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onPrimary.withOpacity(0.9),
               letterSpacing: 1.5,
@@ -325,7 +335,9 @@ class _ProfilePageState extends State<ProfileView> {
 
           // Edit Profile Button
           ElevatedButton.icon(
-            onPressed: state.isLoading ? null : () => _showEditProfileDialog(context, state),
+            onPressed: state.isLoading
+                ? null
+                : () => _showEditProfileDialog(context, state),
             icon: const Icon(Icons.edit, size: 16),
             label: const Text('Edit Profile'),
             style: ElevatedButton.styleFrom(
@@ -428,9 +440,7 @@ class _ProfilePageState extends State<ProfileView> {
 
   Widget _buildOrganizationSection(BuildContext context, ProfileState state) {
     final theme = Theme.of(context);
-    final user = state.user;
-
-    if (user == null) return const SizedBox();
+    final organizations = state.organizations;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -439,22 +449,96 @@ class _ProfilePageState extends State<ProfileView> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            child: Text(
-              'Organization',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'My Organizations',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (state.loadingOrganizations)
+                  SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-          _buildOrganizationCard(context),
+          _buildOrganizationCard(context, organizations, state),
         ],
       ),
     );
   }
 
-  Widget _buildOrganizationCard(BuildContext context) {
+  Widget _buildOrganizationCard(BuildContext context,
+      List<UserOrganization> organizations, ProfileState state) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    if (state.loadingOrganizations) {
+      return Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: colorScheme.outline.withOpacity(0.2),
+          ),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    if (organizations.isEmpty) {
+      return Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: colorScheme.outline.withOpacity(0.2),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Icon(
+                Icons.business_outlined,
+                size: 48,
+                color: colorScheme.onSurface.withOpacity(0.3),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'No Organizations',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'You are not a member of any organizations yet.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Card(
       elevation: 0,
@@ -467,31 +551,175 @@ class _ProfilePageState extends State<ProfileView> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [
-            _buildInfoRow(
-              context,
-              icon: Icons.business_outlined,
-              label: 'Organization',
-              value: 'Data4Impact Ethiopia',
-            ),
-            const SizedBox(height: 12),
-            _buildInfoRow(
-              context,
-              icon: Icons.work_outline,
-              label: 'Department',
-              value: 'Research & Analytics',
-            ),
-            const SizedBox(height: 12),
-            _buildInfoRow(
-              context,
-              icon: Icons.badge_outlined,
-              label: 'Employee ID',
-              value: 'D4I-ET-001',
-            ),
-          ],
+          children: organizations
+              .map((userOrg) => _buildOrganizationItem(context, userOrg))
+              .toList(),
         ),
       ),
     );
+  }
+
+  Widget _buildOrganizationItem(
+      BuildContext context, UserOrganization userOrg) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final org = userOrg.organization;
+    final profileService = context.read<ProfileCubit>().profileService;
+
+    // Get the full image URL
+    final imageUrl = profileService.getOrganizationImageUrl(org.logoUrl);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              // Organization Logo
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: imageUrl.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildOrganizationPlaceholder(
+                                colorScheme, org.name);
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return _buildOrganizationPlaceholder(
+                                colorScheme, org.name);
+                          },
+                        ),
+                      )
+                    : _buildOrganizationPlaceholder(colorScheme, org.name),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      org.name,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Slug: ${org.slug}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Member since ${_formatDate(userOrg.joinedAt)}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (userOrg.roles.isNotEmpty)
+                      Wrap(
+                        spacing: 6,
+                        children: userOrg.roles
+                            .map(
+                              (role) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getRoleColor(role.name, colorScheme),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  role.name.toUpperCase(),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrganizationPlaceholder(
+      ColorScheme colorScheme, String orgName) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.business,
+          size: 24,
+          color: colorScheme.primary,
+        ),
+      ),
+    );
+  }
+
+  Color _getRoleColor(String roleName, ColorScheme colorScheme) {
+    switch (roleName.toLowerCase()) {
+      case 'owner':
+        return Colors.orange.shade700;
+      case 'admin':
+        return Colors.red.shade700;
+      case 'manager':
+        return Colors.blue.shade700;
+      case 'member':
+        return Colors.green.shade700;
+      default:
+        return colorScheme.primary;
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays < 1) {
+        return 'Today';
+      } else if (difference.inDays < 30) {
+        return '${difference.inDays} days ago';
+      } else if (difference.inDays < 365) {
+        final months = (difference.inDays / 30).floor();
+        return '$months ${months == 1 ? 'month' : 'months'} ago';
+      } else {
+        final years = (difference.inDays / 365).floor();
+        return '$years ${years == 1 ? 'year' : 'years'} ago';
+      }
+    } catch (e) {
+      return 'Unknown date';
+    }
   }
 
   Widget _buildSecurityOverviewSection(BuildContext context) {
@@ -600,9 +828,9 @@ class _ProfilePageState extends State<ProfileView> {
             Text(
               'Logout',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.red,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ],
         ),
@@ -759,12 +987,12 @@ class _ProfilePageState extends State<ProfileView> {
   }
 
   Widget _buildSecurityItem(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String subtitle,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -801,13 +1029,13 @@ class _ProfilePageState extends State<ProfileView> {
   }
 
   Widget _buildInfoRow(
-      BuildContext context, {
-        required IconData icon,
-        required String label,
-        required String value,
-        bool isVerified = false,
-        bool showCopyButton = false,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    bool isVerified = false,
+    bool showCopyButton = false,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -883,9 +1111,11 @@ class _ProfilePageState extends State<ProfileView> {
       context: context,
       builder: (dialogContext) => BlocProvider.value(
         value: context.read<ProfileCubit>(),
-        child: state.user != null ? EditProfileDialog(
-          user: state.user!,
-        ) : const SizedBox(),
+        child: state.user != null
+            ? EditProfileDialog(
+                user: state.user!,
+              )
+            : const SizedBox(),
       ),
     );
   }
@@ -921,7 +1151,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   void initState() {
     super.initState();
     _firstNameController = TextEditingController(text: widget.user.firstName);
-    _middleNameController = TextEditingController(text: widget.user.middleName ?? '');
+    _middleNameController =
+        TextEditingController(text: widget.user.middleName ?? '');
     _lastNameController = TextEditingController(text: widget.user.lastName);
     _phoneController = TextEditingController(text: widget.user.phone ?? '');
   }
@@ -980,33 +1211,39 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: state.isLoading ? null : () {
-                      context.read<ProfileCubit>().cancelEditing();
-                      Navigator.of(context).pop();
-                    },
+                    onPressed: state.isLoading
+                        ? null
+                        : () {
+                            context.read<ProfileCubit>().cancelEditing();
+                            Navigator.of(context).pop();
+                          },
                     child: const Text('Cancel'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: state.isLoading ? null : () async {
-                      await context.read<ProfileCubit>().saveProfile(context);
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    },
+                    onPressed: state.isLoading
+                        ? null
+                        : () async {
+                            await context
+                                .read<ProfileCubit>()
+                                .saveProfile(context);
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                          },
                     child: state.isLoading
                         ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.onPrimary,
-                        ),
-                      ),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colorScheme.onPrimary,
+                              ),
+                            ),
+                          )
                         : const Text('Save'),
                   ),
                 ),
@@ -1019,12 +1256,12 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }
 
   Widget _buildTextField(
-      TextEditingController controller,
-      String label,
-      Function(String) onChanged, {
-        TextInputType keyboardType = TextInputType.text,
-        bool isEnabled = true,
-      }) {
+    TextEditingController controller,
+    String label,
+    Function(String) onChanged, {
+    TextInputType keyboardType = TextInputType.text,
+    bool isEnabled = true,
+  }) {
     return TextField(
       controller: controller,
       enabled: isEnabled,
@@ -1048,9 +1285,11 @@ class ChangePasswordDialog extends StatefulWidget {
 }
 
 class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -1138,7 +1377,8 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                       // Handle password change logic here
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Password changed successfully')),
+                        const SnackBar(
+                            content: Text('Password changed successfully')),
                       );
                     },
                     child: const Text('Update'),

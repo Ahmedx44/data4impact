@@ -122,10 +122,10 @@ class _StudyViewState extends State<StudyView>
             print('   - isLoading: ${studyState.isLoading}');
             print('   - hasError: ${studyState.hasError}');
 
-            if (studyState.isLoading) {
+            if (studyState.isLoading && studyState.studies.isEmpty) {
               print('⏳ Loading state - showing skeleton');
               return _buildSkeletonStudyList();
-            } else if (studyState.hasError) {
+            } else if (studyState.hasError && studyState.studies.isEmpty) {
               print('❌ Error state: ${studyState.errorMessage}');
               return ApiErrorWidget(
                 errorMessage: _getUserFriendlyErrorMessage(studyState.errorMessage!),
@@ -149,49 +149,52 @@ class _StudyViewState extends State<StudyView>
 
               if (activeStudies.isEmpty) {
                 print('📭 No active studies found');
-                return _buildEmptyState('No active studies found');
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    final projectSlug = homeState.selectedProject?.slug ?? '';
+                    if (projectSlug.isNotEmpty) {
+                      context.read<StudyCubit>().fetchStudies(projectSlug);
+                    }
+                  },
+                  color: Theme.of(context).colorScheme.primary,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height,
+                      child: _buildEmptyState('No active studies found'),
+                    ),
+                  ),
+                );
               }
 
               print('🎉 Building list with ${activeStudies.length} active studies');
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: activeStudies.length,
-                itemBuilder: (context, index) {
-                  final study = activeStudies[index];
-
-                  // Safe progress calculation
-                  double progress = 0.0;
-                  try {
-                    final responses = study['responseCount'] as int? ?? 0;
-                    final sample = study['sampleSize'] as int? ?? 0;
-                    progress = sample > 0 ? responses / sample : 0.0;
-                  } catch (e) {
-                    print('❌ Error calculating progress: $e');
+              return RefreshIndicator(
+                onRefresh: () async {
+                  final projectSlug = homeState.selectedProject?.slug ?? '';
+                  if (projectSlug.isNotEmpty) {
+                    context.read<StudyCubit>().fetchStudies(projectSlug);
                   }
+                },
+                color: Theme.of(context).colorScheme.primary,
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: activeStudies.length,
+                  itemBuilder: (context, index) {
+                    final study = activeStudies[index];
 
-                  return GestureDetector(
-                    onTap: () {
-                      final studyCubit = context.read<StudyCubit>();
-                      final studyData = studyCubit.getStudyById(study['_id'] as String);
+                    // Safe progress calculation
+                    double progress = 0.0;
+                    try {
+                      final responses = study['responseCount'] as int? ?? 0;
+                      final sample = study['sampleSize'] as int? ?? 0;
+                      progress = sample > 0 ? responses / sample : 0.0;
+                    } catch (e) {
+                      print('❌ Error calculating progress: $e');
+                    }
 
-                      if (studyData != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute<Widget>(
-                            builder: (context) => StudyDetailPage(
-                              studyId: study['_id'] as String,
-                              studyData: studyData,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: StudyCard(
-                      title: study['name'] as String? ?? 'Untitled Study',
-                      description: study['description'] as String? ?? 'No description available',
-                      progress: progress,
-                      status: study['status'] as String? ?? 'unknown',
-                      callback: () {
+                    return GestureDetector(
+                      onTap: () {
                         final studyCubit = context.read<StudyCubit>();
                         final studyData = studyCubit.getStudyById(study['_id'] as String);
 
@@ -207,9 +210,31 @@ class _StudyViewState extends State<StudyView>
                           );
                         }
                       },
-                    ),
-                  );
-                },
+                      child: StudyCard(
+                        title: study['name'] as String? ?? 'Untitled Study',
+                        description: study['description'] as String? ?? 'No description available',
+                        progress: progress,
+                        status: study['status'] as String? ?? 'unknown',
+                        callback: () {
+                          final studyCubit = context.read<StudyCubit>();
+                          final studyData = studyCubit.getStudyById(study['_id'] as String);
+
+                          if (studyData != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute<Widget>(
+                                builder: (context) => StudyDetailPage(
+                                  studyId: study['_id'] as String,
+                                  studyData: studyData,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
               );
             }
           },
@@ -223,20 +248,9 @@ class _StudyViewState extends State<StudyView>
       builder: (context, homeState) {
         return BlocBuilder<StudyCubit, StudyState>(
           builder: (context, studyState) {
-
-            // Handle initial state - fetch studies if we have a project
-            if (studyState.isInitial) {
-              final projectSlug = homeState.selectedProject?.slug ?? '';
-              if (projectSlug.isNotEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  context.read<StudyCubit>().fetchStudies(projectSlug);
-                });
-              }
-            }
-
-            if (studyState.isLoading) {
+            if (studyState.isLoading && studyState.studies.isEmpty) {
               return _buildSkeletonStudyList();
-            } else if (studyState.hasError) {
+            } else if (studyState.hasError && studyState.studies.isEmpty) {
               return ApiErrorWidget(
                 errorMessage:
                 _getUserFriendlyErrorMessage(studyState.errorMessage!),
@@ -252,50 +266,55 @@ class _StudyViewState extends State<StudyView>
               final oldStudies = studyState.studies.where((study) {
                 final status = study['status'] as String?;
                 final isOld = status != 'inProgress' && status != 'draft';
-                print('🔍 Study "${study['name']}" - status: $status, isOld: $isOld');
                 return isOld;
               }).toList();
 
-              print('🔍 Filtered old studies: ${oldStudies.length}');
-
               if (oldStudies.isEmpty) {
-                return _buildEmptyState('No completed studies found');
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    final projectSlug = homeState.selectedProject?.slug ?? '';
+                    if (projectSlug.isNotEmpty) {
+                      context.read<StudyCubit>().fetchStudies(projectSlug);
+                    }
+                  },
+                  color: Theme.of(context).colorScheme.primary,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height,
+                      child: _buildEmptyState('No completed studies found'),
+                    ),
+                  ),
+                );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: oldStudies.length,
-                itemBuilder: (context, index) {
-                  final study = oldStudies[index];
-
-                  // Safe progress calculation
-                  double progress = 0.0;
-                  try {
-                    final responses = study['responseCount'] as int? ?? 0;
-                    final sample = study['sampleSize'] as int? ?? 0;
-                    progress = sample > 0 ? responses / sample : 0.0;
-                  } catch (e) {
-                    print('❌ Error calculating progress: $e');
+              return RefreshIndicator(
+                onRefresh: () async {
+                  final projectSlug = homeState.selectedProject?.slug ?? '';
+                  if (projectSlug.isNotEmpty) {
+                    context.read<StudyCubit>().fetchStudies(projectSlug);
                   }
+                },
+                color: Theme.of(context).colorScheme.primary,
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: oldStudies.length,
+                  itemBuilder: (context, index) {
+                    final study = oldStudies[index];
 
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<Widget>(
-                          builder: (context) => StudyDetailPage(
-                            studyId: study['_id'] as String,
-                            studyData: study,
-                          ),
-                        ),
-                      );
-                    },
-                    child: StudyCard(
-                      title: study['name'] as String? ?? 'Untitled Study',
-                      description: study['description'] as String? ?? 'No description available',
-                      progress: progress,
-                      status: study['status'] as String? ?? 'unknown',
-                      callback: () {
+                    // Safe progress calculation
+                    double progress = 0.0;
+                    try {
+                      final responses = study['responseCount'] as int? ?? 0;
+                      final sample = study['sampleSize'] as int? ?? 0;
+                      progress = sample > 0 ? responses / sample : 0.0;
+                    } catch (e) {
+                      print('❌ Error calculating progress: $e');
+                    }
+
+                    return GestureDetector(
+                      onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute<Widget>(
@@ -306,9 +325,26 @@ class _StudyViewState extends State<StudyView>
                           ),
                         );
                       },
-                    ),
-                  );
-                },
+                      child: StudyCard(
+                        title: study['name'] as String? ?? 'Untitled Study',
+                        description: study['description'] as String? ?? 'No description available',
+                        progress: progress,
+                        status: study['status'] as String? ?? 'unknown',
+                        callback: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute<Widget>(
+                              builder: (context) => StudyDetailPage(
+                                studyId: study['_id'] as String,
+                                studyData: study,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
               );
             }
           },
@@ -318,14 +354,25 @@ class _StudyViewState extends State<StudyView>
   }
 
   Widget _buildSkeletonStudyList() {
-    return Skeletonizer(
-      enabled: true,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return _buildSkeletonStudyCard();
-        },
+    return RefreshIndicator(
+      onRefresh: () async {
+        final homeState = context.read<HomeCubit>().state;
+        final projectSlug = homeState.selectedProject?.slug ?? '';
+        if (projectSlug.isNotEmpty) {
+          context.read<StudyCubit>().fetchStudies(projectSlug);
+        }
+      },
+      color: Theme.of(context).colorScheme.primary,
+      child: Skeletonizer(
+        enabled: true,
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: 5,
+          itemBuilder: (context, index) {
+            return _buildSkeletonStudyCard();
+          },
+        ),
       ),
     );
   }

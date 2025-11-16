@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:data4impact/core/service/api_service/Model/current_user.dart';
+import 'package:data4impact/core/service/api_service/Model/organization_model.dart';
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -174,7 +175,7 @@ class ProfileService {
     }
   }
 
- /* Future<Map<String,dynamic>> getListOfInvites(String userId) async {
+  Future<List<UserOrganization>> getUserOrganizations() async {
     try {
       final cookie = await secureStorage.read(key: 'session_cookie');
       if (cookie == null) {
@@ -182,19 +183,41 @@ class ProfileService {
       }
 
       final response = await apiClient.get(
-        '/users/$userId',
+        '/organizations/my',
         options: Options(headers: {
           'Cookie': cookie,
         }),
       );
 
-      if (response.data is Map<String, dynamic>) {
-        return CurrentUser.fromJson(response.data as Map<String, dynamic>);
+      print('DEBUG: Organizations raw response: ${response.data}');
+
+      if (response.data is List) {
+        final organizations = (response.data as List<dynamic>)
+            .map((org) => UserOrganization.fromJson(org as Map<String, dynamic>))
+            .toList();
+        print('DEBUG: Parsed ${organizations.length} organizations');
+        return organizations;
       } else {
         throw Exception('Unexpected response format');
       }
     } on DioException catch (e) {
+      print('Get organizations error: ${e.response?.data}');
       rethrow;
     }
-  }*/
+  }
+
+// Add this method to build full image URL
+  String getOrganizationImageUrl(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) {
+      return '';
+    }
+
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+
+    // Otherwise, build the full URL
+    return 'https://api.data4impact.et/files/$imagePath';
+  }
 }
