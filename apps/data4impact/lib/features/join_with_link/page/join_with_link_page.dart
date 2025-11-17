@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/api_service/file_upload_service.dart';
+import 'package:data4impact/core/service/api_service/home_service.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
 import 'package:data4impact/core/service/api_service/segment_service.dart';
 import 'package:data4impact/core/service/api_service/study_service.dart';
@@ -24,6 +25,7 @@ class JoinWithLinkPage extends StatelessWidget {
         connectivity: context.read<Connectivity>(),
         fileUploadService: context.read<FileUploadService>(),
         studyService: context.read<StudyService>(),
+        homeService: context.read<HomeService>(),
       ),
       child: const JoinWithLinkView(),
     );

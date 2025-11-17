@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/api_service/file_upload_service.dart';
+import 'package:data4impact/core/service/api_service/home_service.dart';
 import 'package:data4impact/core/service/api_service/invitation_service.dart';
 import 'package:data4impact/core/service/api_service/profile_service.dart';
 import 'package:data4impact/core/service/api_service/project_service.dart';
@@ -47,6 +48,8 @@ class App extends StatelessWidget {
       dio: apiClient.dio,
       secureStorage: secureStorage,
     );
+    final homeService =
+        HomeService(apiClient: apiClient, secureStorage: secureStorage);
     final invitationService =
         InvitationService(apiClient: apiClient, secureStorage: secureStorage);
     final connectivity = Connectivity(); // Add this
@@ -65,7 +68,8 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: connectivity),
         RepositoryProvider.value(value: profileService),
         RepositoryProvider.value(value: invitationService),
-        RepositoryProvider.value(value: teamService)
+        RepositoryProvider.value(value: teamService),
+        RepositoryProvider.value(value: homeService)
       ],
       child: MultiBlocProvider(
         providers: [
@@ -86,13 +90,16 @@ class App extends StatelessWidget {
                 segmentService: segmentService,
                 studyService: studyService,
                 fileUploadService: fileUploadService,
-                connectivity: connectivity),
+                connectivity: connectivity,
+                homeService: homeService),
           ),
           BlocProvider(
             create: (_) => StudyCubit(studyService: studyService),
           ),
           BlocProvider(
-            create: (_) => DataCollectCubit(studyService: studyService,fileUploadService: fileUploadService),
+            create: (_) => DataCollectCubit(
+                studyService: studyService,
+                fileUploadService: fileUploadService),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(

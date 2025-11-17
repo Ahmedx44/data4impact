@@ -1,5 +1,6 @@
-// team_view.dart
 import 'package:data4impact/core/service/api_service/Model/team_model.dart';
+import 'package:data4impact/features/home/cubit/home_cubit.dart';
+import 'package:data4impact/features/home/cubit/home_state.dart';
 import 'package:data4impact/features/team/cubit/team_cubit.dart';
 import 'package:data4impact/features/team/cubit/team_state.dart';
 import 'package:data4impact/features/team/page/team_detail_view.dart';
@@ -19,6 +20,15 @@ class _TeamViewState extends State<TeamView> {
   void initState() {
     super.initState();
     context.read<TeamCubit>().getTeams();
+    // Ensure collectors data is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeCubit>().fetchMyCollectors();
+    });
+  }
+
+  // Helper methods to calculate statistics from collector data
+  int _getTotalCollectors(List<Map<String, dynamic>> collectors) {
+    return collectors.length;
   }
 
   @override
@@ -27,16 +37,23 @@ class _TeamViewState extends State<TeamView> {
       backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: BlocBuilder<TeamCubit, TeamState>(
-          builder: (context, state) {
-            if (state.isLoading && state.teams.isEmpty) {
-              return _buildLoadingState(context);
-            }
+          builder: (context, teamState) {
+            return BlocBuilder<HomeCubit, HomeState>(
+              builder: (context, homeState) {
+                // Calculate collector statistics from HomeCubit data
+                final totalCollectors = _getTotalCollectors(homeState.collectors);
 
-            if (state.error != null && state.teams.isEmpty) {
-              return _buildErrorState(context, state.error!);
-            }
+                if (teamState.isLoading && teamState.teams.isEmpty) {
+                  return _buildLoadingState(context);
+                }
 
-            return _buildContent(context, state);
+                if (teamState.error != null && teamState.teams.isEmpty) {
+                  return _buildErrorState(context, teamState.error!);
+                }
+
+                return _buildContent(context, teamState, homeState, totalCollectors);
+              },
+            );
           },
         ),
       ),
@@ -118,10 +135,11 @@ class _TeamViewState extends State<TeamView> {
     );
   }
 
-  Widget _buildContent(BuildContext context, TeamState state) {
+  Widget _buildContent(BuildContext context, TeamState teamState, HomeState homeState, int totalCollectors) {
     return RefreshIndicator(
       onRefresh: () async {
-        context.read<TeamCubit>().getTeams();
+        await context.read<TeamCubit>().getTeams();
+        await context.read<HomeCubit>().fetchMyCollectors();
       },
       color: Theme.of(context).colorScheme.primary,
       backgroundColor: Theme.of(context).colorScheme.background,
@@ -144,13 +162,12 @@ class _TeamViewState extends State<TeamView> {
                       height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 4),
                 ],
               ),
             ),
           ),
 
-          // Stats Section
+          // Stats Section with only 4 cards
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -164,27 +181,15 @@ class _TeamViewState extends State<TeamView> {
                 children: [
                   TeamStatsCard(
                     title: 'Total Teams',
-                    value: state.totalTeams,
+                    value: teamState.totalTeams,
                     subtitle: 'Active teams',
                     icon: Icons.group_work_rounded,
                   ),
                   TeamStatsCard(
                     title: 'Total Collectors',
-                    value: state.totalCollectors,
-                    subtitle: 'All team members',
-                    icon: Icons.people_alt_rounded,
-                  ),
-                  TeamStatsCard(
-                    title: 'With Supervisor',
-                    value: state.totalSupervisors,
-                    subtitle: 'Teams with supervisors',
-                    icon: Icons.supervisor_account_rounded,
-                  ),
-                  TeamStatsCard(
-                    title: 'Total Fields',
-                    value: state.totalFields,
-                    subtitle: 'Custom fields',
-                    icon: Icons.list_alt_rounded,
+                    value: totalCollectors,
+                    subtitle: 'All assignments',
+                    icon: Icons.assignment_rounded,
                   ),
                 ],
               ),
@@ -213,7 +218,7 @@ class _TeamViewState extends State<TeamView> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      state.teams.length.toString(),
+                      teamState.teams.length.toString(),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primary,
                         fontSize: 12,
@@ -221,13 +226,41 @@ class _TeamViewState extends State<TeamView> {
                       ),
                     ),
                   ),
+                  const Spacer(),
+                  if (homeState.isOffline)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.wifi_off,
+                            size: 14,
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Offline',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
 
           // Teams List
-          if (state.teams.isEmpty)
+          if (teamState.teams.isEmpty)
             _buildEmptyState(context)
           else
             SliverPadding(
@@ -235,10 +268,78 @@ class _TeamViewState extends State<TeamView> {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                    final team = state.teams[index];
+                    final team = teamState.teams[index];
                     return _buildTeamCard(context, team);
                   },
-                  childCount: state.teams.length,
+                  childCount: teamState.teams.length,
+                ),
+              ),
+            ),
+
+          // Sync Status
+          if (homeState.pendingSyncCount > 0)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.sync,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sync Pending',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              '${homeState.pendingSyncCount} response(s) waiting to sync',
+                              style: TextStyle(
+                                color: Colors.blue.withOpacity(0.8),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!homeState.isSyncing)
+                        TextButton(
+                          onPressed: () => context.read<HomeCubit>().manualSync(),
+                          child: Text(
+                            'Sync Now',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      if (homeState.isSyncing)
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -319,76 +420,85 @@ class _TeamViewState extends State<TeamView> {
             );
           },
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Team Avatar
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                width: 1.0,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Team Avatar
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.group_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 24,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.group_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
+                  const SizedBox(width: 16),
 
-                // Team Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        team.name as String,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        team.description as String ?? 'No description',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          fontSize: 13,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _buildTeamStat(
-                            context,
-                            Icons.people_outline_rounded,
-                            '${team.memberCount} members',
+                  // Team Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          team.name as String,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(width: 16),
-                          _buildTeamStat(
-                            context,
-                            Icons.list_alt_rounded,
-                            '${team.fields.length} fields',
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          team.description as String ?? 'No description',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            fontSize: 13,
                           ),
-                        ],
-                      ),
-                    ],
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _buildTeamStat(
+                              context,
+                              Icons.people_outline_rounded,
+                              '${team.memberCount} members',
+                            ),
+                            const SizedBox(width: 16),
+                            _buildTeamStat(
+                              context,
+                              Icons.list_alt_rounded,
+                              '${team.fields.length} fields',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                // Chevron
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                  size: 20,
-                ),
-              ],
+                  // Chevron
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

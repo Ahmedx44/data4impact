@@ -72,6 +72,22 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     });
   }
 
+  double _calculatePerformance() {
+    if (members.isEmpty) return 0.0;
+    final activeMembers = members.where((member) => member.roles.isNotEmpty).length;
+    return (activeMembers / members.length) * 100;
+  }
+
+  String _calculateGoalProgress() {
+    const totalGoal = 15;
+    final currentProgress = members.length;
+    return '$currentProgress/$totalGoal';
+  }
+
+  int _calculatePendingMembers() {
+    return members.where((member) => member.roles.isEmpty || !member.roles.contains('pending')).length;
+  }
+
   Future<void> _exportToCSV() async {
     try {
       final selectedIndexes = selectedMembers.asMap().entries.where((entry) => entry.value).map((entry) => entry.key).toList();
@@ -432,11 +448,13 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
   Widget _buildContent() {
     final selectedCount = selectedMembers.where((isSelected) => isSelected).length;
+    final performance = _calculatePerformance();
+    final goalProgress = _calculateGoalProgress();
+    final pendingMembers = _calculatePendingMembers();
 
     return Column(
       children: [
-
-        // Stats Cards
+        // Stats Cards - Only 4 cards as requested
         Padding(
           padding: const EdgeInsets.all(20.0),
           child: GridView.count(
@@ -452,24 +470,30 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                 value: members.length,
                 subtitle: 'Team members',
                 icon: Icons.people_rounded,
+                color: Theme.of(context).colorScheme.primary,
               ),
               TeamStatsCard(
-                title: 'Active',
-                value: members.length,
-                subtitle: 'Active members',
-                icon: Icons.check_circle_rounded,
+                title: 'Performance',
+                value: performance.toInt(),
+                subtitle: '${performance.toStringAsFixed(1)}% efficiency',
+                icon: Icons.trending_up_rounded,
+                color: Colors.green,
+                isPercentage: true,
               ),
               TeamStatsCard(
-                title: 'Supervisors',
-                value: members.where((member) => member.roles.contains('supervisor')).length,
-                subtitle: 'Team supervisors',
-                icon: Icons.supervisor_account_rounded,
+                title: 'Goal',
+                value: 0, // We'll display custom text instead
+                subtitle: goalProgress,
+                icon: Icons.flag_rounded,
+                color: Colors.orange,
+                customValue: goalProgress, // Custom display for goal progress
               ),
               TeamStatsCard(
-                title: 'Collectors',
-                value: members.where((member) => member.roles.contains('collector')).length,
-                subtitle: 'Data collectors',
-                icon: Icons.assignment_rounded,
+                title: 'Pending Members',
+                value: pendingMembers,
+                subtitle: 'Need attention',
+                icon: Icons.pending_actions_rounded,
+                color: Colors.red,
               ),
             ],
           ),

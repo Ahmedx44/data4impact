@@ -1,78 +1,67 @@
-import 'package:data4impact/core/service/api_service/Model/project.dart';
-import 'package:equatable/equatable.dart';
+// lib/features/home/cubit/home_state.dart
 
-class HomeState extends Equatable {
+import 'package:data4impact/core/service/api_service/Model/project.dart';
+
+class HomeState {
   final bool isLoading;
+  final bool fetchingProjects;
+  final bool fetchingCollectors;
+  final bool isOffline;
   final bool isSyncing;
-  final double syncProgress; // Add sync progress (0.0 to 1.0)
+  final double syncProgress;
+  final int totalToSync;
+  final int syncedSoFar;
+  final int pendingSyncCount;
+  final bool invitationLoading;
   final List<Project> projects;
   final Project? selectedProject;
-  final bool invitationLoading;
-  final bool isOffline;
-  final String? errorMessage;
-  final int pendingSyncCount;
-  final int totalToSync; // Add total items to sync
-  final int syncedSoFar; // Add count of synced items
-  final bool fetchingProjects;
+  final List<Map<String, dynamic>> collectors;
 
   const HomeState({
     this.isLoading = false,
+    this.fetchingProjects = false,
+    this.fetchingCollectors = false,
+    this.isOffline = false,
     this.isSyncing = false,
     this.syncProgress = 0.0,
-    this.projects = const [],
-    this.selectedProject,
-    this.invitationLoading = false,
-    this.isOffline = false,
-    this.errorMessage,
-    this.pendingSyncCount = 0,
     this.totalToSync = 0,
     this.syncedSoFar = 0,
-   this.fetchingProjects=false,
+    this.pendingSyncCount = 0,
+    this.invitationLoading = false,
+    this.projects = const [],
+    this.selectedProject,
+    this.collectors = const [],
   });
-
-  @override
-  List<Object?> get props => [
-    isLoading,
-    isSyncing,
-    syncProgress,
-    projects,
-    selectedProject,
-    invitationLoading,
-    isOffline,
-    errorMessage,
-    pendingSyncCount,
-    totalToSync,
-    syncedSoFar,
-    fetchingProjects,
-  ];
 
   HomeState copyWith({
     bool? isLoading,
+    bool? fetchingProjects,
+    bool? fetchingCollectors,
+    bool? isOffline,
     bool? isSyncing,
     double? syncProgress,
-    List<Project>? projects,
-    Project? selectedProject,
-    bool? invitationLoading,
-    bool? isOffline,
-    String? errorMessage,
-    int? pendingSyncCount,
     int? totalToSync,
     int? syncedSoFar,
-    bool? fetchingProjects,
+    int? pendingSyncCount,
+    bool? invitationLoading,
+    List<Project>? projects,
+    Project? selectedProject,
+    List<Map<String, dynamic>>? collectors,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
+      fetchingProjects: fetchingProjects ?? this.fetchingProjects,
+      fetchingCollectors: fetchingCollectors ?? this.fetchingCollectors,
+      isOffline: isOffline ?? this.isOffline,
       isSyncing: isSyncing ?? this.isSyncing,
       syncProgress: syncProgress ?? this.syncProgress,
-      projects: projects ?? this.projects,
-      selectedProject: selectedProject ?? this.selectedProject,
-      invitationLoading: invitationLoading ?? this.invitationLoading,
-      isOffline: isOffline ?? this.isOffline,
-      errorMessage: errorMessage ?? this.errorMessage,
-      pendingSyncCount: pendingSyncCount ?? this.pendingSyncCount,
       totalToSync: totalToSync ?? this.totalToSync,
       syncedSoFar: syncedSoFar ?? this.syncedSoFar,
-        fetchingProjects:fetchingProjects??this.fetchingProjects,
+      pendingSyncCount: pendingSyncCount ?? this.pendingSyncCount,
+      invitationLoading: invitationLoading ?? this.invitationLoading,
+      projects: projects ?? this.projects,
+      selectedProject: selectedProject ?? this.selectedProject,
+      collectors: collectors ?? this.collectors,
     );
   }
 }

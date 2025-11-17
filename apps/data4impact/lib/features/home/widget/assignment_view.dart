@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AssignmentView extends StatelessWidget {
-  const AssignmentView({super.key});
+  final List<Map<String, dynamic>> collectors;
+
+  const AssignmentView({super.key, required this.collectors});
 
   @override
   Widget build(BuildContext context) {
@@ -32,16 +34,15 @@ class AssignmentView extends StatelessWidget {
         ),
         SizedBox(
           height: 400,
-          child:  ListView(
-            children: const [
-              AssignmentCard(),
-              SizedBox(height: 12),
-              AssignmentCard(),
-              SizedBox(height: 12),
-              AssignmentCard(),
-              SizedBox(height: 12),
-              AssignmentCard(),
-            ],
+          child: ListView(
+            children: collectors.map((collector) {
+              return Column(
+                children: [
+                  AssignmentCard(collector: collector),
+                  const SizedBox(height: 12),
+                ],
+              );
+            }).toList(),
           ),
         ),
       ],

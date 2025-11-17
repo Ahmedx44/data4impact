@@ -200,36 +200,38 @@ class _StudyDetailViewState extends State<StudyDetailView>
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: CustomButton(
-                width: double.infinity,
-                height: 100,
-                child: Text(
-                  'Continue ${_getStudyTypeDisplayName()}',
-                  style: GoogleFonts.lexendDeca(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute<Widget>(
-                      builder: (context) => DataCollectionPage(
-                        studyId: widget.studyId,
-                        studyType: _getStudyType(),
-                        approach: widget.studyData['approach'].toString(),
-                        designType: widget.studyData['design']['type'].toString(),
-                      ),
+          if (widget.studyData['status'] != 'completed')
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: CustomButton(
+                  width: double.infinity,
+                  height: 100,
+                  child: Text(
+                    'Continue ${_getStudyTypeDisplayName()}',
+                    style: GoogleFonts.lexendDeca(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
-                  );
-                },
+                  ),
+                  onTap: () {
+                    print('widgetttttt: ${widget.studyData}');
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute<Widget>(
+                        builder: (context) => DataCollectionPage(
+                          studyId: widget.studyId,
+                          studyType: _getStudyType(),
+                          approach: widget.studyData['approach'].toString(),
+                          designType: widget.studyData['design']['type'].toString(),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
           const SliverToBoxAdapter(
             child: SizedBox(
               height: 20,
@@ -241,15 +243,13 @@ class _StudyDetailViewState extends State<StudyDetailView>
   }
 
   int _calculateDaysRemaining(Map<String, dynamic> studyData) {
-    // Implement your logic to calculate days remaining
-    // For example, if you have a closeOnDate field:
     if (studyData['closeOnDate'] != null) {
       final closeDate = DateTime.parse(studyData['closeOnDate'] as String);
       final now = DateTime.now();
       final difference = closeDate.difference(now).inDays;
       return difference > 0 ? difference : 0;
     }
-    return 10; // Default value if no close date
+    return 10;
   }
 }
 

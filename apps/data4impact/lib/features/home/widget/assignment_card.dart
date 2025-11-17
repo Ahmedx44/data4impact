@@ -1,12 +1,38 @@
+import 'package:data4impact/features/study/cubit/study_cubit.dart';
+import 'package:data4impact/features/study_detail/pages/study_detail_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AssignmentCard extends StatelessWidget {
-  const AssignmentCard({super.key});
+  final Map<String, dynamic> collector;
+
+  const AssignmentCard({super.key, required this.collector});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isOverdue = true; // You can make this dynamic
+
+    // Extract data from collector
+    final study = collector['study'] as Map<String, dynamic>? ?? {};
+    final studyName = study['name'] as String? ?? 'Unknown Study';
+    final studyDescription =
+        study['description'] as String? ?? 'No description available';
+    final responseCount = collector['responseCount'] as int? ?? 0;
+    final maxLimit = collector['maxLimit'] as int? ?? 0;
+    final status = collector['status'] as String? ?? 'inProgress';
+    final assignedDate = collector['assignedDate'] as String? ?? '';
+    final completedDate = collector['completedDate'] as String? ?? '';
+
+    // Calculate progress
+    final progress = maxLimit > 0 ? responseCount / maxLimit : 0.0;
+    final progressPercentage = (progress * 100).toInt();
+
+    // Determine status and colors
+    final isCompleted = status == 'completed';
+    final isOverdue = !isCompleted && _isOverdue(assignedDate);
+
+    // Calculate due date status
+    final dueStatus = _getDueStatus(assignedDate, completedDate, isCompleted);
 
     return Card(
       elevation: 1,
@@ -29,21 +55,29 @@ class AssignmentCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Brand Awareness Analysis',
+                    studyName,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.onSurface,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 _StatusBadge(
-                  text: isOverdue ? "Overdue" : "In Progress",
-                  color: isOverdue
-                      ? theme.colorScheme.errorContainer
-                      : theme.colorScheme.primaryContainer,
-                  textColor: isOverdue
-                      ? theme.colorScheme.onErrorContainer
-                      : theme.colorScheme.onPrimaryContainer,
+                  text: isCompleted
+                      ? "Completed"
+                      : (isOverdue ? "Overdue" : "In Progress"),
+                  color: isCompleted
+                      ? Colors.green.shade100
+                      : (isOverdue
+                          ? theme.colorScheme.errorContainer
+                          : theme.colorScheme.primaryContainer),
+                  textColor: isCompleted
+                      ? Colors.green.shade800
+                      : (isOverdue
+                          ? theme.colorScheme.onErrorContainer
+                          : theme.colorScheme.onPrimaryContainer),
                 ),
               ],
             ),
@@ -52,10 +86,59 @@ class AssignmentCard extends StatelessWidget {
 
             /// Description
             Text(
-              'Measuring brand recognition and recall across target demographics',
+              studyDescription.isNotEmpty
+                  ? studyDescription
+                  : 'Data collection assignment',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const SizedBox(height: 16),
+
+            /// Response information
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Responses',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    Text(
+                      '$responseCount',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Target',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    Text(
+                      '$maxLimit',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
 
             const SizedBox(height: 16),
@@ -74,7 +157,7 @@ class AssignmentCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '77% (385/500)',
+                      '$progressPercentage% ($responseCount/$maxLimit)',
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.primary,
@@ -86,10 +169,12 @@ class AssignmentCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
-                    value: 0.77,
+                    value: progress,
                     minHeight: 10,
-                    backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                    color: theme.colorScheme.primary,
+                    backgroundColor:
+                        theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                    color:
+                        isCompleted ? Colors.green : theme.colorScheme.primary,
                   ),
                 ),
               ],
@@ -115,7 +200,7 @@ class AssignmentCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          isOverdue ? '5 days overdue' : 'Due in 3 days',
+                          dueStatus,
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: isOverdue
                                 ? theme.colorScheme.error
@@ -128,15 +213,32 @@ class AssignmentCard extends StatelessWidget {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
                   ),
-                  onPressed: () {},
-                  child: const Text('Continue'),
+                  onPressed: () {
+                    final studyCubit = context.read<StudyCubit>();
+                    final studyData =
+                        studyCubit.getStudyById(study['_id'] as String);
+
+                    if (studyData != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<Widget>(
+                          builder: (context) => StudyDetailPage(
+                            studyId: study['_id'] as String,
+                            studyData: studyData,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(isCompleted ? 'View' : 'Continue'),
                 ),
               ],
             ),
@@ -144,6 +246,23 @@ class AssignmentCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  bool _isOverdue(String assignedDate) {
+    // Implement your overdue logic here
+    // For now, return false as a placeholder
+    return false;
+  }
+
+  String _getDueStatus(
+      String assignedDate, String completedDate, bool isCompleted) {
+    if (isCompleted) {
+      return 'Completed';
+    }
+
+    // Implement your due date calculation logic here
+    // For now, return a placeholder
+    return 'Due in 3 days';
   }
 }
 
