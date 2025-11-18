@@ -189,13 +189,10 @@ class ProfileService {
         }),
       );
 
-      print('DEBUG: Organizations raw response: ${response.data}');
-
       if (response.data is List) {
         final organizations = (response.data as List<dynamic>)
             .map((org) => UserOrganization.fromJson(org as Map<String, dynamic>))
             .toList();
-        print('DEBUG: Parsed ${organizations.length} organizations');
         return organizations;
       } else {
         throw Exception('Unexpected response format');

@@ -32,6 +32,10 @@ class CurrentUser {
   });
 
   factory CurrentUser.fromJson(Map<String, dynamic> json) {
+    return CurrentUser.fromMap(json);
+  }
+
+  factory CurrentUser.fromMap(Map<String, dynamic> json) {
     // Extract the primary role name from the roles array
     String extractPrimaryRole(Map<String, dynamic> json) {
       if (json['roles'] is List && (json['roles'] as List).isNotEmpty) {
@@ -54,6 +58,7 @@ class CurrentUser {
       if (json['roles'] is List) {
         return (json['roles'] as List<dynamic>)
             .whereType<Map<String, dynamic>>()
+            .map((role) => Map<String, dynamic>.from(role))
             .toList();
       }
       return [];
@@ -78,13 +83,17 @@ class CurrentUser {
   }
 
   Map<String, dynamic> toJson() {
+    return toMap();
+  }
+
+  Map<String, dynamic> toMap() {
     return {
       '_id': id,
       'firstName': firstName,
       'middleName': middleName,
       'lastName': lastName,
       'role': role,
-      'roles': roles,
+      'roles': roles.map((role) => Map<String, dynamic>.from(role)).toList(),
       'phone': phone,
       'email': email,
       'emailVerified': emailVerified,
@@ -98,5 +107,10 @@ class CurrentUser {
 
   String get fullName {
     return [firstName, middleName, lastName].where((name) => name != null && name.isNotEmpty).join(' ');
+  }
+
+  @override
+  String toString() {
+    return 'CurrentUser(id: $id, name: $fullName, email: $email, role: $role)';
   }
 }

@@ -312,7 +312,6 @@ class StudyService {
         '/studies/$studyId/groups',
         options: Options(headers: {'Cookie': cookie}),
       );
-      print('responseeeee: ${response.data}');
 
       if (response.data is List) {
         final list = response.data as List;

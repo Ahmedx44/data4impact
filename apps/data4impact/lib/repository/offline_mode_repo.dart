@@ -19,7 +19,7 @@ class OfflineModeDataRepo {
   // Project
   Future<void> saveAllProjects(List<Project> value) async {
     Box<List<ProjectHive>> hiveBox =
-    await Hive.openBox<List<ProjectHive>>(projectsBox);
+        await Hive.openBox<List<ProjectHive>>(projectsBox);
 
     final hiveProjects = value.map((p) => ProjectHive.fromProject(p)).toList();
 
@@ -71,32 +71,36 @@ class OfflineModeDataRepo {
     }
   }
 
-  // Current User - FIXED VERSION
   Future<void> saveCurrentUser(CurrentUser user) async {
     try {
       final hiveBox = await Hive.openBox<CurrentUserHive>(currentUserBox);
+
       final userHive = CurrentUserHive.fromCurrentUser(user);
+
       await hiveBox.put(currentUserKey, userHive);
-      AppLogger.logInfo('Current user saved successfully');
-    } catch (e) {
+
+      await hiveBox.close();
+    } catch (e, stackTrace) {
       AppLogger.logError('Error saving current user: $e');
+      AppLogger.logError('Stack trace: $stackTrace');
     }
   }
 
   Future<CurrentUser?> getSavedCurrentUser() async {
     try {
+      if (Hive.isBoxOpen(currentUserBox)) {
+        await Hive.box<CurrentUserHive>(currentUserBox).close();
+      }
+
       final hiveBox = await Hive.openBox<CurrentUserHive>(currentUserBox);
       final userHive = hiveBox.get(currentUserKey);
 
-      if (userHive == null) {
-        AppLogger.logInfo('No saved user found in local storage');
-        return null;
-      }
-
-      AppLogger.logInfo('Loaded user from local storage: ${userHive.email}');
-      return userHive.toCurrentUser();
-    } catch (e) {
+      final currentUser = userHive!.toCurrentUser();
+      return currentUser;
+    } catch (e, stackTrace) {
       AppLogger.logError('Error loading saved current user: $e');
+      AppLogger.logError('Stack trace: $stackTrace');
+
       return null;
     }
   }
@@ -126,8 +130,8 @@ class OfflineModeDataRepo {
     }
   }
 
-  Future<void> saveOfflineAnswer(String studyId,
-      Map<String, dynamic> answerData) async {
+  Future<void> saveOfflineAnswer(
+      String studyId, Map<String, dynamic> answerData) async {
     try {
       final hiveBox = await Hive.openBox(offlineAnswersBox);
       final existingAnswers = await getOfflineAnswers(studyId);
@@ -148,8 +152,8 @@ class OfflineModeDataRepo {
         return [];
       }
 
-      final List<dynamic> decoded = jsonDecode(answersJson.toString()) as List<
-          dynamic>;
+      final List<dynamic> decoded =
+          jsonDecode(answersJson.toString()) as List<dynamic>;
       return decoded.map((item) => item as Map<String, dynamic>).toList();
     } catch (e) {
       AppLogger.logError('Error loading offline answers: $e');
@@ -170,8 +174,8 @@ class OfflineModeDataRepo {
     }
   }
 
-  Future<void> saveStudyCohorts(String studyId,
-      List<Map<String, dynamic>> cohorts) async {
+  Future<void> saveStudyCohorts(
+      String studyId, List<Map<String, dynamic>> cohorts) async {
     try {
       final hiveBox = await Hive.openBox(studyCohortsBox);
       await hiveBox.put('${studyCohortsKey}_$studyId', jsonEncode(cohorts));
@@ -190,8 +194,8 @@ class OfflineModeDataRepo {
         return [];
       }
 
-      final List<dynamic> decoded = jsonDecode(cohortsJson.toString()) as List<
-          dynamic>;
+      final List<dynamic> decoded =
+          jsonDecode(cohortsJson.toString()) as List<dynamic>;
       return decoded.map((item) => item as Map<String, dynamic>).toList();
     } catch (e) {
       AppLogger.logError('Error loading study cohorts: $e');
@@ -200,8 +204,8 @@ class OfflineModeDataRepo {
   }
 
 // Study Waves
-  Future<void> saveStudyWaves(String studyId,
-      List<Map<String, dynamic>> waves) async {
+  Future<void> saveStudyWaves(
+      String studyId, List<Map<String, dynamic>> waves) async {
     try {
       final hiveBox = await Hive.openBox(studyWavesBox);
       await hiveBox.put('${studyWavesKey}_$studyId', jsonEncode(waves));
@@ -220,8 +224,8 @@ class OfflineModeDataRepo {
         return [];
       }
 
-      final List<dynamic> decoded = jsonDecode(wavesJson.toString()) as List<
-          dynamic>;
+      final List<dynamic> decoded =
+          jsonDecode(wavesJson.toString()) as List<dynamic>;
       return decoded.map((item) => item as Map<String, dynamic>).toList();
     } catch (e) {
       AppLogger.logError('Error loading study waves: $e');
@@ -230,8 +234,8 @@ class OfflineModeDataRepo {
   }
 
 // Study Respondents
-  Future<void> saveStudyRespondents(String studyId,
-      List<Map<String, dynamic>> respondents) async {
+  Future<void> saveStudyRespondents(
+      String studyId, List<Map<String, dynamic>> respondents) async {
     try {
       final hiveBox = await Hive.openBox(studyRespondentsBox);
       await hiveBox.put(
@@ -252,8 +256,8 @@ class OfflineModeDataRepo {
         return [];
       }
 
-      final List<dynamic> decoded = jsonDecode(
-          respondentsJson.toString()) as List<dynamic>;
+      final List<dynamic> decoded =
+          jsonDecode(respondentsJson.toString()) as List<dynamic>;
       return decoded.map((item) => item as Map<String, dynamic>).toList();
     } catch (e) {
       AppLogger.logError('Error loading study respondents: $e');
@@ -262,8 +266,8 @@ class OfflineModeDataRepo {
   }
 
 // Study Groups
-  Future<void> saveStudyGroups(String studyId,
-      List<Map<String, dynamic>> groups) async {
+  Future<void> saveStudyGroups(
+      String studyId, List<Map<String, dynamic>> groups) async {
     try {
       final hiveBox = await Hive.openBox(studyGroupsBox);
       await hiveBox.put('${studyGroupsKey}_$studyId', jsonEncode(groups));
@@ -282,8 +286,8 @@ class OfflineModeDataRepo {
         return [];
       }
 
-      final List<dynamic> decoded = jsonDecode(groupsJson.toString()) as List<
-          dynamic>;
+      final List<dynamic> decoded =
+          jsonDecode(groupsJson.toString()) as List<dynamic>;
       return decoded.map((item) => item as Map<String, dynamic>).toList();
     } catch (e) {
       AppLogger.logError('Error loading study groups: $e');
@@ -292,8 +296,8 @@ class OfflineModeDataRepo {
   }
 
 // Study Subjects
-  Future<void> saveStudySubjects(String studyId,
-      List<Map<String, dynamic>> subjects) async {
+  Future<void> saveStudySubjects(
+      String studyId, List<Map<String, dynamic>> subjects) async {
     try {
       final hiveBox = await Hive.openBox(studySubjectsBox);
       await hiveBox.put('${studySubjectsKey}_$studyId', jsonEncode(subjects));
@@ -312,11 +316,41 @@ class OfflineModeDataRepo {
         return [];
       }
 
-      final List<dynamic> decoded = jsonDecode(subjectsJson.toString()) as List<
-          dynamic>;
+      final List<dynamic> decoded =
+          jsonDecode(subjectsJson.toString()) as List<dynamic>;
       return decoded.map((item) => item as Map<String, dynamic>).toList();
     } catch (e) {
       AppLogger.logError('Error loading study subjects: $e');
+      return [];
+    }
+  }
+
+  Future<void> saveCollectors(
+      String projectId, List<dynamic> collectors) async {
+    try {
+      final hiveBox = await Hive.openBox(collectorsBox);
+      await hiveBox.put('${collectorsKey}_$projectId', jsonEncode(collectors));
+      AppLogger.logInfo(
+          'Saved ${collectors.length} collectors for project $projectId');
+    } catch (e) {
+      AppLogger.logError('Error saving collectors: $e');
+    }
+  }
+
+  Future<List<dynamic>> getSavedCollectors(String projectId) async {
+    try {
+      final hiveBox = await Hive.openBox(collectorsBox);
+      final collectorsJson = hiveBox.get('${collectorsKey}_$projectId');
+
+      if (collectorsJson == null) {
+        return [];
+      }
+
+      final List<dynamic> decoded =
+          jsonDecode(collectorsJson.toString()) as List<dynamic>;
+      return decoded;
+    } catch (e) {
+      AppLogger.logError('Error loading saved collectors: $e');
       return [];
     }
   }

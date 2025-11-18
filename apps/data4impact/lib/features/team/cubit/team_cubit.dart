@@ -36,24 +36,21 @@ class TeamCubit extends Cubit<TeamState> {
 
       // Calculate statistics
       final totalTeams = teams.length;
-      final totalCollectors =
-          teams.fold(0, (sum, team) => sum + team.memberCount);
+      final totalCollectors = teams.fold(0, (sum, team) => sum + team.memberCount);
       final totalSupervisors = teams.fold(0, (sum, team) {
-        return sum + (team.memberCount > 0 ? 1 : 0);
+        return sum + (team.memberCount > 0 ? 1 : 0); 
       });
-      final totalFields =
-          teams.fold(0, (sum, team) => sum + team.fields.length);
+      final totalFields = teams.fold(0, (sum, team) => sum + team.fields.length);
 
-      emit(
-        state.copyWith(
-          isLoading: false,
-          teams: teams,
-          totalTeams: totalTeams,
-          totalCollectors: totalCollectors,
-          totalSupervisors: totalSupervisors,
-          totalFields: totalFields,
-        ),
-      );
+      emit(state.copyWith(
+        isLoading: false,
+        teams: teams,
+        totalTeams: totalTeams,
+        totalCollectors: totalCollectors,
+        totalSupervisors: totalSupervisors,
+        totalFields: totalFields,
+      ));
+
     } catch (e) {
       print('Error fetching teams: $e');
       emit(state.copyWith(

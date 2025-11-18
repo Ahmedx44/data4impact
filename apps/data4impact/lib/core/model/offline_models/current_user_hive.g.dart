@@ -22,9 +22,7 @@ class CurrentUserHiveAdapter extends TypeAdapter<CurrentUserHive> {
       middleName: fields[2] as String?,
       lastName: fields[3] as String,
       role: fields[4] as String,
-      roles: (fields[5] as List)
-          .map((dynamic e) => (e as Map).cast<String, dynamic>())
-          .toList(),
+      rolesJson: fields[5] as String,
       phone: fields[6] as String?,
       email: fields[7] as String,
       emailVerified: fields[8] as bool,
@@ -51,7 +49,7 @@ class CurrentUserHiveAdapter extends TypeAdapter<CurrentUserHive> {
       ..writeByte(4)
       ..write(obj.role)
       ..writeByte(5)
-      ..write(obj.roles)
+      ..write(obj.rolesJson)
       ..writeByte(6)
       ..write(obj.phone)
       ..writeByte(7)

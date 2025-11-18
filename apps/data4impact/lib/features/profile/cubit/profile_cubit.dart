@@ -38,6 +38,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       try {
         final currentUser = await authService.getCurrentUser();
 
+
         await OfflineModeDataRepo().saveCurrentUser(currentUser);
 
         await fetchUserOrganizations();

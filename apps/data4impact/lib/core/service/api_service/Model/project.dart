@@ -36,7 +36,6 @@ class Project {
   });
 
   factory Project.fromMap(Map<String, dynamic> map) {
-    print('debug Project.fromMap: Creating project from $map');
     try {
       // Safe parsing with null checks and default values
       String safeString(String key) => map[key]?.toString() ?? '';

@@ -32,7 +32,6 @@ class _NavigationViewState extends State<NavigationView>
   bool _initialLoadCompleted = false;
   bool _showStaticScreen = false;
 
-  // Track which pages have been initialized and store their state
   final List<bool> _pagesInitialized = [];
   final List<Widget> _pages = [];
   final PageStorageBucket _pageStorageBucket = PageStorageBucket();
@@ -42,10 +41,12 @@ class _NavigationViewState extends State<NavigationView>
 
   @override
   void initState() {
+
     super.initState();
     _initializeNavigationItems();
     _checkToken();
     _checkInitialProjectState();
+    _fetchUserData();
   }
 
   Future<void> _checkToken() async {
@@ -53,20 +54,29 @@ class _NavigationViewState extends State<NavigationView>
     setState(() {});
   }
 
+  void _fetchUserData() {
+
+    final profileCubit = context.read<ProfileCubit>();
+    profileCubit.fetchCurrentUser();
+  }
+
   void _checkInitialProjectState() {
     final homeCubit = context.read<HomeCubit>();
-
     // Check current project state immediately
     if (!homeCubit.state.fetchingProjects && homeCubit.state.projects.isEmpty) {
+
       _showStaticScreen = true;
     }
 
-    // Force fetch projects if not already loading
+
     if (homeCubit.state.projects.isEmpty && !homeCubit.state.fetchingProjects) {
+
       homeCubit.fetchAllProjects().then((_) {
         if (mounted) {
           setState(() {
             _showStaticScreen = homeCubit.state.projects.isEmpty;
+            _initialLoadCompleted = true;
+
           });
         }
       });
@@ -82,7 +92,6 @@ class _NavigationViewState extends State<NavigationView>
       TabItem(icon: HugeIcons.strokeRoundedUser, title: 'Profile'),
     ];
 
-    // Initialize with empty pages and mark none as initialized
     _pages.clear();
     _pagesInitialized.clear();
     for (int i = 0; i < items.length; i++) {
@@ -92,7 +101,7 @@ class _NavigationViewState extends State<NavigationView>
   }
 
   void _initializeAdminNavigationItems() {
-    print('Debug:: _initializeAdminNavigationItems called');
+
     items = const [
       TabItem(icon: HugeIcons.strokeRoundedHome01, title: 'Home'),
       TabItem(icon: HugeIcons.strokeRoundedInboxDownload, title: 'Inbox'),
@@ -108,16 +117,17 @@ class _NavigationViewState extends State<NavigationView>
       _pages.add(Container()); // Placeholder
       _pagesInitialized.add(false);
     }
+
   }
 
   Widget _buildPage(int index) {
-    // Initialize page only when it's first accessed
     if (!_pagesInitialized[index]) {
+
       _pagesInitialized[index] = true;
 
       Widget page;
       if (items.length == 6) {
-        // Admin layout
+
         switch (index) {
           case 0:
             page = const HomePage();
@@ -141,7 +151,7 @@ class _NavigationViewState extends State<NavigationView>
             page = Container();
         }
       } else {
-        // Regular layout
+
         switch (index) {
           case 0:
             page = const HomePage();
@@ -163,19 +173,23 @@ class _NavigationViewState extends State<NavigationView>
         }
       }
 
-      // Wrap each page with PageStorage to preserve state
       _pages[index] = PageStorage(
         bucket: _pageStorageBucket,
         child: page,
       );
+
     }
 
     return _pages[index];
   }
 
   bool _isAdmin(ProfileState state) {
-    final isAdmin = state.user?.role?.toLowerCase() == 'admin' ||
-        state.user?.role?.toLowerCase() == 'administrator';
+    if (state.user?.role == null) {
+      return false;
+    }
+    final role = state.user!.role!.toLowerCase();
+    final isAdmin =
+        role == 'admin' || role == 'administrator' || role == 'owner';
     return isAdmin;
   }
 
@@ -183,15 +197,17 @@ class _NavigationViewState extends State<NavigationView>
     final hasValidUser = state.user != null &&
         state.user!.id != null &&
         state.user!.id!.isNotEmpty;
+
+    if (hasValidUser) {
+
+    } else {
+
+    }
     return hasValidUser;
   }
 
-  bool _hasSubjects(HomeState state) {
-    final hasSubjects = state.projects.isNotEmpty;
-    return hasSubjects;
-  }
-
   Widget _buildLoadingScreen() {
+
     return const Scaffold(
       body: Center(
         child: Column(
@@ -454,77 +470,91 @@ class _NavigationViewState extends State<NavigationView>
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginPage()),
-            (route) => false,
+        (route) => false,
       );
 
       ToastService.showSuccessToast(message: 'Logout successful');
     } catch (e) {
+
       ToastService.showErrorToast(message: 'Logout failed: ${e.toString()}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     final theme = Theme.of(context).colorScheme;
 
-    return BlocListener<HomeCubit, HomeState>(
-      listener: (context, homeState) {
-        if (!homeState.fetchingProjects) {
-          final hasProjects = homeState.projects.isNotEmpty;
-          if (_showStaticScreen != !hasProjects) {
-            setState(() {
-              _showStaticScreen = !hasProjects;
-            });
-          }
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<HomeCubit, HomeState>(
+          listener: (context, homeState) {
+            if (!homeState.fetchingProjects) {
+              final hasProjects = homeState.projects.isNotEmpty;
+
+              if (_showStaticScreen != !hasProjects) {
+                setState(() {
+                  _showStaticScreen = !hasProjects;
+                  _initialLoadCompleted = true;
+                });
+              }
+            }
+          },
+        ),
+      ],
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, homeState) {
-          // Show static screen immediately if no projects
           if (_showStaticScreen && !homeState.fetchingProjects) {
             return _buildStaticScreen();
           }
-
-          // Show loading during initial fetch
           if (homeState.fetchingProjects && !_initialLoadCompleted) {
             return _buildLoadingScreen();
           }
 
-          final profileState = context.watch<ProfileCubit>().state;
-          final hasValidUser = _hasValidUser(profileState);
+          return BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, profileState) {
+              if (profileState.isLoading) {
+                return _buildLoadingScreen();
+              }
 
-          // Initialize navigation items based on user role
-          if (hasValidUser) {
-            if (_isAdmin(profileState)) {
-              _initializeAdminNavigationItems();
-            } else {
-              _initializeNavigationItems();
-            }
-          } else {
-            _initializeNavigationItems();
-          }
+              final hasValidUser = _hasValidUser(profileState);
 
-          return Scaffold(
-            body: IndexedStack(
-              index: visit,
-              children: [
-                for (int i = 0; i < items.length; i++) _buildPage(i),
-              ],
-            ),
-            bottomNavigationBar: _showStaticScreen ? null : BottomBarDefault(
-              items: items,
-              backgroundColor: theme.surface,
-              color: theme.onSurface,
-              colorSelected: theme.primary,
-              indexSelected: visit,
-              paddingVertical: 15,
-              onTap: (int index) {
-                setState(() {
-                  visit = index;
-                });
-              },
-            ),
+              if (hasValidUser) {
+                final isAdmin = _isAdmin(profileState);
+
+                if (isAdmin) {
+                  _initializeAdminNavigationItems();
+                } else {
+                  _initializeNavigationItems();
+                }
+              } else {
+                _initializeNavigationItems();
+              }
+
+              return Scaffold(
+                body: IndexedStack(
+                  index: visit,
+                  children: [
+                    for (int i = 0; i < items.length; i++) _buildPage(i),
+                  ],
+                ),
+                bottomNavigationBar: _showStaticScreen
+                    ? null
+                    : BottomBarDefault(
+                        items: items,
+                        backgroundColor: theme.surface,
+                        color: theme.onSurface,
+                        colorSelected: theme.primary,
+                        indexSelected: visit,
+                        paddingVertical: 15,
+                        onTap: (int index) {
+                          setState(() {
+                            visit = index;
+                          });
+                        },
+                      ),
+              );
+            },
           );
         },
       ),

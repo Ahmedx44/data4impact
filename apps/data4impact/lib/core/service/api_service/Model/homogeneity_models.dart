@@ -17,24 +17,19 @@ class Homogeneity {
   });
 
   factory Homogeneity.fromJson(Map<String, dynamic> json) {
-    print('=== PARSING HOMOGENEITY JSON ===');
-    print('Homogeneity JSON keys: ${json.keys}');
-    print('Full homogeneity JSON: $json');
 
     // Parse fields
     List<HomogeneityField> fields = [];
     if (json['fields'] is List) {
-      print('Fields is List, length: ${(json['fields'] as List).length}');
+
       for (var i = 0; i < (json['fields'] as List).length; i++) {
         final fieldJson = (json['fields'] as List)[i];
-        print('Field $i: $fieldJson');
+
         if (fieldJson is Map<String, dynamic>) {
           try {
             final field = HomogeneityField.fromJson(fieldJson);
             fields.add(field);
-            print('Successfully parsed field: ${field.name}');
           } catch (e) {
-            print('Error parsing field $i: $e');
           }
         } else {
           print('Field $i is NOT a Map - type: ${fieldJson.runtimeType}');

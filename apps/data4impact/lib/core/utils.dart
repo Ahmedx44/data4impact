@@ -9,6 +9,7 @@ const studyWavesBox = 'study_waves_box';
 const studyRespondentsBox = 'study_respondents_box';
 const studyGroupsBox = 'study_groups_box';
 const studySubjectsBox = 'study_subjects_box';
+const collectorsBox = 'collectors_box';
 
 /// Key for storing offline mode local data
 const projectsKey = 'projects_key';
@@ -21,6 +22,7 @@ const studyWavesKey = 'study_waves_key';
 const studyRespondentsKey = 'study_respondents_key';
 const studyGroupsKey = 'study_groups_key';
 const studySubjectsKey = 'study_subjects_key';
+const collectorsKey = 'collectors_key';
 
 // Hive BOXES IDs
 const projectsBoxId = 0;
@@ -33,3 +35,4 @@ const studyWavesBoxId = 6;
 const studyRespondentsBoxId = 7;
 const studyGroupsBoxId = 8;
 const studySubjectsBoxId = 9;
+const collectorsBoxId = 10;
