@@ -86,7 +86,6 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> _checkAndSyncOfflineData() async {
     final isConnected = await _isConnected;
 
-    // Update offline status based on current connectivity
     if (state.isOffline != !isConnected) {
       emit(state.copyWith(isOffline: !isConnected));
     }
@@ -197,7 +196,6 @@ class HomeCubit extends Cubit<HomeState> {
               answerData['audioUrl'] = audioUrl;
               answerData.remove('audioFilePath');
             } else {
-              // Skip this answer if audio upload fails but it's required
               continue;
             }
           }
@@ -223,16 +221,13 @@ class HomeCubit extends Cubit<HomeState> {
                 : 0.0,
           ));
         } catch (e) {
-          if (answerData.containsKey('data')) {
-            print('Response data type: ${answerData['data'].runtimeType}');
-          }
         }
       }
       if (successfulIndices.isNotEmpty) {
         await _removeSyncedAnswers(studyId, successfulIndices);
       }
     } catch (e) {
-      print('Error syncing offline answers for study $studyId: $e');
+
     }
     return syncedCount;
   }
@@ -243,7 +238,6 @@ class HomeCubit extends Cubit<HomeState> {
       final result = await fileUploadService.uploadAudioFile(studyId, filePath);
       return result['filename'] as String?;
     } catch (e) {
-      print('Failed to upload audio during sync: $e');
       return null;
     }
   }

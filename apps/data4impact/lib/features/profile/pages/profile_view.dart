@@ -50,15 +50,9 @@ class _ProfilePageState extends State<ProfileView> {
           final box = await Hive.openBox(boxName);
           await box.clear();
           await box.close();
-
-        } catch (e) {
-
-        }
+        } catch (e) {}
       }
-
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }
 
   void _performLogout() async {
@@ -322,7 +316,8 @@ class _ProfilePageState extends State<ProfileView> {
 
           Text(
             user?.roles.isNotEmpty == true
-                ? (user!.roles.first['name'] as String?)?.toUpperCase() ?? 'USER'
+                ? (user!.roles.first['name'] as String?)?.toUpperCase() ??
+                    'USER'
                 : 'USER',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onPrimary.withOpacity(0.9),
@@ -502,39 +497,42 @@ class _ProfilePageState extends State<ProfileView> {
     }
 
     if (organizations.isEmpty) {
-      return Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
+      return Container(
+        width: double.infinity,
+        child: Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: colorScheme.outline.withOpacity(0.2),
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Icon(
-                Icons.business_outlined,
-                size: 48,
-                color: colorScheme.onSurface.withOpacity(0.3),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'No Organizations',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w500,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.business_outlined,
+                  size: 48,
+                  color: colorScheme.onSurface.withOpacity(0.3),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'You are not a member of any organizations yet.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                const SizedBox(height: 12),
+                Text(
+                  'No Organizations',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'You are not a member of any organizations yet.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -758,36 +756,16 @@ class _ProfilePageState extends State<ProfileView> {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(10),
         child: Column(
           children: [
             _buildSecurityItem(
               context,
               icon: Icons.lock_outlined,
               title: 'Change Password',
-              subtitle: 'Last changed 3 months ago',
+              subtitle: 'Update your account password',
               onTap: () {
                 _showChangePasswordDialog(context);
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildSecurityItem(
-              context,
-              icon: Icons.security_outlined,
-              title: 'Two-Factor Authentication',
-              subtitle: 'Not enabled',
-              onTap: () {
-                // Handle 2FA enablement
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildSecurityItem(
-              context,
-              icon: Icons.devices_outlined,
-              title: 'Active Sessions',
-              subtitle: '2 devices active',
-              onTap: () {
-                // Handle active sessions
               },
             ),
           ],
@@ -1128,7 +1106,6 @@ class _ProfilePageState extends State<ProfileView> {
   }
 }
 
-// ... Rest of your EditProfileDialog and ChangePasswordDialog classes remain the same
 class EditProfileDialog extends StatefulWidget {
   final CurrentUser user;
 
@@ -1147,12 +1124,13 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   late TextEditingController _lastNameController;
   late TextEditingController _phoneController;
 
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
     _firstNameController = TextEditingController(text: widget.user.firstName);
-    _middleNameController =
-        TextEditingController(text: widget.user.middleName ?? '');
+    _middleNameController = TextEditingController(text: widget.user.middleName ?? '');
     _lastNameController = TextEditingController(text: widget.user.lastName);
     _phoneController = TextEditingController(text: widget.user.phone ?? '');
   }
@@ -1166,6 +1144,39 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     super.dispose();
   }
 
+  String? _validateName(String? value, String fieldName) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your $fieldName';
+    }
+    if (value.length < 2) {
+      return '$fieldName must be at least 2 characters';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return null; // Phone is optional
+    }
+    if (value.length < 10) {
+      return 'Please enter a valid phone number';
+    }
+    return null;
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    await context.read<ProfileCubit>().saveProfile(context);
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _onFieldChanged(String field, String value) {
+    context.read<ProfileCubit>().updateField(field, value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1175,104 +1186,228 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     return Dialog(
       backgroundColor: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
+      elevation: 8,
+      shadowColor: Colors.black26,
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Edit Profile',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Form Fields
-            _buildTextField(_firstNameController, 'First Name', (value) {
-              context.read<ProfileCubit>().updateField('firstName', value);
-            }, isEnabled: !state.isLoading),
-            const SizedBox(height: 12),
-            _buildTextField(_middleNameController, 'Middle Name', (value) {
-              context.read<ProfileCubit>().updateField('middleName', value);
-            }, isEnabled: !state.isLoading),
-            const SizedBox(height: 12),
-            _buildTextField(_lastNameController, 'Last Name', (value) {
-              context.read<ProfileCubit>().updateField('lastName', value);
-            }, isEnabled: !state.isLoading),
-            const SizedBox(height: 12),
-            _buildTextField(_phoneController, 'Phone', (value) {
-              context.read<ProfileCubit>().updateField('phone', value);
-            }, keyboardType: TextInputType.phone, isEnabled: !state.isLoading),
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Edit Profile',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  IconButton(
                     onPressed: state.isLoading
                         ? null
                         : () {
-                            context.read<ProfileCubit>().cancelEditing();
-                            Navigator.of(context).pop();
-                          },
-                    child: const Text('Cancel'),
+                      context.read<ProfileCubit>().cancelEditing();
+                      Navigator.of(context).pop();
+                    },
+                    icon: Icon(Icons.close, color: colorScheme.onSurface.withOpacity(0.6)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    iconSize: 20,
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Update your personal information',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: state.isLoading
-                        ? null
-                        : () async {
-                            await context
-                                .read<ProfileCubit>()
-                                .saveProfile(context);
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                    child: state.isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.onPrimary,
-                              ),
-                            ),
-                          )
-                        : const Text('Save'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              ),
+              const SizedBox(height: 24),
 
-  Widget _buildTextField(
-    TextEditingController controller,
-    String label,
-    Function(String) onChanged, {
-    TextInputType keyboardType = TextInputType.text,
-    bool isEnabled = true,
-  }) {
-    return TextField(
-      controller: controller,
-      enabled: isEnabled,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+              // First Name
+              Text(
+                'First Name *',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _firstNameController,
+                enabled: !state.isLoading,
+                validator: (value) => _validateName(value, 'first name'),
+                onChanged: (value) => _onFieldChanged('firstName', value),
+                decoration: InputDecoration(
+                  hintText: 'Enter your first name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Middle Name
+              Text(
+                'Middle Name',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _middleNameController,
+                enabled: !state.isLoading,
+                onChanged: (value) => _onFieldChanged('middleName', value),
+                decoration: InputDecoration(
+                  hintText: 'Enter your middle name (optional)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Last Name
+              Text(
+                'Last Name *',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _lastNameController,
+                enabled: !state.isLoading,
+                validator: (value) => _validateName(value, 'last name'),
+                onChanged: (value) => _onFieldChanged('lastName', value),
+                decoration: InputDecoration(
+                  hintText: 'Enter your last name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Phone
+              Text(
+                'Phone Number',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _phoneController,
+                enabled: !state.isLoading,
+                validator: _validatePhone,
+                keyboardType: TextInputType.phone,
+                onChanged: (value) => _onFieldChanged('phone', value),
+                decoration: InputDecoration(
+                  hintText: 'Enter your phone number (optional)',
+                  prefixIcon: Icon(Icons.phone, color: colorScheme.onSurface.withOpacity(0.5)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: state.isLoading
+                          ? null
+                          : () {
+                        context.read<ProfileCubit>().cancelEditing();
+                        Navigator.of(context).pop();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.onSurface,
+                        side: BorderSide(color: colorScheme.outline),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: state.isLoading ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: state.isLoading
+                          ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+                        ),
+                      )
+                          : const Text('Save Changes'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-      keyboardType: keyboardType,
-      onChanged: onChanged,
     );
   }
 }
@@ -1285,11 +1420,15 @@ class ChangePasswordDialog extends StatefulWidget {
 }
 
 class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
-  final TextEditingController _currentPasswordController =
-      TextEditingController();
+  final TextEditingController _currentPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -1297,6 +1436,56 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  String? _validateCurrentPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your current password';
+    }
+    return null;
+  }
+
+  String? _validateNewPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a new password';
+    }
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your new password';
+    }
+    if (value != _newPasswordController.text) {
+      return 'Passwords do not match';
+    }
+    return null;
+  }
+
+  Future<void> _changePassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    // Simulate API call
+    await Future.delayed(const Duration(seconds: 2));
+
+    setState(() => _isLoading = false);
+
+    if (mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Password changed successfully'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
   }
 
   @override
@@ -1307,86 +1496,208 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
     return Dialog(
       backgroundColor: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
+      elevation: 8,
+      shadowColor: Colors.black26,
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Change Password',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Change Password',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(Icons.close, color: colorScheme.onSurface.withOpacity(0.6)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    iconSize: 20,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // Current Password
-            TextField(
-              controller: _currentPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Current Password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 8),
+              Text(
+                'Enter your current password and set a new one',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 24),
 
-            // New Password
-            TextField(
-              controller: _newPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'New Password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+              // Current Password
+              Text(
+                'Current Password',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // Confirm New Password
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Confirm New Password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Cancel'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _currentPasswordController,
+                obscureText: _obscureCurrentPassword,
+                validator: _validateCurrentPassword,
+                decoration: InputDecoration(
+                  hintText: 'Enter current password',
+                  suffixIcon: IconButton(
+                    onPressed: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
+                    icon: Icon(
+                      _obscureCurrentPassword ? Icons.visibility : Icons.visibility_off,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Handle password change logic here
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Password changed successfully')),
-                      );
-                    },
-                    child: const Text('Update'),
+              ),
+              const SizedBox(height: 16),
+
+              // New Password
+              Text(
+                'New Password',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _newPasswordController,
+                obscureText: _obscureNewPassword,
+                validator: _validateNewPassword,
+                decoration: InputDecoration(
+                  hintText: 'Enter new password',
+                  suffixIcon: IconButton(
+                    onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                    icon: Icon(
+                      _obscureNewPassword ? Icons.visibility : Icons.visibility_off,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Must be at least 8 characters',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Confirm New Password
+              Text(
+                'Confirm New Password',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirmPassword,
+                validator: _validateConfirmPassword,
+                decoration: InputDecoration(
+                  hintText: 'Confirm your new password',
+                  suffixIcon: IconButton(
+                    onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    icon: Icon(
+                      _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.onSurface,
+                        side: BorderSide(color: colorScheme.outline),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _changePassword,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: _isLoading
+                          ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+                        ),
+                      )
+                          : const Text('Update Password'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

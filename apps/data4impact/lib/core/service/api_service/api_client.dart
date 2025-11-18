@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 
 class ApiClient {
   final Dio dio;
+  final bool isDebugMode;
 
   ApiClient({String? baseUrl})
       : dio = Dio(
@@ -21,51 +22,109 @@ class ApiClient {
       followRedirects: true,
       maxRedirects: 5,
     ),
-  ) {
+  ),
+        isDebugMode = _isInDebugMode();
+
+  static bool _isInDebugMode() {
+    bool inDebug = false;
+    assert(() {
+      inDebug = true;
+      return true;
+    }());
+    return inDebug;
+  }
+
+  void _logInfo(String message) {
+    if (isDebugMode) {
+      AppLogger.logInfo(message);
+    }
+  }
+
+  void _logWarning(String message) {
+    if (isDebugMode) {
+      AppLogger.logWarning(message);
+    }
+  }
+
+  void _logError(String message, [dynamic error, StackTrace? stackTrace]) {
+    if (isDebugMode) {
+      AppLogger.logError(message, error, stackTrace);
+    }
+  }
+
+  void _logDebug(String message) {
+    if (isDebugMode) {
+      AppLogger.logInfo('[DEBUG] $message');
+    }
+  }
+
+  ApiClient._create(this.dio, this.isDebugMode);
+
+  factory ApiClient.create({String? baseUrl, bool? debugMode}) {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl ?? "",
+        connectTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(seconds: 20),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        validateStatus: (status) => status! < 500,
+        followRedirects: true,
+        maxRedirects: 5,
+      ),
+    );
+
+    final client = ApiClient._create(dio, debugMode ?? _isInDebugMode());
+    client._setupInterceptors();
+    return client;
+  }
+
+  void _setupInterceptors() {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          AppLogger.logInfo('''
+          if (isDebugMode) {
+            _logInfo('''
 🌐 REQUEST 🌐
 Method: ${options.method}
 URL: ${options.uri}
 Headers: ${options.headers}
 Body: ${options.data}
 ''');
+          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          final prettyBody = const JsonEncoder.withIndent('  ')
-              .convert(response.data);
-          // Check for redirect
-          if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
-            AppLogger.logWarning(
-                'Redirect detected to: ${response.headers['location']}');
-          }
+          if (isDebugMode) {
+            final prettyBody = const JsonEncoder.withIndent('  ')
+                .convert(response.data);
 
-          // Log the full response
-          AppLogger.logInfo('''
+            if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
+              _logWarning('Redirect detected to: ${response.headers['location']}');
+            }
+
+            _logInfo('''
 📩 RESPONSE 📩
 Status: ${response.statusCode} ${response.statusMessage}
 URL: ${response.requestOptions.uri}
 Headers: ${response.headers}
 Body: $prettyBody
 ''');
-
+          }
           return handler.next(response);
         },
         onError: (DioException e, handler) {
           final userFriendlyMessage = _getUserFriendlyErrorMessage(e);
 
-          // Handle redirect errors specifically
-          if ([301, 302, 303, 307, 308].contains(e.response?.statusCode)) {
-            AppLogger.logWarning(
-                'Redirect not followed to: ${e.response?.headers['location']}');
-          }
+          if (isDebugMode) {
+            if ([301, 302, 303, 307, 308].contains(e.response?.statusCode)) {
+              _logWarning('Redirect not followed to: ${e.response?.headers['location']}');
+            }
 
-          // Log error responses
-          if (e.response != null) {
-            AppLogger.logError('''
+            if (e.response != null) {
+              _logError('''
 🚨 ERROR RESPONSE 🚨
 User Message: $userFriendlyMessage
 Status: ${e.response?.statusCode}
@@ -74,12 +133,13 @@ Headers: ${e.response?.headers}
 Body: ${e.response?.data}
 Technical: ${e.message}
 ''');
-          } else {
-            AppLogger.logError('''
+            } else {
+              _logError('''
 🚨 NETWORK ERROR 🚨
 User Message: $userFriendlyMessage
 Technical: ${e.message}
 ''');
+            }
           }
 
           return handler.next(e);
@@ -103,12 +163,11 @@ Technical: ${e.message}
       return response;
     } on DioException catch (e, stack) {
       final userMessage = _getUserFriendlyErrorMessage(e);
-      AppLogger.logError(
+      _logError(
         "GET request failed: $userMessage\nURL: $endpoint",
         e,
         stack,
       );
-      // You can throw a custom exception with user-friendly message
       throw Exception(userMessage);
     }
   }
@@ -130,7 +189,7 @@ Technical: ${e.message}
       return response;
     } on DioException catch (e, stack) {
       final userMessage = _getUserFriendlyErrorMessage(e);
-      AppLogger.logError(
+      _logError(
         "POST request failed: $userMessage\nURL: $endpoint",
         e,
         stack,
@@ -154,7 +213,7 @@ Technical: ${e.message}
       return response;
     } on DioException catch (e, stack) {
       final userMessage = _getUserFriendlyErrorMessage(e);
-      AppLogger.logError(
+      _logError(
         "PUT request failed: $userMessage\nURL: $endpoint",
         e,
         stack,
@@ -170,7 +229,7 @@ Technical: ${e.message}
       return response;
     } on DioException catch (e, stack) {
       final userMessage = _getUserFriendlyErrorMessage(e);
-      AppLogger.logError(
+      _logError(
         "DELETE request failed: $userMessage\nURL: $endpoint",
         e,
         stack,
@@ -182,13 +241,13 @@ Technical: ${e.message}
   /// Add auth token
   void setAuthToken(String token) {
     dio.options.headers['Authorization'] = 'Bearer $token';
-    AppLogger.logInfo("🔑 Auth token set");
+    _logDebug("🔑 Auth token set");
   }
 
   /// Clear auth token
   void clearAuthToken() {
     dio.options.headers.remove('Authorization');
-    AppLogger.logInfo("🔑 Auth token cleared");
+    _logDebug("🔑 Auth token cleared");
   }
 
   /// User-friendly error message helper
@@ -278,7 +337,7 @@ Technical: ${e.message}
 
         // For validation errors, format them nicely
         if (data['errors'] is Map) {
-          final errors = Map<String, dynamic>.from(data['errors'] as Map<String,dynamic>);
+          final errors = Map<String, dynamic>.from(data['errors'] as Map<String, dynamic>);
           if (errors.isNotEmpty) {
             final firstError = errors.values.first;
             if (firstError is List) {

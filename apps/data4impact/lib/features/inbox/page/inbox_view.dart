@@ -52,7 +52,6 @@ class _InboxViewState extends State<InboxView>
                   ),
                 ),
               ),
-
               title: const Text(
                 'Inbox',
                 style: TextStyle(
@@ -126,9 +125,6 @@ class _InboxViewState extends State<InboxView>
   Widget _buildNotificationTab(ColorScheme colorScheme, ThemeData theme) {
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: [
-
-      ],
     );
   }
 
@@ -194,104 +190,6 @@ class _InboxViewState extends State<InboxView>
           },
         );
       },
-    );
-  }
-
-  // Message Card
-  Widget _buildAnalysisCard(ColorScheme colorScheme, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        border: Border.all(color: colorScheme.outline.withOpacity(0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'You are Overdue on Brand Awareness Analysis',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.errorContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: Text(
-                  'Unread',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onErrorContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Measuring brand recognition and recall across target demographics',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  minimumSize: Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  'Mark as Read',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton(
-                onPressed: () {
-                  // Handle reject
-                },
-                child: Text(
-                  'Reject',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  side: BorderSide(color: colorScheme.outline.withOpacity(0.4)),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

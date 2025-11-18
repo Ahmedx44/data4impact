@@ -22,9 +22,11 @@ class InboxCubit extends Cubit<InboxState> {
   Future<void> acceptInviatation({required String invitationId}) async {
     emit(state.copyWith(isAccepting: true));
     try {
-      final acceptInivation = await invitationService.acceptInvitation(invitationId);
+      final acceptInivation =
+          await invitationService.acceptInvitation(invitationId);
 
-      ToastService.showSuccessToast(message: 'Successfully accepted the invitation');
+      ToastService.showSuccessToast(
+          message: 'Successfully accepted the invitation');
       emit(state.copyWith(isAccepting: false));
       await getInvitation();
     } catch (e) {
@@ -37,11 +39,10 @@ class InboxCubit extends Cubit<InboxState> {
   Future<void> declineInvitation({required String invitationId}) async {
     emit(state.copyWith(isAccepting: true));
     try {
-      final acceptInivation = await invitationService.acceptInvitation(invitationId);
+      await invitationService.acceptInvitation(invitationId);
 
-      print('decl invitation: ${acceptInivation}');
-
-      ToastService.showSuccessToast(message: 'Successfully declined the invitation');
+      ToastService.showSuccessToast(
+          message: 'Successfully declined the invitation');
       emit(state.copyWith(isAccepting: false));
       await getInvitation();
     } catch (e) {

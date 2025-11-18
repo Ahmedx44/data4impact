@@ -51,15 +51,20 @@ class _HomeViewState extends State<HomeView> {
   }
 
   int _getInProgressCollectors(List<Map<String, dynamic>> collectors) {
-    return collectors.where((collector) => collector['status'] == 'inProgress').length;
+    return collectors
+        .where((collector) => collector['status'] == 'inProgress')
+        .length;
   }
 
   int _getCompletedCollectors(List<Map<String, dynamic>> collectors) {
-    return collectors.where((collector) => collector['status'] == 'completed').length;
+    return collectors
+        .where((collector) => collector['status'] == 'completed')
+        .length;
   }
 
   int _getTotalResponses(List<Map<String, dynamic>> collectors) {
-    return collectors.fold(0, (sum, collector) => sum + (collector['responseCount'] as int? ?? 0));
+    return collectors.fold(
+        0, (sum, collector) => sum + (collector['responseCount'] as int? ?? 0));
   }
 
   @override
@@ -84,14 +89,9 @@ class _HomeViewState extends State<HomeView> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GestureDetector(
-                onTap: () {
-                  // Handle tap if needed
-                },
-                child: const Text(
-                  'Dashboard',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
+              const Text(
+                'Dashboard',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               Text(
                 'Your assignments, progress, and upcoming deadlines',
@@ -102,7 +102,6 @@ class _HomeViewState extends State<HomeView> {
             ],
           ),
           actions: [
-            // Sync Status Indicator
             BlocBuilder<HomeCubit, HomeState>(
               builder: (context, state) {
                 if (state.isSyncing) {
@@ -121,7 +120,6 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   );
                 }
-
                 return IconButton(
                   icon: const Icon(Icons.sync),
                   onPressed: () => context.read<HomeCubit>().manualSync(),
@@ -135,11 +133,13 @@ class _HomeViewState extends State<HomeView> {
               padding: const EdgeInsets.only(right: 8),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(100),
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primary.withAlpha(100),
                   foregroundColor: Theme.of(context).colorScheme.primary,
                   textStyle: const TextStyle(
                     fontSize: 14,
@@ -156,7 +156,7 @@ class _HomeViewState extends State<HomeView> {
                   );
                 },
                 child: const Text(
-                  "Join",
+                  'Join',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -168,11 +168,12 @@ class _HomeViewState extends State<HomeView> {
           builder: (context, state) {
             // Calculate collector statistics
             final totalCollectors = _getTotalCollectors(state.collectors);
-            final inProgressCollectors = _getInProgressCollectors(state.collectors);
-            final completedCollectors = _getCompletedCollectors(state.collectors);
+            final inProgressCollectors =
+                _getInProgressCollectors(state.collectors);
+            final completedCollectors =
+                _getCompletedCollectors(state.collectors);
             final totalResponses = _getTotalResponses(state.collectors);
 
-            // Card data based on collector statistics
             final cardTitles = [
               'Total Collectors',
               'In Progress',
@@ -198,8 +199,6 @@ class _HomeViewState extends State<HomeView> {
               children: [
                 RefreshIndicator(
                   onRefresh: _onRefresh,
-                  displacement: 40.0,
-                  edgeOffset: 0.0,
                   color: Theme.of(context).colorScheme.primary,
                   backgroundColor: Theme.of(context).colorScheme.surface,
                   child: CustomScrollView(
@@ -211,7 +210,9 @@ class _HomeViewState extends State<HomeView> {
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 16),
+                              vertical: 8,
+                              horizontal: 16,
+                            ),
                             color: Colors.orange[100],
                             child: Row(
                               children: [
@@ -243,19 +244,22 @@ class _HomeViewState extends State<HomeView> {
                       // Main Content with Skeletonizer
                       SliverPadding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             Skeletonizer(
-                              enabled: state.fetchingCollectors || state.fetchingProjects,
+                              enabled: state.fetchingCollectors ||
+                                  state.fetchingProjects,
                               child: Column(
                                 children: [
-                                  // Grid Cards Section - Always show 4 cards
                                   GridView.builder(
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     shrinkWrap: true,
                                     gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
                                       crossAxisCount: 2,
                                       mainAxisSpacing: 10,
                                       crossAxisSpacing: 5,
@@ -263,16 +267,18 @@ class _HomeViewState extends State<HomeView> {
                                     ),
                                     itemCount: 4, // Always 4 cards
                                     itemBuilder: (context, index) {
-                                      // Use actual data when not loading, zeros when loading
                                       final title = cardTitles[index];
-                                      final value = (state.fetchingCollectors || state.fetchingProjects)
+                                      final value = (state.fetchingCollectors ||
+                                              state.fetchingProjects)
                                           ? 0
                                           : cardValues[index];
                                       final subtitle = cardSubtitles[index];
 
-                                      return AnimationConfiguration.staggeredGrid(
+                                      return AnimationConfiguration
+                                          .staggeredGrid(
                                         position: index,
-                                        duration: const Duration(milliseconds: 300),
+                                        duration:
+                                            const Duration(milliseconds: 300),
                                         columnCount: 2,
                                         child: FadeInAnimation(
                                           child: ActivityCard(
@@ -284,17 +290,17 @@ class _HomeViewState extends State<HomeView> {
                                       );
                                     },
                                   ),
-
                                   const SizedBox(height: 16),
-
-                                  // Assignment View Section (without tabs)
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surface,
+                                      color:
+                                          Theme.of(context).colorScheme.surface,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                                    child: AssignmentView(collectors: state.collectors),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                    child: AssignmentView(
+                                        collectors: state.collectors),
                                   ),
                                 ],
                               ),
@@ -326,11 +332,11 @@ class _HomeViewState extends State<HomeView> {
                 onPressed: () => context.read<HomeCubit>().manualSync(),
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
+                tooltip: 'Sync ${state.pendingSyncCount} pending responses',
                 child: Badge(
                   label: Text(state.pendingSyncCount.toString()),
                   child: const Icon(Icons.sync),
                 ),
-                tooltip: 'Sync ${state.pendingSyncCount} pending responses',
               );
             }
             return const SizedBox.shrink();
@@ -402,7 +408,10 @@ class _HomeViewState extends State<HomeView> {
                   '${(state.syncProgress * 100).toInt()}% complete',
                   style: TextStyle(
                     fontSize: 10,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
                   ),
                 ),
               ],
@@ -413,8 +422,8 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  void _showSyncStatusDialog(BuildContext context, HomeState state) {
-    showDialog(
+  void _showSyncStatusDialog(BuildContext context, HomeState state) async {
+    await showDialog<Widget>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sync Status'),
@@ -445,7 +454,6 @@ class _HomeViewState extends State<HomeView> {
   }
 }
 
-// RefreshController class for managing refresh state
 class RefreshController {
   bool _isRefreshing = false;
 

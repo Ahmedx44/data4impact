@@ -48,22 +48,19 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     });
   }
 
-  // Language methods
   void changeLanguage(String languageCode) {
     emit(state.copyWith(selectedLanguage: languageCode));
   }
 
-
-// In DataCollectCubit class
   void startCreateRespondentFlow() {
-    // Initialize any necessary state for creating a respondent
-    emit(state.copyWith(
-      newRespondentData: {},
-      isCreatingRespondent: true,
-    ));
+    emit(
+      state.copyWith(
+        newRespondentData: {},
+        isCreatingRespondent: true,
+      ),
+    );
   }
 
-  // Clear error method
   void clearError() {
     emit(state.copyWith(error: null));
   }
@@ -233,10 +230,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
   Future<void> deleteRecording() async {
     try {
-      // Stop any ongoing playback
       await stopAudio();
-
-      // Delete the audio file if it exists
       if (state.audioFilePath != null) {
         final file = File(state.audioFilePath!);
         if (await file.exists()) {
@@ -244,10 +238,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         }
       }
 
-      // Also delete from audio recording service
       await audioRecordingService.deleteRecording();
 
-      // Reset all audio-related state
       emit(state.copyWith(
         audioFilePath: null,
         recordingDuration: 0,
@@ -315,10 +307,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           error: e.message,
         ));
       } catch (e) {
-        emit(state.copyWith(
-          isLoading: false,
-          error: 'Failed to load study: ${e.toString()}',
-        ));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: 'Failed to load study: ${e.toString()}',
+          ),
+        );
       }
     } else {
       try {
@@ -350,27 +344,28 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         study.responseValidation?.requiredLocation ?? false;
     final voiceDuration = study.responseValidation?.voiceDuration ?? 180;
 
-    // Reset all state including hasSeenWelcome
-    emit(state.copyWith(
-      study: study,
-      isLoading: false,
-      currentQuestionIndex: 0,
-      answers: {},
-      requiredQuestions: {},
-      skipQuestions: {},
-      jumpTarget: null,
-      navigationHistory: [],
-      logicJumps: {},
-      availableLanguages: study.languages ?? [],
-      isLocationRequired: isLocationRequired,
-      maxRecordingDuration: voiceDuration,
-      hasSeenWelcome: false,
-      respondents: const [],
-      selectedRespondent: null,
-      isManagingRespondents: study.methodology == 'interview',
-      isCreatingRespondent: false,
-      newRespondentData: {},
-    ));
+    emit(
+      state.copyWith(
+        study: study,
+        isLoading: false,
+        currentQuestionIndex: 0,
+        answers: {},
+        requiredQuestions: {},
+        skipQuestions: {},
+        jumpTarget: null,
+        navigationHistory: [],
+        logicJumps: {},
+        availableLanguages: study.languages ?? [],
+        isLocationRequired: isLocationRequired,
+        maxRecordingDuration: voiceDuration,
+        hasSeenWelcome: false,
+        respondents: const [],
+        selectedRespondent: null,
+        isManagingRespondents: study.methodology == 'interview',
+        isCreatingRespondent: false,
+        newRespondentData: {},
+      ),
+    );
 
     if (isLocationRequired) {
       await getCurrentLocation();
@@ -438,7 +433,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
-    // New logic: Determine which questions to skip based on current answers
     skipQuestions.addAll(_determineSkipQuestions(study, answers));
 
     return currentState.copyWith(
@@ -452,7 +446,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       Study study, Map<String, dynamic> answers) {
     Set<String> questionsToSkip = {};
 
-    // Check each question to see if it should be accessible based on current answers
     for (final question in study.questions) {
       if (!_isQuestionAccessible(question, study, answers)) {
         questionsToSkip.add(question.id);
@@ -464,11 +457,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
   bool _isQuestionAccessible(
       ApiQuestion targetQuestion, Study study, Map<String, dynamic> answers) {
-    // A question is accessible if:
-    // 1. There's no logic preventing it, OR
-    // 2. There's explicit logic that leads to it
-
-    // Find all questions that have logic pointing to this target question
     List<ApiQuestion> questionsWithLogicToTarget = [];
 
     for (final question in study.questions) {
@@ -490,13 +478,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
-    // If no questions have logic pointing to this target, it's accessible by default
     if (questionsWithLogicToTarget.isEmpty) {
       return true;
     }
 
-    // If there are questions with logic pointing to this target,
-    // check if any of their conditions are satisfied
     for (final sourceQuestion in questionsWithLogicToTarget) {
       if (sourceQuestion.logic != null) {
         for (final logicItem in sourceQuestion.logic!) {
@@ -505,13 +490,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             final actions = logicItem['actions'] as List?;
 
             if (conditions != null && actions != null) {
-              // Check if this logic item targets our question
               final targetsOurQuestion = actions.any((action) =>
                   action['objective'] == 'jumpToQuestion' &&
                   action['target'] == targetQuestion.id);
 
               if (targetsOurQuestion) {
-                // Check if the condition is satisfied
                 final conditionResult = _evaluateConditionGroup(
                   study,
                   answers,
@@ -527,7 +510,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         }
       }
     }
-
     return false;
   }
 
@@ -750,17 +732,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     }
 
-    // Find the next accessible question
     int nextIndex = currentIndex + 1;
 
     while (nextIndex < study.questions.length) {
       final nextQuestion = study.questions[nextIndex];
 
-      // Check if this question is accessible based on current answers
       if (_isQuestionAccessible(nextQuestion, study, state.answers)) {
-        break; // Found an accessible question
+        break;
       } else {
-        nextIndex++; // Skip this question and check the next one
+        nextIndex++;
       }
     }
 
@@ -769,7 +749,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       final newHistory = List<int>.from(state.navigationHistory)
         ..add(currentIndex);
 
-      // Create new state and re-evaluate logic
       final newState = state.copyWith(
         currentQuestionIndex: nextIndex,
         jumpTarget: null,
@@ -925,7 +904,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       return;
     }
 
-    // Start submission process
     emit(state.copyWith(isSubmitting: true, error: null));
 
     try {
@@ -938,7 +916,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       final isVoiceRequired = study.responseValidation?.requiredVoice ?? false;
 
       // Handle audio upload if required
-      if (isVoiceRequired && state.audioFilePath != null && fileUploadService != null) {
+      if (isVoiceRequired &&
+          state.audioFilePath != null &&
+          fileUploadService != null) {
         final connected = InternetConnectionMonitor(
           checkOnInterval: false,
           checkInterval: const Duration(seconds: 5),
@@ -1005,7 +985,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           ToastService.showSuccessToast(
             message: 'Response submitted successfully',
           );
-
         } catch (e) {
           emit(state.copyWith(
             isSubmitting: false,
@@ -1024,9 +1003,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           ));
 
           ToastService.showSuccessToast(
-            message: 'Response saved offline. Will sync when internet is available.',
+            message:
+                'Response saved offline. Will sync when internet is available.',
           );
-
         } catch (e) {
           emit(state.copyWith(
             isSubmitting: false,
@@ -1035,14 +1014,14 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           ToastService.showErrorToast(message: 'Failed to save offline: $e');
         }
       }
-
     } catch (e) {
       // Handle any unexpected errors
       emit(state.copyWith(
         isSubmitting: false,
         error: 'Unexpected error during submission: $e',
       ));
-      ToastService.showErrorToast(message: 'Unexpected error during submission: $e');
+      ToastService.showErrorToast(
+          message: 'Unexpected error during submission: $e');
     }
   }
 
@@ -1086,9 +1065,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       "submittedAt": DateTime.now().toIso8601String(),
     };
 
-    // -------------------------
-    // ✅ Add Geolocation ONLY IF valid
-    // -------------------------
     final geo = state.locationData?.toJson();
 
     bool hasValidGeo(Map<String, dynamic>? g) {
@@ -1103,9 +1079,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       submission["geolocation"] = geo;
     }
 
-    // -------------------------
-    // Filtering Cohort
-    // -------------------------
     if (state.selectedCohort != null) {
       submission["cohort"] = state.selectedCohort!['_id'];
     }
@@ -1163,7 +1136,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
-  // Interview specific methods
   Future<void> loadStudyRespondents(String studyId) async {
     emit(state.copyWith(isLoading: true, error: null));
 
@@ -1178,7 +1150,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       try {
         final respondents = await studyService.getStudyRespondents(studyId);
 
-        // Save to offline storage
         await OfflineModeDataRepo().saveStudyRespondents(studyId, respondents);
 
         emit(state.copyWith(
@@ -1186,20 +1157,23 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           respondents: respondents,
         ));
       } catch (e) {
-        // Fallback to offline data
         final offlineRespondents =
             await OfflineModeDataRepo().getStudyRespondents(studyId);
         if (offlineRespondents.isNotEmpty) {
-          emit(state.copyWith(
-            isLoading: false,
-            respondents: offlineRespondents,
-          ));
+          emit(
+            state.copyWith(
+              isLoading: false,
+              respondents: offlineRespondents,
+            ),
+          );
           ToastService.showInfoToast(message: 'Using offline respondents data');
         } else {
-          emit(state.copyWith(
-            isLoading: false,
-            error: 'Failed to load respondents: ${e.toString()}',
-          ));
+          emit(
+            state.copyWith(
+              isLoading: false,
+              error: 'Failed to load respondents: ${e.toString()}',
+            ),
+          );
         }
       }
     } else {
@@ -1213,10 +1187,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         ));
         ToastService.showInfoToast(message: 'Using offline respondents data');
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: 'No offline respondents data available',
-        ));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: 'No offline respondents data available',
+          ),
+        );
       }
     }
   }
@@ -1226,12 +1202,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      final result = await studyService.createStudyRespondent(
+      await studyService.createStudyRespondent(
         studyId: studyId,
         respondentData: respondentData,
       );
 
-      // Reload respondents to include the new one
       final respondents = await studyService.getStudyRespondents(studyId);
 
       emit(state.copyWith(
@@ -1243,23 +1218,26 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
       ToastService.showSuccessToast(message: 'Respondent created successfully');
 
-      // Return success indicator
       return;
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Failed to create respondent: ${e.toString()}',
-      ));
-      // Re-throw the error to handle it in the UI
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: 'Failed to create respondent: ${e.toString()}',
+        ),
+      );
+
       throw e;
     }
   }
 
   void selectRespondent(Map<String, dynamic> respondent) {
-    emit(state.copyWith(
-      selectedRespondent: respondent,
-      isManagingRespondents: false,
-    ));
+    emit(
+      state.copyWith(
+        selectedRespondent: respondent,
+        isManagingRespondents: false,
+      ),
+    );
   }
 
   void startInterview() {
@@ -1276,26 +1254,32 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void backToRespondentManagement() {
-    emit(state.copyWith(
-      isManagingRespondents: true,
-      selectedRespondent: null,
-      currentQuestionIndex: 0,
-      answers: {},
-    ));
+    emit(
+      state.copyWith(
+        isManagingRespondents: true,
+        selectedRespondent: null,
+        currentQuestionIndex: 0,
+        answers: {},
+      ),
+    );
   }
 
   void showCreateRespondentForm() {
-    emit(state.copyWith(
-      isCreatingRespondent: true,
-      newRespondentData: {},
-    ));
+    emit(
+      state.copyWith(
+        isCreatingRespondent: true,
+        newRespondentData: {},
+      ),
+    );
   }
 
   void cancelCreateRespondent() {
-    emit(state.copyWith(
-      isCreatingRespondent: false,
-      newRespondentData: {},
-    ));
+    emit(
+      state.copyWith(
+        isCreatingRespondent: false,
+        newRespondentData: {},
+      ),
+    );
   }
 
   void updateNewRespondentData(String key, dynamic value) {
@@ -1330,16 +1314,20 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         final offlineCohorts =
             await OfflineModeDataRepo().getStudyCohorts(studyId);
         if (offlineCohorts.isNotEmpty) {
-          emit(state.copyWith(
-            isLoading: false,
-            cohorts: offlineCohorts,
-          ));
+          emit(
+            state.copyWith(
+              isLoading: false,
+              cohorts: offlineCohorts,
+            ),
+          );
           ToastService.showInfoToast(message: 'Using offline cohorts data');
         } else {
-          emit(state.copyWith(
-            isLoading: false,
-            error: 'Failed to load cohorts: ${e.toString()}',
-          ));
+          emit(
+            state.copyWith(
+              isLoading: false,
+              error: 'Failed to load cohorts: ${e.toString()}',
+            ),
+          );
         }
       }
     } else {
@@ -1362,11 +1350,13 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void selectCohort(Map<String, dynamic> cohort) {
-    emit(state.copyWith(
-      selectedCohort: cohort,
-      selectedWave: null,
-      selectedSubject: null,
-    ));
+    emit(
+      state.copyWith(
+        selectedCohort: cohort,
+        selectedWave: null,
+        selectedSubject: null,
+      ),
+    );
   }
 
   Future<void> loadStudyWaves(String studyId) async {
@@ -1766,12 +1756,14 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       // Reload groups to include the new one
       final groups = await studyService.getStudyGroups(studyId);
 
-      emit(state.copyWith(
-        isLoading: false,
-        groups: groups,
-        isCreatingGroup: false,
-        newGroupData: {},
-      ),);
+      emit(
+        state.copyWith(
+          isLoading: false,
+          groups: groups,
+          isCreatingGroup: false,
+          newGroupData: {},
+        ),
+      );
 
       ToastService.showSuccessToast(message: 'Group created successfully');
     } catch (e) {
@@ -1793,13 +1785,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     ));
   }
 
-// Load respondents for group discussion
   Future<void> loadGroupRespondents(String studyId) async {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
       final respondents = await studyService.getStudyRespondents(studyId);
-      // Filter respondents by selected group if needed
       final groupRespondents = respondents.where((respondent) {
         return respondent['group'] == state.selectedGroup?['_id'];
       }).toList();
@@ -1816,7 +1806,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
-// Select respondents for group discussion
   void toggleRespondentSelection(Map<String, dynamic> respondent) {
     final currentSelected =
         List<Map<String, dynamic>>.from(state.selectedGroupRespondents);
@@ -1832,7 +1821,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(selectedGroupRespondents: currentSelected));
   }
 
-// Start group discussion with selected respondents
   void startGroupDiscussion() {
     if (state.selectedGroupRespondents.isEmpty) {
       ToastService.showErrorToast(
@@ -1851,27 +1839,25 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     ));
   }
 
-// Move to next respondent in group discussion
   void nextRespondentInGroup({required String studyId}) {
     final nextIndex = state.currentRespondentIndex + 1;
 
     if (nextIndex < state.selectedGroupRespondents.length) {
-      // Move to next respondent
-      emit(state.copyWith(
-        currentRespondentIndex: nextIndex,
-        currentQuestionIndex: 0,
-        answers: {},
-        navigationHistory: const [],
-        logicJumps: const {},
-        jumpTarget: null,
-      ));
+      emit(
+        state.copyWith(
+          currentRespondentIndex: nextIndex,
+          currentQuestionIndex: 0,
+          answers: {},
+          navigationHistory: const [],
+          logicJumps: const {},
+          jumpTarget: null,
+        ),
+      );
     } else {
-      // All respondents completed, submit final response
       submitSurvey(studyId: studyId);
     }
   }
 
-// Navigation methods for group discussion flow
   void backToGroupSelection() {
     emit(state.copyWith(
       isManagingGroups: true,

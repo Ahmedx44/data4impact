@@ -61,7 +61,7 @@ class _StudyViewState extends State<StudyView>
                   splashFactory: NoSplash.splashFactory,
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicatorPadding:
-                  const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                   labelColor: colorScheme.primary,
                   unselectedLabelColor: colorScheme.onSurface.withAlpha(255),
                   labelStyle: const TextStyle(
@@ -109,26 +109,14 @@ class _StudyViewState extends State<StudyView>
       },
       builder: (context, homeState) {
         return BlocConsumer<StudyCubit, StudyState>(
-          listener: (context, studyState) {
-            // Listen for state changes
-            print('🎯 StudyState changed:');
-            print('   - studies count: ${studyState.studies.length}');
-            print('   - isLoading: ${studyState.isLoading}');
-            print('   - hasError: ${studyState.hasError}');
-          },
+          listener: (context, studyState) {},
           builder: (context, studyState) {
-            print('🎯 Active Studies Tab - Current State:');
-            print('   - studies count: ${studyState.studies.length}');
-            print('   - isLoading: ${studyState.isLoading}');
-            print('   - hasError: ${studyState.hasError}');
-
             if (studyState.isLoading && studyState.studies.isEmpty) {
-              print('⏳ Loading state - showing skeleton');
               return _buildSkeletonStudyList();
             } else if (studyState.hasError && studyState.studies.isEmpty) {
-              print('❌ Error state: ${studyState.errorMessage}');
               return ApiErrorWidget(
-                errorMessage: _getUserFriendlyErrorMessage(studyState.errorMessage!),
+                errorMessage:
+                    _getUserFriendlyErrorMessage(studyState.errorMessage!),
                 errorDetails: studyState.errorDetails!,
                 onRetry: () {
                   final projectSlug = homeState.selectedProject?.slug ?? '';
@@ -141,14 +129,10 @@ class _StudyViewState extends State<StudyView>
               final activeStudies = studyState.studies.where((study) {
                 final status = study['status'] as String?;
                 final isActive = status == 'inProgress' || status == 'draft';
-                print('🔍 Study "${study['name']}" - status: $status, isActive: $isActive');
                 return isActive;
               }).toList();
 
-              print('🔍 Filtered active studies: ${activeStudies.length}');
-
               if (activeStudies.isEmpty) {
-                print('📭 No active studies found');
                 return RefreshIndicator(
                   onRefresh: () async {
                     final projectSlug = homeState.selectedProject?.slug ?? '';
@@ -167,7 +151,6 @@ class _StudyViewState extends State<StudyView>
                 );
               }
 
-              print('🎉 Building list with ${activeStudies.length} active studies');
               return RefreshIndicator(
                 onRefresh: () async {
                   final projectSlug = homeState.selectedProject?.slug ?? '';
@@ -189,14 +172,13 @@ class _StudyViewState extends State<StudyView>
                       final responses = study['responseCount'] as int? ?? 0;
                       final sample = study['sampleSize'] as int? ?? 0;
                       progress = sample > 0 ? responses / sample : 0.0;
-                    } catch (e) {
-                      print('❌ Error calculating progress: $e');
-                    }
+                    } catch (e) {}
 
                     return GestureDetector(
                       onTap: () {
                         final studyCubit = context.read<StudyCubit>();
-                        final studyData = studyCubit.getStudyById(study['_id'] as String);
+                        final studyData =
+                            studyCubit.getStudyById(study['_id'] as String);
 
                         if (studyData != null) {
                           Navigator.push(
@@ -212,12 +194,14 @@ class _StudyViewState extends State<StudyView>
                       },
                       child: StudyCard(
                         title: study['name'] as String? ?? 'Untitled Study',
-                        description: study['description'] as String? ?? 'No description available',
+                        description: study['description'] as String? ??
+                            'No description available',
                         progress: progress,
                         status: study['status'] as String? ?? 'unknown',
                         callback: () {
                           final studyCubit = context.read<StudyCubit>();
-                          final studyData = studyCubit.getStudyById(study['_id'] as String);
+                          final studyData =
+                              studyCubit.getStudyById(study['_id'] as String);
 
                           if (studyData != null) {
                             Navigator.push(
@@ -253,7 +237,7 @@ class _StudyViewState extends State<StudyView>
             } else if (studyState.hasError && studyState.studies.isEmpty) {
               return ApiErrorWidget(
                 errorMessage:
-                _getUserFriendlyErrorMessage(studyState.errorMessage!),
+                    _getUserFriendlyErrorMessage(studyState.errorMessage!),
                 errorDetails: studyState.errorDetails!,
                 onRetry: () {
                   final projectSlug = homeState.selectedProject?.slug ?? '';
@@ -309,9 +293,7 @@ class _StudyViewState extends State<StudyView>
                       final responses = study['responseCount'] as int? ?? 0;
                       final sample = study['sampleSize'] as int? ?? 0;
                       progress = sample > 0 ? responses / sample : 0.0;
-                    } catch (e) {
-                      print('❌ Error calculating progress: $e');
-                    }
+                    } catch (e) {}
 
                     return GestureDetector(
                       onTap: () {
@@ -327,7 +309,8 @@ class _StudyViewState extends State<StudyView>
                       },
                       child: StudyCard(
                         title: study['name'] as String? ?? 'Untitled Study',
-                        description: study['description'] as String? ?? 'No description available',
+                        description: study['description'] as String? ??
+                            'No description available',
                         progress: progress,
                         status: study['status'] as String? ?? 'unknown',
                         callback: () {
@@ -417,7 +400,6 @@ class _StudyViewState extends State<StudyView>
     } else if (technicalError.contains('timeout')) {
       return 'The request timed out. Please check your connection and try again.';
     }
-
     return 'An unexpected error occurred. Please try again.';
   }
 }

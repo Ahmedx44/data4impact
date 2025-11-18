@@ -15,8 +15,6 @@ class TeamCubit extends Cubit<TeamState> {
 
       final response = await teamService.getTeams();
 
-      print('API Response: ${response}');
-
       List<TeamModel> teams = [];
 
       if (response is List) {
@@ -38,22 +36,24 @@ class TeamCubit extends Cubit<TeamState> {
 
       // Calculate statistics
       final totalTeams = teams.length;
-      final totalCollectors = teams.fold(0, (sum, team) => sum + team.memberCount);
+      final totalCollectors =
+          teams.fold(0, (sum, team) => sum + team.memberCount);
       final totalSupervisors = teams.fold(0, (sum, team) {
-        // You might need to adjust this logic based on your actual data structure
-        return sum + (team.memberCount > 0 ? 1 : 0); // Example logic
+        return sum + (team.memberCount > 0 ? 1 : 0);
       });
-      final totalFields = teams.fold(0, (sum, team) => sum + team.fields.length);
+      final totalFields =
+          teams.fold(0, (sum, team) => sum + team.fields.length);
 
-      emit(state.copyWith(
-        isLoading: false,
-        teams: teams,
-        totalTeams: totalTeams,
-        totalCollectors: totalCollectors,
-        totalSupervisors: totalSupervisors,
-        totalFields: totalFields,
-      ));
-
+      emit(
+        state.copyWith(
+          isLoading: false,
+          teams: teams,
+          totalTeams: totalTeams,
+          totalCollectors: totalCollectors,
+          totalSupervisors: totalSupervisors,
+          totalFields: totalFields,
+        ),
+      );
     } catch (e) {
       print('Error fetching teams: $e');
       emit(state.copyWith(

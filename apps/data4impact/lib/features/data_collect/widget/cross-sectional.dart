@@ -45,19 +45,17 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
   Widget build(BuildContext context) {
     return BlocConsumer<DataCollectCubit, DataCollectState>(
       listener: (context, state) {
-        // Show toast for errors instead of changing screen
         if (state.error != null && state.error != _previousError) {
           ToastService.showErrorToast(message: state.error!);
           _previousError = state.error;
           context.read<DataCollectCubit>().clearError();
         }
 
-        // Handle submission result
         if (state.submissionResult != null) {
-          Navigator.pop(context); // Return to previous screen
+          Navigator.pop(context);
         }
 
-        // Handle loading dialogs
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (state.isSubmitting) {
             DialogLoading.show(context);
@@ -67,7 +65,6 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
         });
       },
       builder: (context, state) {
-        // Initial loading error screen
         if (state.isLoading && state.error != null) {
           return _buildErrorScreen(state.error!);
         }
@@ -106,7 +103,6 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
             elevation: 0,
             foregroundColor: Theme.of(context).colorScheme.onSurface,
             actions: [
-              // Language selector dropdown
               if (study.languages.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(right: 16.0),
@@ -130,7 +126,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                           value: language['code'] as String,
                           child: Text(language['name'] as String? ?? 'Unknown'),
                         );
-                      }).toList(),
+                      }),
                     ],
                     underline: const SizedBox(),
                     style: TextStyle(

@@ -36,10 +36,8 @@ class LoginCubit extends Cubit<LoginState> {
         SignInRequestModel(email: email, password: password),
       );
 
-      print('responseeee 123: ${response}');
       await _storeSessionCookie(response.headers);
 
-      // Check again before emitting success
       if (!isClosed) {
         emit(
           state.copyWith(
@@ -50,7 +48,6 @@ class LoginCubit extends Cubit<LoginState> {
         );
       }
 
-      // Fetch and store user data including role
       final currentUser = await authService.getCurrentUser();
 
       if (!isClosed) {
@@ -182,7 +179,11 @@ class LoginCubit extends Cubit<LoginState> {
     final random = Random.secure();
     return String.fromCharCodes(
       Iterable.generate(
-          length, (_) => chars.codeUnitAt(random.nextInt(chars.length))),
+        length,
+        (_) => chars.codeUnitAt(
+          random.nextInt(chars.length),
+        ),
+      ),
     );
   }
 

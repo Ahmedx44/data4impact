@@ -354,7 +354,7 @@ class _LoginViewState extends State<LoginView> {
                     ],
                   ),
                   const SizedBox(height: 32),
-                  Row(
+                  /*Row(
                     children: [
                       Expanded(
                         child: Container(
@@ -439,7 +439,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 24),*/
                 ],
               ),
             ),

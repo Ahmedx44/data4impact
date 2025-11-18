@@ -28,8 +28,6 @@ class StudyCubit extends Cubit<StudyState> {
   Future<void> fetchStudies(String projectSlug) async {
     emit(state.loading());
 
-    print('🔄 fetchStudies called for project: $projectSlug');
-
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
       checkInterval: const Duration(seconds: 5),

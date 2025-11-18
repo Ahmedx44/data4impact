@@ -158,11 +158,11 @@ class _SignUpViewState extends State<SignUpView> {
                     SizedBox(height: size.height * 0.03),
                     _buildSignupButton(theme),
                     SizedBox(height: size.height * 0.03),
-                    _buildLoginLink(theme),
+                    _buildLoginLink(theme),/*
                     SizedBox(height: size.height * 0.03),
                     _buildOrDivider(),
                     SizedBox(height: size.height * 0.03),
-                    _buildGoogleButton(),
+                    _buildGoogleButton(),*/
                     SizedBox(height: size.height * 0.03),
                   ],
                 ),
