@@ -475,7 +475,7 @@ class HomeCubit extends Cubit<HomeState> {
         emit(state.copyWith(
           collectors: collectors,
           fetchingCollectors: false,
-        ));
+        ),);
       } else {
         // Offline mode - load from local storage
         final savedCollectors = await OfflineModeDataRepo().getSavedCollectors(

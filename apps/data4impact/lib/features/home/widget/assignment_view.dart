@@ -10,7 +10,7 @@ class AssignmentView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (collectors.isEmpty) {
-      return const SizedBox.shrink();
+      return _buildEmptyState(context);
     }
 
     return AnimationLimiter(
@@ -30,6 +30,47 @@ class AssignmentView extends StatelessWidget {
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(40.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.assignment_outlined,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No Assignments',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onBackground,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'You don\'t have any assignments yet.\nNew assignments will appear here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
+              fontSize: 14,
+            ),
+          ),
+        ],
       ),
     );
   }

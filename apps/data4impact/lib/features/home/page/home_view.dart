@@ -29,17 +29,14 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Future<void> _initializeData() async {
-    await context.read<HomeCubit>().fetchAllProjects();
-    // Fetch collectors after projects are loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HomeCubit>().fetchMyCollectors();
+      context.read<HomeCubit>().fetchAllProjects();
     });
   }
 
   Future<void> _onRefresh() async {
     try {
       await context.read<HomeCubit>().fetchAllProjects();
-      await context.read<HomeCubit>().fetchMyCollectors();
       _refreshController.refreshCompleted();
     } catch (e) {
       _refreshController.refreshFailed();
@@ -78,8 +75,8 @@ class _HomeViewState extends State<HomeView> {
       listener: (context, state) {
         if (state.selectedProject != null) {
           context.read<StudyCubit>().fetchStudies(state.selectedProject!.slug);
-          // Fetch collectors for the new project
-          context.read<HomeCubit>().fetchMyCollectors();
+     /*     // Fetch collectors for the new project
+          context.read<HomeCubit>().fetchMyCollectors();*/
         }
       },
       child: Scaffold(
@@ -287,8 +284,7 @@ class _HomeViewState extends State<HomeView> {
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         Skeletonizer(
-                          enabled: state.fetchingCollectors ||
-                              state.fetchingProjects,
+                          enabled: state.fetchingCollectors,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
