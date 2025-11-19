@@ -1,81 +1,100 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class StudyDetailActitityCard extends StatelessWidget {
-  const StudyDetailActitityCard({
+class StudyDetailActivityCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const StudyDetailActivityCard({
     super.key,
     required this.title,
     required this.value,
     required this.subtitle,
     this.icon = Icons.star,
+    this.color = Colors.blue,
+    this.onTap,
   });
-
-  final String title;
-  final String value;
-  final String subtitle;
-  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = Theme.of(context).colorScheme;
 
     return Card(
-      elevation: 0,
+      elevation: 2,
+      shadowColor: theme.shadow.withOpacity(0.1),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.outline.withOpacity(0.08),
           width: 1,
         ),
       ),
-      color: theme.colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 7),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title.toUpperCase(),
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 9,
-                    letterSpacing: 0.5,
+      color: Theme.of(context).brightness == Brightness.light
+          ? Colors.white
+          : theme.surface,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title.toUpperCase(),
+                    style: GoogleFonts.lexendDeca(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: theme.onSurface.withOpacity(0.6),
+                      letterSpacing: 0.8,
+                    ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      color: color,
+                      size: 16,
+                    ),
                   ),
-                  child: Icon(
-                    icon,
-                    color: theme.colorScheme.primary,
-                    size: 15,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value.toString(),
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              subtitle,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              const SizedBox(height: 16),
+              Text(
+                value,
+                style: GoogleFonts.lexendDeca(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: theme.onSurface,
+                  height: 1.2,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: GoogleFonts.lexendDeca(
+                  fontSize: 12,
+                  color: theme.onSurfaceVariant,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -7,6 +7,7 @@ import 'package:data4impact/features/team/page/team_detail_view.dart';
 import 'package:data4impact/features/team/widget/teams_stat_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TeamView extends StatefulWidget {
   const TeamView({super.key});
@@ -406,10 +407,19 @@ class _TeamViewState extends State<TeamView> {
   Widget _buildTeamCard(BuildContext context, dynamic team) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+      child: Card(
         elevation: 2,
+        shadowColor: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.08),
+            width: 1,
+          ),
+        ),
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.white
+            : Theme.of(context).colorScheme.surface,
         child: InkWell(
           onTap: () {
             Navigator.push(
@@ -419,86 +429,105 @@ class _TeamViewState extends State<TeamView> {
               ),
             );
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                width: 1.0,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Team Avatar
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.group_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 24,
-                    ),
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                // Team Avatar
+                Container(
+                  width: 60,
+                  height: 60,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 16),
+                  child: Icon(
+                    Icons.group_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
 
-                  // Team Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          team.name as String,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                // Team Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              team.name as String,
+                              style: GoogleFonts.lexendDeca(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context).colorScheme.onSurface,
+                                height: 1.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          team.description as String ?? 'No description',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                            fontSize: 13,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _buildTeamStat(
-                              context,
-                              Icons.people_outline_rounded,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
                               '${team.memberCount} members',
+                              style: GoogleFonts.lexendDeca(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                             ),
-                            const SizedBox(width: 16),
-                            _buildTeamStat(
-                              context,
-                              Icons.list_alt_rounded,
-                              '${team.fields.length} fields',
-                            ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        team.description as String ?? 'No description',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          height: 1.4,
                         ),
-                      ],
-                    ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _buildTeamStat(
+                            context,
+                            Icons.list_alt_rounded,
+                            '${team.fields.length} fields',
+                          ),
+                          const SizedBox(width: 16),
+                          _buildTeamStat(
+                            context,
+                            Icons.people_outline_rounded,
+                            '${team.memberCount} members',
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
 
-                  // Chevron
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                    size: 20,
-                  ),
-                ],
-              ),
+                // Chevron
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                  size: 20,
+                ),
+              ],
             ),
           ),
         ),
@@ -514,13 +543,13 @@ class _TeamViewState extends State<TeamView> {
           size: 14,
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 6),
         Text(
           text,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          style: GoogleFonts.lexendDeca(
             fontSize: 12,
             fontWeight: FontWeight.w500,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ],

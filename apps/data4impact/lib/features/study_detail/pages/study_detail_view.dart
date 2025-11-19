@@ -70,7 +70,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
     final currentResponses = widget.studyData['responseCount'] ?? 0;
     final totalResponses = widget.studyData['sampleSize'] ?? 0;
     final progress =
-        totalResponses as int > 0 ? currentResponses / totalResponses : 0;
+    totalResponses as int > 0 ? currentResponses / totalResponses : 0;
     final collectorCount = widget.studyData['collectorCount'] ?? 0;
     final questionCount = widget.studyData['questionCount'] ?? 0;
 
@@ -119,18 +119,24 @@ class _StudyDetailViewState extends State<StudyDetailView>
               progress: (progress as int).toDouble(),
             ),
           ),
+
+          // Study Type Badge
+          SliverToBoxAdapter(
+            child: _buildStudyTypeBadge(context),
+          ),
+
           // Stats Grid
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
-                (context, index) {
+                    (context, index) {
                   final List<StatCardData> stats = [
                     StatCardData(
                       title: 'Total Response',
                       value: totalResponses.toString(),
                       subtitle:
-                          '${totalResponses - currentResponses} Remaining',
+                      '${totalResponses - currentResponses} Remaining',
                       icon: Icons.assignment_turned_in_rounded,
                       color: Colors.blue,
                     ),
@@ -138,7 +144,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                       title: 'Response Rate',
                       value: '${(progress * 100).toStringAsFixed(1)}%',
                       subtitle:
-                          '${(progress * 100).toStringAsFixed(1)}% completion',
+                      '${(progress * 100).toStringAsFixed(1)}% completion',
                       icon: Icons.trending_up_rounded,
                       color: Colors.green,
                       isPercentage: true,
@@ -179,26 +185,6 @@ class _StudyDetailViewState extends State<StudyDetailView>
             ),
           ),
 
-          // Tabs Section
-          SliverToBoxAdapter(
-            child: _buildTabSection(context),
-          ),
-
-          // Tab Content
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 420,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  ResponseTimeDistributionChart(studyData: widget.studyData),
-                  TopPerformersWidget(studyData: widget.studyData),
-                  MilestoneTrackingWidget(studyData: widget.studyData),
-                ],
-              ),
-            ),
-          ),
-
           // Continue Button (if not completed)
           if (widget.studyData['status'] != 'completed')
             SliverToBoxAdapter(
@@ -206,14 +192,21 @@ class _StudyDetailViewState extends State<StudyDetailView>
                 padding: const EdgeInsets.all(16),
                 child: CustomButton(
                   width: double.infinity,
-                  height: 56,
-                  child: Text(
-                    'Continue ${_getStudyTypeDisplayName()}',
-                    style: GoogleFonts.lexendDeca(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                  height: 70,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Continue ${_getStudyTypeDisplayName()}',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                   onTap: () {
                     Navigator.pushReplacement(
@@ -224,7 +217,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                           studyType: _getStudyType(),
                           approach: widget.studyData['approach'].toString(),
                           designType:
-                              widget.studyData['design']['type'].toString(),
+                          widget.studyData['design']['type'].toString(),
                         ),
                       ),
                     );
@@ -232,22 +225,74 @@ class _StudyDetailViewState extends State<StudyDetailView>
                 ),
               ),
             ),
-
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 20),
-          )
         ],
       ),
     );
   }
 
+  Widget _buildStudyTypeBadge(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final studyType = _getStudyTypeDisplayName();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.primary.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _getStudyTypeIcon(),
+              size: 16,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              studyType,
+              style: GoogleFonts.lexendDeca(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getStudyTypeIcon() {
+    final studyType = _getStudyType();
+    switch (studyType) {
+      case 'survey':
+        return Icons.assignment_rounded;
+      case 'interview':
+        return Icons.record_voice_over_rounded;
+      case 'discussion':
+        return Icons.group_rounded;
+      case 'longitudinal':
+        return Icons.timeline_rounded;
+      default:
+        return Icons.assignment_rounded;
+    }
+  }
+
   Widget _buildProgressOverviewCard(
-    BuildContext context, {
-    required int currentResponses,
-    required int totalResponses,
-    required int daysRemaining,
-    required double progress,
-  }) {
+      BuildContext context, {
+        required int currentResponses,
+        required int totalResponses,
+        required int daysRemaining,
+        required double progress,
+      }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -325,7 +370,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                           valueColor: AlwaysStoppedAnimation<Color>(
                             progress >= 1 ? Colors.green : colorScheme.primary,
                           ),
-                          backgroundColor: colorScheme.surfaceVariant,
+                          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.5),
                         ),
                       ),
                       Column(
@@ -358,6 +403,9 @@ class _StudyDetailViewState extends State<StudyDetailView>
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceVariant.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.1),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -388,14 +436,23 @@ class _StudyDetailViewState extends State<StudyDetailView>
                         ),
                       ],
                     ),
-                    Icon(
-                      daysRemaining > 0
-                          ? Icons.schedule_rounded
-                          : Icons.check_circle_rounded,
-                      color: daysRemaining > 0
-                          ? colorScheme.primary
-                          : Colors.green,
-                      size: 24,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: daysRemaining > 0
+                            ? colorScheme.primary.withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        daysRemaining > 0
+                            ? Icons.schedule_rounded
+                            : Icons.check_circle_rounded,
+                        color: daysRemaining > 0
+                            ? colorScheme.primary
+                            : Colors.green,
+                        size: 20,
+                      ),
                     ),
                   ],
                 ),

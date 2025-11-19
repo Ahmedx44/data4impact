@@ -19,8 +19,8 @@ class CustomButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onTap,
       style: ButtonStyle(
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 0),
+        padding: WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: height * 0.3),
         ),
         backgroundColor: WidgetStateProperty.all(
           theme.colorScheme.primary,
