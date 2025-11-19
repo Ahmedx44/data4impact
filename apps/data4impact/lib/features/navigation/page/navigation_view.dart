@@ -29,8 +29,9 @@ class _NavigationViewState extends State<NavigationView>
   late List<TabItem> items;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   String? _sessionToken;
-  bool _initialLoadCompleted = false;
+  bool _initialDataLoaded = false;
   bool _showStaticScreen = false;
+  bool _isInitialLoad = true;
 
   final List<bool> _pagesInitialized = [];
   final List<Widget> _pages = [];
@@ -43,37 +44,45 @@ class _NavigationViewState extends State<NavigationView>
   void initState() {
     super.initState();
     _initializeNavigationItems();
-    _checkToken();
-    _checkInitialProjectState();
-    _fetchUserData();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      await _checkToken();
+      await _fetchInitialData();
+
+      if (mounted) {
+        setState(() {
+          _initialDataLoaded = true;
+          _isInitialLoad = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _initialDataLoaded = true;
+          _isInitialLoad = false;
+        });
+      }
+    }
   }
 
   Future<void> _checkToken() async {
     _sessionToken = await _secureStorage.read(key: 'session_cookie');
-    setState(() {});
   }
 
-  void _fetchUserData() {
-    final profileCubit = context.read<ProfileCubit>();
-    profileCubit.fetchCurrentUser();
-  }
-
-  void _checkInitialProjectState() {
+  Future<void> _fetchInitialData() async {
     final homeCubit = context.read<HomeCubit>();
-    // Check current project state immediately
-    if (!homeCubit.state.fetchingProjects && homeCubit.state.projects.isEmpty) {
-      _showStaticScreen = true;
-    }
+    final profileCubit = context.read<ProfileCubit>();
 
-    if (homeCubit.state.projects.isEmpty && !homeCubit.state.fetchingProjects) {
-      homeCubit.fetchAllProjects().then((_) {
-        if (mounted) {
-          setState(() {
-            _showStaticScreen = homeCubit.state.projects.isEmpty;
-            _initialLoadCompleted = true;
-          });
-        }
-      });
+    // Sequential initialization - wait for each step to complete
+    await homeCubit.fetchAllProjects();
+    await profileCubit.fetchCurrentUser();
+
+    // Only fetch collectors if we have a valid project
+    if (homeCubit.state.selectedProject != null) {
+      await homeCubit.fetchMyCollectors();
     }
   }
 
@@ -580,39 +589,34 @@ class _NavigationViewState extends State<NavigationView>
       listeners: [
         BlocListener<HomeCubit, HomeState>(
           listener: (context, homeState) {
-            if (!homeState.fetchingProjects) {
+            if (!homeState.fetchingProjects && _isInitialLoad) {
               final hasProjects = homeState.projects.isNotEmpty;
-
-              if (_showStaticScreen != !hasProjects) {
-                setState(() {
-                  _showStaticScreen = !hasProjects;
-                  _initialLoadCompleted = true;
-                });
-              }
+              setState(() {
+                _showStaticScreen = !hasProjects;
+                _initialDataLoaded = true;
+                _isInitialLoad = false;
+              });
             }
           },
         ),
       ],
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, homeState) {
+          // Show loading only during initial load
+          if (_isInitialLoad && !_initialDataLoaded) {
+            return _buildLoadingScreen();
+          }
+
           if (_showStaticScreen && !homeState.fetchingProjects) {
             return _buildStaticScreen();
-          }
-          if (homeState.fetchingProjects && !_initialLoadCompleted) {
-            return _buildLoadingScreen();
           }
 
           return BlocBuilder<ProfileCubit, ProfileState>(
             builder: (context, profileState) {
-              if (profileState.isLoading) {
-                return _buildLoadingScreen();
-              }
-
               final hasValidUser = _hasValidUser(profileState);
 
               if (hasValidUser) {
                 final isAdmin = _isAdmin(profileState);
-
                 if (isAdmin) {
                   _initializeAdminNavigationItems();
                 } else {
