@@ -1130,7 +1130,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   void initState() {
     super.initState();
     _firstNameController = TextEditingController(text: widget.user.firstName);
-    _middleNameController = TextEditingController(text: widget.user.middleName ?? '');
+    _middleNameController =
+        TextEditingController(text: widget.user.middleName ?? '');
     _lastNameController = TextEditingController(text: widget.user.lastName);
     _phoneController = TextEditingController(text: widget.user.phone ?? '');
   }
@@ -1211,10 +1212,11 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                     onPressed: state.isLoading
                         ? null
                         : () {
-                      context.read<ProfileCubit>().cancelEditing();
-                      Navigator.of(context).pop();
-                    },
-                    icon: Icon(Icons.close, color: colorScheme.onSurface.withOpacity(0.6)),
+                            context.read<ProfileCubit>().cancelEditing();
+                            Navigator.of(context).pop();
+                          },
+                    icon: Icon(Icons.close,
+                        color: colorScheme.onSurface.withOpacity(0.6)),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     iconSize: 20,
@@ -1256,7 +1258,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1287,7 +1290,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1319,7 +1323,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1342,7 +1347,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                 onChanged: (value) => _onFieldChanged('phone', value),
                 decoration: InputDecoration(
                   hintText: 'Enter your phone number (optional)',
-                  prefixIcon: Icon(Icons.phone, color: colorScheme.onSurface.withOpacity(0.5)),
+                  prefixIcon: Icon(Icons.phone,
+                      color: colorScheme.onSurface.withOpacity(0.5)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: colorScheme.outline),
@@ -1353,7 +1359,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1367,14 +1374,15 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                       onPressed: state.isLoading
                           ? null
                           : () {
-                        context.read<ProfileCubit>().cancelEditing();
-                        Navigator.of(context).pop();
-                      },
+                              context.read<ProfileCubit>().cancelEditing();
+                              Navigator.of(context).pop();
+                            },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorScheme.onSurface,
                         side: BorderSide(color: colorScheme.outline),
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Cancel'),
                     ),
@@ -1387,18 +1395,20 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                         backgroundColor: colorScheme.primary,
                         foregroundColor: colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
                       child: state.isLoading
                           ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
-                        ),
-                      )
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    colorScheme.onPrimary),
+                              ),
+                            )
                           : const Text('Save Changes'),
                     ),
                   ),
@@ -1420,9 +1430,11 @@ class ChangePasswordDialog extends StatefulWidget {
 }
 
 class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
@@ -1519,7 +1531,8 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.close, color: colorScheme.onSurface.withOpacity(0.6)),
+                    icon: Icon(Icons.close,
+                        color: colorScheme.onSurface.withOpacity(0.6)),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     iconSize: 20,
@@ -1551,9 +1564,12 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 decoration: InputDecoration(
                   hintText: 'Enter current password',
                   suffixIcon: IconButton(
-                    onPressed: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
+                    onPressed: () => setState(() =>
+                        _obscureCurrentPassword = !_obscureCurrentPassword),
                     icon: Icon(
-                      _obscureCurrentPassword ? Icons.visibility : Icons.visibility_off,
+                      _obscureCurrentPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                       color: colorScheme.onSurface.withOpacity(0.5),
                     ),
                   ),
@@ -1567,7 +1583,8 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1589,9 +1606,12 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 decoration: InputDecoration(
                   hintText: 'Enter new password',
                   suffixIcon: IconButton(
-                    onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                    onPressed: () => setState(
+                        () => _obscureNewPassword = !_obscureNewPassword),
                     icon: Icon(
-                      _obscureNewPassword ? Icons.visibility : Icons.visibility_off,
+                      _obscureNewPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                       color: colorScheme.onSurface.withOpacity(0.5),
                     ),
                   ),
@@ -1605,7 +1625,8 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1634,9 +1655,12 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 decoration: InputDecoration(
                   hintText: 'Confirm your new password',
                   suffixIcon: IconButton(
-                    onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    onPressed: () => setState(() =>
+                        _obscureConfirmPassword = !_obscureConfirmPassword),
                     icon: Icon(
-                      _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                      _obscureConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                       color: colorScheme.onSurface.withOpacity(0.5),
                     ),
                   ),
@@ -1650,7 +1674,8 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1661,12 +1686,14 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorScheme.onSurface,
                         side: BorderSide(color: colorScheme.outline),
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Cancel'),
                     ),
@@ -1679,19 +1706,24 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                         backgroundColor: colorScheme.primary,
                         foregroundColor: colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
                       child: _isLoading
                           ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
-                        ),
-                      )
-                          : const Text('Update Password'),
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    colorScheme.onPrimary),
+                              ),
+                            )
+                          : const Text(
+                              'Update Password',
+                              style: TextStyle(fontSize: 12),
+                            ),
                     ),
                   ),
                 ],
