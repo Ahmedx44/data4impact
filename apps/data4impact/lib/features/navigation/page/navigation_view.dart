@@ -507,74 +507,71 @@ class _NavigationViewState extends State<NavigationView>
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              final isSelected = index == visit;
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(items.length, (index) {
+            final item = items[index];
+            final isSelected = index == visit;
 
-              return Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 2.0),
-                  child: Material(
-                    color: Colors.transparent,
+            return Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        visit = index;
+                      });
+                    },
                     borderRadius: BorderRadius.circular(12),
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          visit = index;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: paddingVertical,
-                          horizontal: 4.0,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: isSelected
-                              ? theme.primary.withOpacity(0.1)
-                              : Colors.transparent,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              item.icon as IconData,
-                              size: iconSize,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: paddingVertical,
+                        horizontal: 4.0,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: isSelected
+                            ? theme.primary.withOpacity(0.1)
+                            : Colors.transparent,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            item.icon as IconData,
+                            size: iconSize,
+                            color: isSelected
+                                ? theme.primary
+                                : theme.onSurface.withOpacity(0.7),
+                          ),
+                          SizedBox(height: itemSpacing),
+                          Text(
+                            item.title as String,
+                            style: TextStyle(
+                              fontSize: fontSize,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                               color: isSelected
                                   ? theme.primary
                                   : theme.onSurface.withOpacity(0.7),
                             ),
-                            SizedBox(height: itemSpacing),
-                            Text(
-                              item.title as String,
-                              style: TextStyle(
-                                fontSize: fontSize,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                                color: isSelected
-                                    ? theme.primary
-                                    : theme.onSurface.withOpacity(0.7),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              );
-            }),
-          ),
+              ),
+            );
+          }),
         ),
       ),
     );
@@ -635,7 +632,7 @@ class _NavigationViewState extends State<NavigationView>
                 ),
                 bottomNavigationBar: _showStaticScreen
                     ? null
-                    : _buildResponsiveBottomNavigationBar(), // Using the new custom UI with text
+                    : _buildResponsiveBottomNavigationBar(),
               );
             },
           );

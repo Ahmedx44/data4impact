@@ -295,7 +295,7 @@ class _HomeViewState extends State<HomeView> {
                               Text(
                                 'Overview',
                                 style: GoogleFonts.lexendDeca(
-                                  fontSize: 18,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: theme.onSurface,
                                 ),
@@ -303,11 +303,10 @@ class _HomeViewState extends State<HomeView> {
                               GridView.builder(
                                 physics: const NeverScrollableScrollPhysics(),
                                 shrinkWrap: true,
+                                padding: EdgeInsets.all(0),
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  mainAxisSpacing: 5,
-                                  crossAxisSpacing: 5,
                                   childAspectRatio: 1.1,
                                 ),
                                 itemCount: 4,
