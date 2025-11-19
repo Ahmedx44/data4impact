@@ -1,6 +1,6 @@
 import 'package:awesome_bottom_bar/awesome_bottom_bar.dart';
 import 'package:data4impact/core/service/toast_service.dart';
-import 'package:data4impact/features/collectors/page/collectors_page.dart';
+import 'package:data4impact/features/contributors/page/contributors_page.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/home/cubit/home_state.dart';
 import 'package:data4impact/features/home/page/home_page.dart';
@@ -41,7 +41,6 @@ class _NavigationViewState extends State<NavigationView>
 
   @override
   void initState() {
-
     super.initState();
     _initializeNavigationItems();
     _checkToken();
@@ -55,7 +54,6 @@ class _NavigationViewState extends State<NavigationView>
   }
 
   void _fetchUserData() {
-
     final profileCubit = context.read<ProfileCubit>();
     profileCubit.fetchCurrentUser();
   }
@@ -64,19 +62,15 @@ class _NavigationViewState extends State<NavigationView>
     final homeCubit = context.read<HomeCubit>();
     // Check current project state immediately
     if (!homeCubit.state.fetchingProjects && homeCubit.state.projects.isEmpty) {
-
       _showStaticScreen = true;
     }
 
-
     if (homeCubit.state.projects.isEmpty && !homeCubit.state.fetchingProjects) {
-
       homeCubit.fetchAllProjects().then((_) {
         if (mounted) {
           setState(() {
             _showStaticScreen = homeCubit.state.projects.isEmpty;
             _initialLoadCompleted = true;
-
           });
         }
       });
@@ -101,7 +95,6 @@ class _NavigationViewState extends State<NavigationView>
   }
 
   void _initializeAdminNavigationItems() {
-
     items = const [
       TabItem(icon: HugeIcons.strokeRoundedHome01, title: 'Home'),
       TabItem(icon: HugeIcons.strokeRoundedInboxDownload, title: 'Inbox'),
@@ -117,17 +110,14 @@ class _NavigationViewState extends State<NavigationView>
       _pages.add(Container()); // Placeholder
       _pagesInitialized.add(false);
     }
-
   }
 
   Widget _buildPage(int index) {
     if (!_pagesInitialized[index]) {
-
       _pagesInitialized[index] = true;
 
       Widget page;
       if (items.length == 6) {
-
         switch (index) {
           case 0:
             page = const HomePage();
@@ -139,7 +129,7 @@ class _NavigationViewState extends State<NavigationView>
             page = const StudyPage();
             break;
           case 3:
-            page = const CollectorsPage();
+            page = const ContributorsPage();
             break;
           case 4:
             page = const TeamPage();
@@ -151,7 +141,6 @@ class _NavigationViewState extends State<NavigationView>
             page = Container();
         }
       } else {
-
         switch (index) {
           case 0:
             page = const HomePage();
@@ -177,7 +166,6 @@ class _NavigationViewState extends State<NavigationView>
         bucket: _pageStorageBucket,
         child: page,
       );
-
     }
 
     return _pages[index];
@@ -199,15 +187,11 @@ class _NavigationViewState extends State<NavigationView>
         state.user!.id!.isNotEmpty;
 
     if (hasValidUser) {
-
-    } else {
-
-    }
+    } else {}
     return hasValidUser;
   }
 
   Widget _buildLoadingScreen() {
-
     return const Scaffold(
       body: Center(
         child: Column(
@@ -475,7 +459,6 @@ class _NavigationViewState extends State<NavigationView>
 
       ToastService.showSuccessToast(message: 'Logout successful');
     } catch (e) {
-
       ToastService.showErrorToast(message: 'Logout failed: ${e.toString()}');
     }
   }

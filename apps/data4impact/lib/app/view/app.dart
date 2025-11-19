@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:data4impact/core/service/api_service/api_client.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
+import 'package:data4impact/core/service/api_service/contributor_service.dart';
 import 'package:data4impact/core/service/api_service/file_upload_service.dart';
 import 'package:data4impact/core/service/api_service/home_service.dart';
 import 'package:data4impact/core/service/api_service/invitation_service.dart';
@@ -44,6 +45,8 @@ class App extends StatelessWidget {
         ProjectService(apiClient: apiClient, secureStorage: secureStorage);
     final teamService =
         TeamService(apiClient: apiClient, secureStorage: secureStorage);
+    final contributorService =
+        ContributorService(apiClient: apiClient, secureStorage: secureStorage);
     final fileUploadService = FileUploadService(
       dio: apiClient.dio,
       secureStorage: secureStorage,
@@ -69,6 +72,7 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: profileService),
         RepositoryProvider.value(value: invitationService),
         RepositoryProvider.value(value: teamService),
+        RepositoryProvider.value(value: contributorService),
         RepositoryProvider.value(value: homeService)
       ],
       child: MultiBlocProvider(
