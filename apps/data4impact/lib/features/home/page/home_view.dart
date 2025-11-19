@@ -300,7 +300,6 @@ class _HomeViewState extends State<HomeView> {
                                   color: theme.onSurface,
                                 ),
                               ),
-                              const SizedBox(height: 16),
                               GridView.builder(
                                 physics: const NeverScrollableScrollPhysics(),
                                 shrinkWrap: true,

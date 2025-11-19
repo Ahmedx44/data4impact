@@ -1,5 +1,6 @@
 import 'package:data4impact/core/widget/AfiyaButton.dart';
 import 'package:data4impact/features/data_collect/page/data_collection_page.dart';
+import 'package:data4impact/features/home/widget/actitity_card.dart';
 import 'package:data4impact/features/study_detail/widget/milestone_tracker.dart';
 import 'package:data4impact/features/study_detail/widget/response_time_distrubtion.dart';
 import 'package:data4impact/features/study_detail/widget/study_detail_actitity_card.dart';
@@ -68,11 +69,12 @@ class _StudyDetailViewState extends State<StudyDetailView>
     // Use actual study data instead of static values
     final currentResponses = widget.studyData['responseCount'] ?? 0;
     final totalResponses = widget.studyData['sampleSize'] ?? 0;
-    final progress = totalResponses as int > 0 ? currentResponses / totalResponses : 0;
+    final progress =
+        totalResponses as int > 0 ? currentResponses / totalResponses : 0;
     final collectorCount = widget.studyData['collectorCount'] ?? 0;
     final questionCount = widget.studyData['questionCount'] ?? 0;
 
-    // Calculate days remaining (you might need to adjust this based on your actual data structure)
+    // Calculate days remaining
     final daysRemaining = _calculateDaysRemaining(widget.studyData);
 
     return Scaffold(
@@ -82,65 +84,87 @@ class _StudyDetailViewState extends State<StudyDetailView>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.studyData['name'].toString() ??'',
+              widget.studyData['name'].toString(),
               style: GoogleFonts.lexendDeca(
-                  fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-            SizedBox(
-              width: 200,
-              child: Text(
-                widget.studyData['description'].toString() ?? '',
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.lexendDeca(fontSize: 10),
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
               ),
-            )
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              child: Text(
+                widget.studyData['description'].toString(),
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.lexendDeca(
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
           ],
         ),
         centerTitle: false,
       ),
       body: CustomScrollView(
         slivers: [
+          // Progress Overview Card
           SliverToBoxAdapter(
-            child: ProgressTimelineWidget(
+            child: _buildProgressOverviewCard(
+              context,
               currentResponses: currentResponses as int,
-              totalResponses: totalResponses,
+              totalResponses: totalResponses as int,
               daysRemaining: daysRemaining,
-              progress: progress as int,
+              progress: (progress as int).toDouble(),
             ),
           ),
+          // Stats Grid
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final titles = [
-                    'Total Response',
-                    'Response Rate',
-                    'Data Collectors',
-                    'Questions',
+                (context, index) {
+                  final List<StatCardData> stats = [
+                    StatCardData(
+                      title: 'Total Response',
+                      value: totalResponses.toString(),
+                      subtitle:
+                          '${totalResponses - currentResponses} Remaining',
+                      icon: Icons.assignment_turned_in_rounded,
+                      color: Colors.blue,
+                    ),
+                    StatCardData(
+                      title: 'Response Rate',
+                      value: '${(progress * 100).toStringAsFixed(1)}%',
+                      subtitle:
+                          '${(progress * 100).toStringAsFixed(1)}% completion',
+                      icon: Icons.trending_up_rounded,
+                      color: Colors.green,
+                      isPercentage: true,
+                    ),
+                    StatCardData(
+                      title: 'Data Collectors',
+                      value: collectorCount.toString(),
+                      subtitle: 'All active',
+                      icon: Icons.people_rounded,
+                      color: Colors.orange,
+                    ),
+                    StatCardData(
+                      title: 'Questions',
+                      value: questionCount.toString(),
+                      subtitle: 'Total questions',
+                      icon: Icons.question_answer_rounded,
+                      color: Colors.purple,
+                    ),
                   ];
-                  final values = [
-                    totalResponses,
-                    (progress * 100).toStringAsFixed(1),
-                    collectorCount,
-                    questionCount,
-                  ];
-                  final subtitles = [
-                    '${totalResponses - currentResponses} Remaining',
-                    '${(progress * 100).toStringAsFixed(1)}% completion',
-                    'All active',
-                    "Total questions",
-                  ];
+
                   return AnimationConfiguration.staggeredGrid(
                     position: index,
                     duration: const Duration(milliseconds: 300),
                     columnCount: 2,
                     child: FadeInAnimation(
-                      child: StudyDetailActitityCard(
-                        title: titles[index],
-                        value: values[index].toString(),
-                        subtitle: subtitles[index],
-                      ),
+                      child: _buildStatCard(stats[index]),
                     ),
                   );
                 },
@@ -148,48 +172,22 @@ class _StudyDetailViewState extends State<StudyDetailView>
               ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 5,
-                childAspectRatio: 1.4,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.1,
               ),
             ),
           ),
+
+          // Tabs Section
           SliverToBoxAdapter(
-            child: Material(
-              color: colorScheme.surface,
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: colorScheme.primary.withOpacity(0.2),
-                ),
-                splashFactory: NoSplash.splashFactory,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicatorPadding:
-                const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                labelColor: colorScheme.primary,
-                unselectedLabelColor: colorScheme.onSurface.withAlpha(255),
-                labelStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.normal,
-                ),
-                dividerColor: Colors.transparent,
-                dividerHeight: 0,
-                tabs: const [
-                  Tab(text: 'Progress'),
-                  Tab(text: 'Collectors'),
-                  Tab(text: 'Timeline'),
-                ],
-              ),
-            ),
+            child: _buildTabSection(context),
           ),
+
+          // Tab Content
           SliverToBoxAdapter(
             child: SizedBox(
-              height: 410,
+              height: 420,
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -200,23 +198,24 @@ class _StudyDetailViewState extends State<StudyDetailView>
               ),
             ),
           ),
+
+          // Continue Button (if not completed)
           if (widget.studyData['status'] != 'completed')
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(16),
                 child: CustomButton(
                   width: double.infinity,
-                  height: 100,
+                  height: 56,
                   child: Text(
                     'Continue ${_getStudyTypeDisplayName()}',
                     style: GoogleFonts.lexendDeca(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
                   ),
                   onTap: () {
-                    print('widgetttttt: ${widget.studyData}');
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute<Widget>(
@@ -224,7 +223,8 @@ class _StudyDetailViewState extends State<StudyDetailView>
                           studyId: widget.studyId,
                           studyType: _getStudyType(),
                           approach: widget.studyData['approach'].toString(),
-                          designType: widget.studyData['design']['type'].toString(),
+                          designType:
+                              widget.studyData['design']['type'].toString(),
                         ),
                       ),
                     );
@@ -232,12 +232,239 @@ class _StudyDetailViewState extends State<StudyDetailView>
                 ),
               ),
             ),
+
           const SliverToBoxAdapter(
-            child: SizedBox(
-              height: 20,
-            ),
+            child: SizedBox(height: 20),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildProgressOverviewCard(
+    BuildContext context, {
+    required int currentResponses,
+    required int totalResponses,
+    required int daysRemaining,
+    required double progress,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Card(
+        elevation: 2,
+        shadowColor: colorScheme.shadow.withOpacity(0.1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: colorScheme.outline.withOpacity(0.08),
+            width: 1,
+          ),
+        ),
+        color: colorScheme.surface,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.surface,
+                colorScheme.surface,
+                colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              // Progress Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Progress',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$currentResponses/$totalResponses',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        'Responses',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 12,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        height: 80,
+                        width: 80,
+                        child: CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 8,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            progress >= 1 ? Colors.green : colorScheme.primary,
+                          ),
+                          backgroundColor: colorScheme.surfaceVariant,
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            '${(progress * 100).toStringAsFixed(0)}%',
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            'Complete',
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 10,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Timeline Row
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Timeline',
+                          style: GoogleFonts.lexendDeca(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          daysRemaining > 0
+                              ? '$daysRemaining days remaining'
+                              : 'Completed',
+                          style: GoogleFonts.lexendDeca(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: daysRemaining > 0
+                                ? colorScheme.onSurface
+                                : Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Icon(
+                      daysRemaining > 0
+                          ? Icons.schedule_rounded
+                          : Icons.check_circle_rounded,
+                      color: daysRemaining > 0
+                          ? colorScheme.primary
+                          : Colors.green,
+                      size: 24,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(StatCardData data) {
+    return ActivityCard(
+      title: data.title,
+      value: 0, // We'll use customValue instead
+      subtitle: data.subtitle,
+      icon: data.icon,
+      color: data.color,
+      isPercentage: data.isPercentage,
+      customValue: data.value,
+      onTap: () {}, // Add functionality if needed
+    );
+  }
+
+  Widget _buildTabSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      shadowColor: colorScheme.shadow.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colorScheme.outline.withOpacity(0.08),
+          width: 1,
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: colorScheme.surface,
+        ),
+        child: TabBar(
+          controller: _tabController,
+          indicator: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: colorScheme.primary.withOpacity(0.1),
+          ),
+          splashFactory: NoSplash.splashFactory,
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicatorPadding: const EdgeInsets.all(4),
+          labelColor: colorScheme.primary,
+          unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
+          labelStyle: GoogleFonts.lexendDeca(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: GoogleFonts.lexendDeca(
+            fontSize: 14,
+            fontWeight: FontWeight.normal,
+          ),
+          dividerColor: Colors.transparent,
+          tabs: const [
+            Tab(text: 'Progress'),
+            Tab(text: 'Collectors'),
+            Tab(text: 'Timeline'),
+          ],
+        ),
       ),
     );
   }
@@ -253,112 +480,20 @@ class _StudyDetailViewState extends State<StudyDetailView>
   }
 }
 
-class ProgressTimelineWidget extends StatelessWidget {
-  final int currentResponses;
-  final int totalResponses;
-  final int daysRemaining;
-  final int progress;
+class StatCardData {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final bool isPercentage;
 
-  const ProgressTimelineWidget({
-    super.key,
-    required this.currentResponses,
-    required this.totalResponses,
-    required this.daysRemaining,
-    required this.progress,
+  StatCardData({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    this.isPercentage = false,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // Progress section
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          height: 40,
-                          width: 40,
-                          child: CircularProgressIndicator(
-                            value: double.tryParse(progress.toString()),
-                            strokeWidth: 4,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.colorScheme.primary),
-                            backgroundColor: theme.colorScheme.surfaceVariant,
-                          ),
-                        ),
-                        Text(
-                          "${(progress * 100).toStringAsFixed(0)}%",
-                          style: GoogleFonts.lexendDeca(
-                              fontSize: 12, color: theme.colorScheme.onSurface),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "$currentResponses/$totalResponses Responses",
-                      style: GoogleFonts.lexendDeca(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6)),
-                    ),
-                  ],
-                ),
-
-                // Divider
-                Container(
-                  height: 40,
-                  width: 1,
-                  color: theme.colorScheme.outline.withOpacity(0.2),
-                ),
-
-                // Timeline section
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Timeline",
-                      style: GoogleFonts.lexendDeca(
-                          fontSize: 14,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6)),
-                    ),
-                    Text(
-                      daysRemaining > 0 ? "- $daysRemaining days" : "Completed",
-                      style: GoogleFonts.lexendDeca(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: daysRemaining > 0
-                              ? theme.colorScheme.onSurface
-                              : theme.colorScheme.primary),
-                    ),
-                    Text(
-                      daysRemaining > 0 ? "remaining" : "on time",
-                      style: GoogleFonts.lexendDeca(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
