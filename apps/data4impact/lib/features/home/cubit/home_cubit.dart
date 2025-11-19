@@ -10,6 +10,7 @@ import 'package:data4impact/core/service/api_service/study_service.dart';
 import 'package:data4impact/core/service/api_service/file_upload_service.dart';
 import 'package:data4impact/core/service/api_service/auth_service.dart';
 import 'package:data4impact/core/service/api_service/home_service.dart';
+import 'package:data4impact/core/service/app_logger.dart';
 import 'package:data4impact/core/service/internt_connection_monitor.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/home/cubit/home_state.dart';
@@ -104,23 +105,21 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<int> _getPendingSyncCount() async {
     try {
-      final offlineAnswersBox = await Hive.openBox('offline_answers_box');
       int totalCount = 0;
+      final offlineAnswersBox = await Hive.openBox('offline_answers_box');
+      final keys = offlineAnswersBox.keys.toList();
 
-      final keys = offlineAnswersBox.keys;
       for (final key in keys) {
         if (key.toString().startsWith('offline_answers_key_')) {
-          final answersJson = offlineAnswersBox.get(key);
-          if (answersJson != null && answersJson.toString().isNotEmpty) {
-            final List<dynamic> decoded =
-            jsonDecode(answersJson.toString()) as List;
-            totalCount += decoded.length;
-          }
+          final studyId = key.toString().replaceFirst('offline_answers_key_', '');
+          final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
+          totalCount += offlineAnswers.length;
         }
       }
+
       return totalCount;
     } catch (e) {
-
+      AppLogger.logError('Error getting pending sync count: $e');
       return 0;
     }
   }
@@ -137,14 +136,25 @@ class HomeCubit extends Cubit<HomeState> {
 
     try {
       final offlineAnswersBox = await Hive.openBox('offline_answers_box');
-      final keys = offlineAnswersBox.keys;
+      final keys = offlineAnswersBox.keys.toList();
+
+      // First, count total items to sync
+      int totalItems = 0;
+      for (final key in keys) {
+        if (key.toString().startsWith('offline_answers_key_')) {
+          final studyId = key.toString().replaceFirst('offline_answers_key_', '');
+          final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
+          totalItems += offlineAnswers.length;
+        }
+      }
+
+      emit(state.copyWith(totalToSync: totalItems));
 
       int totalSynced = 0;
 
       for (final key in keys) {
         if (key.toString().startsWith('offline_answers_key_')) {
-          final studyId =
-          key.toString().replaceFirst('offline_answers_key_', '');
+          final studyId = key.toString().replaceFirst('offline_answers_key_', '');
           final syncedCount = await _syncStudyOfflineAnswers(studyId);
           totalSynced += syncedCount;
         }
@@ -155,12 +165,21 @@ class HomeCubit extends Cubit<HomeState> {
 
       if (totalSynced > 0) {
         ToastService.showSuccessToast(
-            message: 'Synced $totalSynced offline responses');
+            message: 'Successfully synced $totalSynced offline responses'
+        );
+      } else if (totalItems > 0) {
+        ToastService.showInfoToast(
+            message: 'No responses synced. Please check your connection'
+        );
       }
     } catch (e) {
+      AppLogger.logError('Sync failed: ${e.toString()}');
       ToastService.showErrorToast(message: 'Sync failed: ${e.toString()}');
     } finally {
-      emit(state.copyWith(isSyncing: false));
+      emit(state.copyWith(
+        isSyncing: false,
+        syncProgress: 1.0,
+      ));
     }
   }
 
@@ -168,100 +187,129 @@ class HomeCubit extends Cubit<HomeState> {
     int syncedCount = 0;
 
     try {
-      final offlineAnswers =
-      await OfflineModeDataRepo().getOfflineAnswers(studyId);
+      final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
 
       if (offlineAnswers.isEmpty) {
+        AppLogger.logInfo('No offline answers to sync for study: $studyId');
         return 0;
       }
 
-      emit(state.copyWith(
-        totalToSync: state.totalToSync + offlineAnswers.length,
-      ));
+      AppLogger.logInfo('Syncing ${offlineAnswers.length} offline answers for study: $studyId');
 
       final List<int> successfulIndices = [];
 
       for (int i = 0; i < offlineAnswers.length; i++) {
-        final answerData = Map<String, dynamic>.from(offlineAnswers[i]);
-
         try {
+          // Get the complete response object (not just the data array)
+          final responseObject = Map<String, dynamic>.from(offlineAnswers[i]);
+
+          AppLogger.logInfo('Processing offline answer $i: ${jsonEncode(responseObject)}');
+
           // Handle audio file upload if present
-          if (answerData.containsKey('audioFilePath')) {
-            final audioFilePath = answerData['audioFilePath'] as String;
-            final audioUrl =
-            await _uploadAudioFileForSync(audioFilePath, studyId);
+          if (responseObject.containsKey('audioFilePath')) {
+            final audioFilePath = responseObject['audioFilePath'] as String;
+            final audioUrl = await _uploadAudioFileForSync(audioFilePath, studyId);
 
             if (audioUrl != null) {
-              answerData['audioUrl'] = audioUrl;
-              answerData.remove('audioFilePath');
+              responseObject['audioUrl'] = audioUrl;
+              responseObject.remove('audioFilePath');
             } else {
-              continue;
+              AppLogger.logWarning('Audio upload failed for answer $i, skipping audio');
+              responseObject.remove('audioFilePath');
             }
           }
 
-          final responseData = answerData['data'] as List<dynamic>?;
-
-          if (responseData == null || responseData.isEmpty) {
+          // Validate the response structure
+          if (!responseObject.containsKey('data') ||
+              responseObject['data'] is! List ||
+              (responseObject['data'] as List).isEmpty) {
+            AppLogger.logWarning('Invalid response structure for answer $i, skipping');
             continue;
           }
 
+          // Submit the complete response object
           await studyService.submitSurveyResponse(
             studyId: studyId,
-            responseData: responseData,
+            responseData: [responseObject], // Wrap in array as API expects
           );
 
           successfulIndices.add(i);
           syncedCount++;
 
+          AppLogger.logInfo('Successfully synced offline answer $i');
+
+          // Update progress
           emit(state.copyWith(
             syncedSoFar: state.syncedSoFar + 1,
             syncProgress: state.totalToSync > 0
-                ? (state.syncedSoFar + 1) / state.totalToSync
+                ? state.syncedSoFar / state.totalToSync
                 : 0.0,
           ));
+
         } catch (e) {
+          AppLogger.logError('Failed to sync offline answer $i: $e');
+          // Continue with next answer instead of stopping
+          continue;
         }
       }
+
+      // Remove successfully synced answers
       if (successfulIndices.isNotEmpty) {
         await _removeSyncedAnswers(studyId, successfulIndices);
+        AppLogger.logInfo('Removed ${successfulIndices.length} synced answers for study: $studyId');
       }
-    } catch (e) {
 
+    } catch (e) {
+      AppLogger.logError('Error in _syncStudyOfflineAnswers for study $studyId: $e');
     }
+
     return syncedCount;
   }
 
-  Future<String?> _uploadAudioFileForSync(
-      String filePath, String studyId) async {
+  Future<String?> _uploadAudioFileForSync(String audioFilePath, String studyId) async {
     try {
-      final result = await fileUploadService.uploadAudioFile(studyId, filePath);
-      return result['filename'] as String?;
+      if (!await File(audioFilePath).exists()) {
+        AppLogger.logWarning('Audio file not found: $audioFilePath');
+        return null;
+      }
+
+      final result = await fileUploadService.uploadAudioFile(studyId, audioFilePath);
+      final audioUrl = result['filename'] as String?;
+
+      if (audioUrl != null) {
+        // Delete the local file after successful upload
+        try {
+          await File(audioFilePath).delete();
+          AppLogger.logInfo('Deleted local audio file after successful upload: $audioFilePath');
+        } catch (e) {
+          AppLogger.logWarning('Failed to delete local audio file: $e');
+        }
+      }
+
+      return audioUrl;
     } catch (e) {
+      AppLogger.logError('Audio upload failed for file $audioFilePath: $e');
       return null;
     }
   }
 
-  Future<void> _removeSyncedAnswers(String studyId, List<int> indices) async {
+  Future<void> _removeSyncedAnswers(String studyId, List<int> indicesToRemove) async {
     try {
-      final offlineAnswers =
-      await OfflineModeDataRepo().getOfflineAnswers(studyId);
-      indices.sort((a, b) => b.compareTo(a));
+      final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
 
-      for (final index in indices) {
+      // Sort indices in descending order to avoid index shifting issues
+      indicesToRemove.sort((a, b) => b.compareTo(a));
+
+      for (final index in indicesToRemove) {
         if (index >= 0 && index < offlineAnswers.length) {
-          offlineAnswers.removeAt(index);
+          await OfflineModeDataRepo().removeOfflineAnswer(studyId, index);
         }
       }
 
-      final hiveBox = await Hive.openBox('offline_answers_box');
-      if (offlineAnswers.isEmpty) {
-        await hiveBox.delete('offline_answers_key_$studyId');
-      } else {
-        await hiveBox.put(
-            'offline_answers_key_$studyId', jsonEncode(offlineAnswers));
-      }
+      AppLogger.logInfo('Removed ${indicesToRemove.length} synced answers');
     } catch (e) {
-      print('Error removing synced answers: $e');
+      AppLogger.logError('Error removing synced answers: $e');
+      throw e;
     }
   }
 

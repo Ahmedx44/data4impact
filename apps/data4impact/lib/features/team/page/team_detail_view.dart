@@ -49,20 +49,27 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
       final response = await teamService.getTeamMembers(widget.team.id);
 
-      setState(() {
-        members = response.map((memberData) => MemberModel.fromJson(memberData as Map<String,dynamic>)).toList();
+      // Handle the response properly - it's a List<dynamic>
+      if (response is List) {
+        setState(() {
+          members = response.map((memberData) {
+            return MemberModel.fromJson(memberData as Map<String,dynamic>);
+          }).toList();
 
+          for (var member in members) {
+            expandedMembers[member.id] = false;
+            memberStudies[member.id] = [];
+            selectedStudies[member.id] = [];
+          }
 
-        for (var member in members) {
-          expandedMembers[member.id] = false;
-          memberStudies[member.id] = [];
-          selectedStudies[member.id] = [];
-        }
-
-        isLoading = false;
-        error = null;
-      });
+          isLoading = false;
+          error = null;
+        });
+      } else {
+        throw Exception('Invalid response format from server');
+      }
     } catch (e) {
+      print('Error loading team members: $e');
       setState(() {
         error = e.toString();
         isLoading = false;

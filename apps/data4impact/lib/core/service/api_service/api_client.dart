@@ -6,7 +6,6 @@ import 'package:dio/dio.dart';
 
 class ApiClient {
   final Dio dio;
-  final bool isDebugMode;
 
   ApiClient({String? baseUrl})
       : dio = Dio(
@@ -22,45 +21,29 @@ class ApiClient {
       followRedirects: true,
       maxRedirects: 5,
     ),
-  ),
-        isDebugMode = _isInDebugMode();
-
-  static bool _isInDebugMode() {
-    bool inDebug = false;
-    assert(() {
-      inDebug = true;
-      return true;
-    }());
-    return inDebug;
+  ) {
+    _setupInterceptors();
   }
 
   void _logInfo(String message) {
-    if (isDebugMode) {
-      AppLogger.logInfo(message);
-    }
+    AppLogger.logInfo(message);
   }
 
   void _logWarning(String message) {
-    if (isDebugMode) {
-      AppLogger.logWarning(message);
-    }
+    AppLogger.logWarning(message);
   }
 
   void _logError(String message, [dynamic error, StackTrace? stackTrace]) {
-    if (isDebugMode) {
-      AppLogger.logError(message, error, stackTrace);
-    }
+    AppLogger.logError(message, error, stackTrace);
   }
 
   void _logDebug(String message) {
-    if (isDebugMode) {
-      AppLogger.logInfo('[DEBUG] $message');
-    }
+    AppLogger.logInfo('[DEBUG] $message');
   }
 
-  ApiClient._create(this.dio, this.isDebugMode);
+  ApiClient._create(this.dio);
 
-  factory ApiClient.create({String? baseUrl, bool? debugMode}) {
+  factory ApiClient.create({String? baseUrl}) {
     final dio = Dio(
       BaseOptions(
         baseUrl: baseUrl ?? "",
@@ -76,7 +59,7 @@ class ApiClient {
       ),
     );
 
-    final client = ApiClient._create(dio, debugMode ?? _isInDebugMode());
+    final client = ApiClient._create(dio);
     client._setupInterceptors();
     return client;
   }
@@ -85,46 +68,41 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          if (isDebugMode) {
-            _logInfo('''
+          _logInfo('''
 🌐 REQUEST 🌐
 Method: ${options.method}
 URL: ${options.uri}
 Headers: ${options.headers}
 Body: ${options.data}
 ''');
-          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          if (isDebugMode) {
-            final prettyBody = const JsonEncoder.withIndent('  ')
-                .convert(response.data);
+          final prettyBody = const JsonEncoder.withIndent('  ')
+              .convert(response.data);
 
-            if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
-              _logWarning('Redirect detected to: ${response.headers['location']}');
-            }
+          if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
+            _logWarning('Redirect detected to: ${response.headers['location']}');
+          }
 
-            _logInfo('''
+          _logInfo('''
 📩 RESPONSE 📩
 Status: ${response.statusCode} ${response.statusMessage}
 URL: ${response.requestOptions.uri}
 Headers: ${response.headers}
 Body: $prettyBody
 ''');
-          }
           return handler.next(response);
         },
         onError: (DioException e, handler) {
           final userFriendlyMessage = _getUserFriendlyErrorMessage(e);
 
-          if (isDebugMode) {
-            if ([301, 302, 303, 307, 308].contains(e.response?.statusCode)) {
-              _logWarning('Redirect not followed to: ${e.response?.headers['location']}');
-            }
+          if ([301, 302, 303, 307, 308].contains(e.response?.statusCode)) {
+            _logWarning('Redirect not followed to: ${e.response?.headers['location']}');
+          }
 
-            if (e.response != null) {
-              _logError('''
+          if (e.response != null) {
+            _logError('''
 🚨 ERROR RESPONSE 🚨
 User Message: $userFriendlyMessage
 Status: ${e.response?.statusCode}
@@ -133,13 +111,12 @@ Headers: ${e.response?.headers}
 Body: ${e.response?.data}
 Technical: ${e.message}
 ''');
-            } else {
-              _logError('''
+          } else {
+            _logError('''
 🚨 NETWORK ERROR 🚨
 User Message: $userFriendlyMessage
 Technical: ${e.message}
 ''');
-            }
           }
 
           return handler.next(e);

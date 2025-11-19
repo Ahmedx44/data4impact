@@ -283,7 +283,7 @@ class _HomeViewState extends State<HomeView> {
                   ];
 
                   return SliverPadding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(5),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         Skeletonizer(
@@ -306,8 +306,8 @@ class _HomeViewState extends State<HomeView> {
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  mainAxisSpacing: 12,
-                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 5,
+                                  crossAxisSpacing: 5,
                                   childAspectRatio: 1.1,
                                 ),
                                 itemCount: 4,

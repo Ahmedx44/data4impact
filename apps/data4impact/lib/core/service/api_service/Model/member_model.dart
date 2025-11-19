@@ -1,113 +1,89 @@
-// member_model.dart
-import 'package:equatable/equatable.dart';
-
-class MemberModel extends Equatable {
+class MemberModel {
   final String id;
-  final String teamId;
+  final String team;
   final List<String> roles;
+  final String project;
+  final String organization;
   final String userId;
   final Map<String, dynamic> attributes;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   final User user;
 
-  const MemberModel({
+  MemberModel({
     required this.id,
-    required this.teamId,
+    required this.team,
     required this.roles,
+    required this.project,
+    required this.organization,
     required this.userId,
     required this.attributes,
-    this.createdAt,
-    this.updatedAt,
+    required this.createdAt,
+    required this.updatedAt,
     required this.user,
   });
 
+  String get fullName => '${user.firstName} ${user.middleName} ${user.lastName}'.trim();
+
   factory MemberModel.fromJson(Map<String, dynamic> json) {
     return MemberModel(
-      id: json['_id'] as String ?? '',
-      teamId: json['team']  as String?? '',
-      roles: List<String>.from(json['roles'] as List ?? []),
-      userId: json['userId'] as String ?? '',
-      attributes: Map<String, dynamic>.from(json['attributes'] as Map<String,dynamic> ?? {}),
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : null,
-      user: User.fromJson(json['user'] as Map<String,dynamic> ?? {}),
+      id: json['_id']?.toString() ?? '',
+      team: json['team']?.toString() ?? '',
+      roles: (json['roles'] as List<dynamic>?)?.map((role) => role.toString()).toList() ?? [],
+      project: json['project']?.toString() ?? '',
+      organization: json['organization']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? '',
+      attributes: (json['attributes'] as Map<String, dynamic>?) ?? {},
+      createdAt: DateTime.parse(json['createdAt']?.toString() ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updatedAt']?.toString() ?? DateTime.now().toIso8601String()),
+      user: User.fromJson(json['user'] as Map<String, dynamic>? ?? {}),
     );
   }
-
-  String get fullName {
-    final names = [user.firstName, user.middleName, user.lastName].where((name) => name != null && name.isNotEmpty);
-    return names.join(' ');
-  }
-
-  @override
-  List<Object?> get props => [
-    id,
-    teamId,
-    roles,
-    userId,
-    attributes,
-    createdAt,
-    updatedAt,
-    user,
-  ];
 }
 
-class User extends Equatable {
+class User {
   final String id;
   final String firstName;
-  final String? middleName;
+  final String middleName;
   final String lastName;
+  final List<String> roles;
   final String phone;
   final String email;
   final bool emailVerified;
-  final String? imageUrl;
   final bool active;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? imageUrl;
 
-  const User({
+  User({
     required this.id,
     required this.firstName,
-    this.middleName,
+    required this.middleName,
     required this.lastName,
+    required this.roles,
     required this.phone,
     required this.email,
     required this.emailVerified,
-    this.imageUrl,
     required this.active,
-    this.createdAt,
-    this.updatedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.imageUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['_id'] as String ?? '',
-      firstName: json['firstName'] as String ?? '',
-      middleName: json['middleName'] as String,
-      lastName: json['lastName'] as String ?? '',
-      phone: json['phone'] as String ?? '',
-      email: json['email']  as String ?? '',
-      emailVerified: json['emailVerified'] as bool ?? false,
-      imageUrl: json['imageUrl'] as String,
-      active: json['active'] as bool ?? false,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : null,
+      id: json['_id']?.toString() ?? '',
+      firstName: json['firstName']?.toString() ?? '',
+      middleName: json['middleName']?.toString() ?? '',
+      lastName: json['lastName']?.toString() ?? '',
+      roles: (json['roles'] as List<dynamic>?)?.map((role) => role.toString()).toList() ?? [],
+      phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      emailVerified: json['emailVerified'] as bool? ?? false,
+      active: json['active'] as bool? ?? false,
+      createdAt: DateTime.parse(json['createdAt']?.toString() ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updatedAt']?.toString() ?? DateTime.now().toIso8601String()),
+      imageUrl: json['imageUrl']?.toString(),
     );
   }
-
-  @override
-  List<Object?> get props => [
-    id,
-    firstName,
-    middleName,
-    lastName,
-    phone,
-    email,
-    emailVerified,
-    imageUrl,
-    active,
-    createdAt,
-    updatedAt,
-  ];
 }

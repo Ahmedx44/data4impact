@@ -1166,7 +1166,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
               respondents: offlineRespondents,
             ),
           );
-          ToastService.showInfoToast(message: 'Using offline respondents data');
         } else {
           emit(
             state.copyWith(
@@ -1185,7 +1184,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           isLoading: false,
           respondents: offlineRespondents,
         ));
-        ToastService.showInfoToast(message: 'Using offline respondents data');
       } else {
         emit(
           state.copyWith(
@@ -1320,7 +1318,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
               cohorts: offlineCohorts,
             ),
           );
-          ToastService.showInfoToast(message: 'Using offline cohorts data');
         } else {
           emit(
             state.copyWith(
@@ -1339,7 +1336,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           isLoading: false,
           cohorts: offlineCohorts,
         ));
-        ToastService.showInfoToast(message: 'Using offline cohorts data');
       } else {
         emit(state.copyWith(
           isLoading: false,
@@ -1390,7 +1386,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             isLoading: false,
             waves: offlineWaves,
           ));
-          ToastService.showInfoToast(message: 'Using offline waves data');
+
         } else {
           emit(state.copyWith(
             isLoading: false,
@@ -1406,7 +1402,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           isLoading: false,
           waves: offlineWaves,
         ));
-        ToastService.showInfoToast(message: 'Using offline waves data');
       } else {
         emit(state.copyWith(
           isLoading: false,
@@ -1490,7 +1485,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             isLoading: false,
             subjects: offlineSubjects,
           ));
-          ToastService.showInfoToast(message: 'Using offline subjects data');
+
         } else {
           emit(state.copyWith(
             isLoading: false,
@@ -1507,7 +1502,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           isLoading: false,
           subjects: offlineSubjects,
         ));
-        ToastService.showInfoToast(message: 'Using offline subjects data');
       } else {
         emit(state.copyWith(
           isLoading: false,
@@ -1716,7 +1710,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             isLoading: false,
             groups: offlineGroups,
           ));
-          ToastService.showInfoToast(message: 'Using offline groups data');
         } else {
           emit(state.copyWith(
             isLoading: false,
@@ -1732,7 +1725,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           isLoading: false,
           groups: offlineGroups,
         ));
-        ToastService.showInfoToast(message: 'Using offline groups data');
       } else {
         emit(state.copyWith(
           isLoading: false,

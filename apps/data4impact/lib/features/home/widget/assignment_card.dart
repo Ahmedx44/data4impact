@@ -14,6 +14,7 @@ class AssignmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
 
+
     // Extract data from collector
     final study = collector['study'] as Map<String, dynamic>? ?? {};
     final studyName = study['name'] as String? ?? 'Unknown Study';
@@ -21,7 +22,7 @@ class AssignmentCard extends StatelessWidget {
         study['description'] as String? ?? 'No description available';
     final responseCount = collector['responseCount'] as int? ?? 0;
     final maxLimit = collector['maxLimit'] as int? ?? 0;
-    final status = collector['status'] as String? ?? 'inProgress';
+    final status = collector['study']['status'] as String? ?? '';
     final assignedDate = collector['assignedDate'] as String? ?? '';
     final completedDate = collector['completedDate'] as String? ?? '';
 

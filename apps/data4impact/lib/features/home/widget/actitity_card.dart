@@ -37,22 +37,15 @@ class ActivityCard extends StatelessWidget {
           width: 1,
         ),
       ),
-      color: theme.surface,
+      color: Theme.of(context).brightness == Brightness.light
+          ? Colors.white
+          : theme.surface,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.surface,
-                theme.surface,
-                theme.surfaceContainerHighest.withOpacity(0.3),
-              ],
-            ),
           ),
           padding: const EdgeInsets.all(16),
           child: Column(
