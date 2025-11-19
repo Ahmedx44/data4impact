@@ -1,5 +1,5 @@
-// team_stats_card.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ActivityCard extends StatelessWidget {
   final String title;
@@ -25,127 +25,108 @@ class ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final theme = Theme.of(context).colorScheme;
 
-    // Responsive sizing based on screen width
-    final bool isSmallScreen = screenWidth < 360;
-    final bool isMediumScreen = screenWidth < 400;
-
-    final double iconSize = isSmallScreen ? 16 : (isMediumScreen ? 18 : 20);
-    final double iconPadding = isSmallScreen ? 8 : (isMediumScreen ? 10 : 12);
-    final double spacing = isSmallScreen ? 8 : (isMediumScreen ? 12 : 16);
-
-    return Material(
-      color: Colors.transparent,
+    return Card(
+      elevation: 2,
+      shadowColor: theme.shadow.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: theme.outline.withOpacity(0.08),
+          width: 1,
+        ),
+      ),
+      color: theme.surface,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark
-                ? Theme.of(context).colorScheme.surface
-                : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon
-                Container(
-                  padding: EdgeInsets.all(iconPadding),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: iconSize,
-                  ),
-                ),
-
-               const  SizedBox(height: 15),
-
-                // Value - Responsive font size
-                Text(
-                  customValue ?? (isPercentage ? '$value%' : value.toString()),
-                  style: TextStyle(
-                    fontSize: _getValueFontSize(screenWidth),
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    height: 1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                SizedBox(height: isSmallScreen ? 2 : 4),
-
-                // Title - Responsive font size
-                Text(
-                  title.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: _getTitleFontSize(screenWidth),
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                    letterSpacing: 0.8,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                SizedBox(height: isSmallScreen ? 2 : 4),
-
-                // Subtitle - Responsive font size
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: _getSubtitleFontSize(screenWidth),
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.surface,
+                theme.surface,
+                theme.surfaceContainerHighest.withOpacity(0.3),
               ],
             ),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      color: color,
+                      size: 20,
+                    ),
+                  ),
+                  if (isPercentage)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$value%',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                customValue ?? value.toString(),
+                style: GoogleFonts.lexendDeca(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: theme.onSurface,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: GoogleFonts.lexendDeca(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: theme.onSurface.withOpacity(0.8),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                subtitle,
+                style: GoogleFonts.lexendDeca(
+                  fontSize: 12,
+                  color: theme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  double _getValueFontSize(double screenWidth) {
-    if (screenWidth < 360) return 20;    // Very small screens
-    if (screenWidth < 400) return 22;    // Small screens
-    if (screenWidth < 600) return 24;    // Medium screens
-    return 28;                           // Large screens
-  }
-
-  double _getTitleFontSize(double screenWidth) {
-    if (screenWidth < 360) return 10;    // Very small screens
-    if (screenWidth < 400) return 11;    // Small screens
-    if (screenWidth < 600) return 12;    // Medium screens
-    return 13;                           // Large screens
-  }
-
-  double _getSubtitleFontSize(double screenWidth) {
-    if (screenWidth < 360) return 9;     // Very small screens
-    if (screenWidth < 400) return 10;    // Small screens
-    if (screenWidth < 600) return 11;    // Medium screens
-    return 12;                           // Large screens
   }
 }

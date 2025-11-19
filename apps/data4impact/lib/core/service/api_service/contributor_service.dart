@@ -31,4 +31,26 @@ class ContributorService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> getContributorDetails(
+      String contributorId) async {
+    try {
+      final cookie = await secureStorage.read(key: 'session_cookie');
+
+      if (cookie == null || cookie.isEmpty) {
+        throw Exception('No authentication cookie found');
+      }
+
+      final response = await apiClient.get(
+        '/contributors/$contributorId',
+        queryParameters: {'detail': true},
+        options: Options(headers: {'Cookie': cookie}),
+      );
+
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      print('Error fetching contributor details: ${e.message}');
+      rethrow;
+    }
+  }
 }

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class HomeView extends StatefulWidget {
@@ -69,7 +70,7 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = Theme.of(context).colorScheme;
     return BlocListener<HomeCubit, HomeState>(
       listenWhen: (previous, current) {
         return previous.selectedProject != current.selectedProject;
@@ -82,371 +83,342 @@ class _HomeViewState extends State<HomeView> {
         }
       },
       child: Scaffold(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.surface,
         drawer: const ProjectDrawer(),
-        appBar: AppBar(
-          forceMaterialTransparency: true,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Dashboard',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                'Your assignments, progress, and upcoming deadlines',
-                style: GoogleFonts.lexendDeca(
-                  fontSize: 8,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            BlocBuilder<HomeCubit, HomeState>(
-              builder: (context, state) {
-                if (state.isSyncing) {
-                  return _buildSyncProgressIndicator(context, state);
-                }
-
-                if (state.pendingSyncCount > 0) {
-                  return Badge(
-                    label: Text(state.pendingSyncCount.toString()),
-                    child: IconButton(
-                      icon: const Icon(Icons.sync_problem),
-                      onPressed: () {
-                        _showSyncStatusDialog(context, state);
-                      },
-                      tooltip: '${state.pendingSyncCount} pending sync',
+        body: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: theme.primary,
+          backgroundColor: theme.surface,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                pinned: true,
+                snap: false,
+                centerTitle: false,
+                backgroundColor: theme.surface,
+                surfaceTintColor: theme.surface,
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dashboard',
+                      style: GoogleFonts.lexendDeca(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: theme.onSurface,
+                      ),
                     ),
-                  );
-                }
-                return IconButton(
-                  icon: const Icon(Icons.sync),
-                  onPressed: () => context.read<HomeCubit>().manualSync(),
-                  tooltip: 'Sync Now',
-                );
-              },
-            ),
-
-            // Join Button
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primary.withAlpha(100),
-                  foregroundColor: Theme.of(context).colorScheme.primary,
-                  textStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  elevation: 0,
-                ),
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute<Widget>(
-                      builder: (context) => const JoinWithLinkPage(),
+                    Text(
+                      'Your assignments & progress',
+                      style: GoogleFonts.lexendDeca(
+                        fontSize: 12,
+                        color: theme.onSurfaceVariant,
+                      ),
                     ),
-                  );
-                },
-                child: const Text(
-                  'Join',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  ],
                 ),
-              ),
-            )
-          ],
-        ),
-        body: BlocConsumer<HomeCubit, HomeState>(
-          listener: (context, state) {},
-          builder: (context, state) {
-            // Calculate collector statistics
-            final totalCollectors = _getTotalCollectors(state.collectors);
-            final inProgressCollectors =
-                _getInProgressCollectors(state.collectors);
-            final completedCollectors =
-                _getCompletedCollectors(state.collectors);
-            final totalResponses = _getTotalResponses(state.collectors);
-
-            final cardTitles = [
-              'Total Collectors',
-              'In Progress',
-              'Completed',
-              'Total Responses',
-            ];
-
-            final cardValues = [
-              totalCollectors,
-              inProgressCollectors,
-              completedCollectors,
-              totalResponses,
-            ];
-
-            final cardSubtitles = [
-              'All assignments',
-              'Active assignments',
-              'Finished assignments',
-              'All responses collected',
-            ];
-
-            return Stack(
-              children: [
-                RefreshIndicator(
-                  onRefresh: _onRefresh,
-                  color: Theme.of(context).colorScheme.primary,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      // Offline Banner
-                      if (state.isOffline)
-                        SliverToBoxAdapter(
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                              horizontal: 16,
-                            ),
-                            color: Colors.orange[100],
-                            child: Row(
-                              children: [
-                                const Icon(Icons.wifi_off,
-                                    size: 16, color: Colors.orange),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Offline Mode',
-                                  style: TextStyle(
-                                    color: Colors.orange[800],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Responses will be synced when online',
-                                    style: TextStyle(
-                                      color: Colors.orange[700],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                actions: [
+                  BlocBuilder<HomeCubit, HomeState>(
+                    builder: (context, state) {
+                      if (state.isSyncing) {
+                        return Container(
+                          margin: const EdgeInsets.only(right: 16),
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.primary,
                             ),
                           ),
-                        ),
+                        );
+                      }
 
-                      // Main Content with Skeletonizer
-                      SliverPadding(
+                      if (state.pendingSyncCount > 0) {
+                        return IconButton(
+                          icon: Badge(
+                            label: Text(state.pendingSyncCount.toString()),
+                            child: Icon(HugeIcons.strokeRoundedCloudUpload,
+                                color: theme.primary),
+                          ),
+                          onPressed: () =>
+                              _showSyncStatusDialog(context, state),
+                          tooltip: '${state.pendingSyncCount} pending sync',
+                        );
+                      }
+                      return IconButton(
+                        icon: Icon(HugeIcons.strokeRoundedCloudUpload,
+                            color: theme.onSurfaceVariant),
+                        onPressed: () => context.read<HomeCubit>().manualSync(),
+                        tooltip: 'Sync Now',
+                      );
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16, left: 8),
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            Skeletonizer(
-                              enabled: state.fetchingCollectors ||
-                                  state.fetchingProjects,
-                              child: Column(
-                                children: [
-                                  GridView.builder(
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    shrinkWrap: true,
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      mainAxisSpacing: 10,
-                                      crossAxisSpacing: 5,
-                                      childAspectRatio: 1.3,
-                                    ),
-                                    itemCount: 4, // Always 4 cards
-                                    itemBuilder: (context, index) {
-                                      final title = cardTitles[index];
-                                      final value = (state.fetchingCollectors ||
-                                              state.fetchingProjects)
-                                          ? 0
-                                          : cardValues[index];
-                                      final subtitle = cardSubtitles[index];
+                      ),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute<Widget>(
+                            builder: (context) => const JoinWithLinkPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(HugeIcons.strokeRoundedLink01, size: 18),
+                      label: Text(
+                        'Join',
+                        style: GoogleFonts.lexendDeca(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-                                      return AnimationConfiguration
-                                          .staggeredGrid(
-                                        position: index,
-                                        duration:
-                                            const Duration(milliseconds: 300),
-                                        columnCount: 2,
-                                        child: FadeInAnimation(
-                                          child: ActivityCard(
-                                            title: title,
-                                            value: value,
-                                            subtitle: subtitle,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Theme.of(context).colorScheme.surface,
-                                      borderRadius: BorderRadius.circular(12),
+              // Offline Banner
+              BlocBuilder<HomeCubit, HomeState>(
+                builder: (context, state) {
+                  if (state.isOffline) {
+                    return SliverToBoxAdapter(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border:
+                              Border.all(color: Colors.orange.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(HugeIcons.strokeRoundedWifi01,
+                                size: 20, color: Colors.orange),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'You are offline',
+                                    style: GoogleFonts.lexendDeca(
+                                      color: Colors.orange[800],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
                                     ),
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                    child: AssignmentView(
-                                        collectors: state.collectors),
+                                  ),
+                                  Text(
+                                    'Responses will be synced automatically when you are back online.',
+                                    style: GoogleFonts.lexendDeca(
+                                      color: Colors.orange[800],
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ]),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-                // Sync Progress Overlay
-                if (state.isSyncing)
-                  Positioned(
-                    bottom: 20,
-                    right: 20,
-                    child: _buildSyncProgressCard(context, state),
-                  ),
-              ],
-            );
-          },
-        ),
-
-        // Floating Sync Button for easy access
-        floatingActionButton: BlocBuilder<HomeCubit, HomeState>(
-          builder: (context, state) {
-            if (state.pendingSyncCount > 0 && !state.isSyncing) {
-              return FloatingActionButton(
-                onPressed: () => context.read<HomeCubit>().manualSync(),
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                tooltip: 'Sync ${state.pendingSyncCount} pending responses',
-                child: Badge(
-                  label: Text(state.pendingSyncCount.toString()),
-                  child: const Icon(Icons.sync),
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSyncProgressIndicator(BuildContext context, HomeState state) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            value: state.syncProgress,
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
-          ),
-        ),
-        Text(
-          '${(state.syncProgress * 100).toInt()}%',
-          style: const TextStyle(
-            fontSize: 8,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSyncProgressCard(BuildContext context, HomeState state) {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                value: state.syncProgress,
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary,
-                ),
+                    );
+                  }
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
               ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Syncing...',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  '${(state.syncProgress * 100).toInt()}% complete',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.7),
-                  ),
-                ),
-              ],
-            ),
-          ],
+
+              // Main Content
+              BlocBuilder<HomeCubit, HomeState>(
+                builder: (context, state) {
+                  // Calculate collector statistics
+                  final totalCollectors = _getTotalCollectors(state.collectors);
+                  final inProgressCollectors =
+                      _getInProgressCollectors(state.collectors);
+                  final completedCollectors =
+                      _getCompletedCollectors(state.collectors);
+                  final totalResponses = _getTotalResponses(state.collectors);
+
+                  final cardTitles = [
+                    'Total Collectors',
+                    'In Progress',
+                    'Completed',
+                    'Total Responses',
+                  ];
+
+                  final cardValues = [
+                    totalCollectors,
+                    inProgressCollectors,
+                    completedCollectors,
+                    totalResponses,
+                  ];
+
+                  final cardSubtitles = [
+                    'All assignments',
+                    'Active assignments',
+                    'Finished assignments',
+                    'All responses collected',
+                  ];
+
+                  final cardIcons = [
+                    HugeIcons.strokeRoundedTask01,
+                    HugeIcons.strokeRoundedTime01,
+                    HugeIcons.strokeRoundedCheckmarkCircle02,
+                    HugeIcons.strokeRoundedNote01,
+                  ];
+
+                  final cardColors = [
+                    Colors.blue,
+                    Colors.orange,
+                    Colors.green,
+                    Colors.purple,
+                  ];
+
+                  return SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        Skeletonizer(
+                          enabled: state.fetchingCollectors ||
+                              state.fetchingProjects,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Overview',
+                                style: GoogleFonts.lexendDeca(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              GridView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  childAspectRatio: 1.1,
+                                ),
+                                itemCount: 4,
+                                itemBuilder: (context, index) {
+                                  final title = cardTitles[index];
+                                  final value = (state.fetchingCollectors ||
+                                          state.fetchingProjects)
+                                      ? 0
+                                      : cardValues[index];
+                                  final subtitle = cardSubtitles[index];
+
+                                  return AnimationConfiguration.staggeredGrid(
+                                    position: index,
+                                    duration: const Duration(milliseconds: 300),
+                                    columnCount: 2,
+                                    child: FadeInAnimation(
+                                      child: ActivityCard(
+                                        title: title,
+                                        value: value,
+                                        subtitle: subtitle,
+                                        icon: cardIcons[index],
+                                        color: cardColors[index],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (state.collectors.isNotEmpty) ...[
+                                const SizedBox(height: 32),
+                                Text(
+                                  'Recent Assignments',
+                                  style: GoogleFonts.lexendDeca(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                AssignmentView(collectors: state.collectors),
+                              ],
+                              const SizedBox(height: 80), // Bottom padding
+                            ],
+                          ),
+                        ),
+                      ]),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _showSyncStatusDialog(BuildContext context, HomeState state) async {
+    final theme = Theme.of(context).colorScheme;
     await showDialog<Widget>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sync Status'),
+        backgroundColor: theme.surface,
+        surfaceTintColor: theme.surface,
+        title: Text(
+          'Sync Status',
+          style: GoogleFonts.lexendDeca(fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pending sync: ${state.pendingSyncCount} response(s)'),
-            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(HugeIcons.strokeRoundedCloudUpload,
+                    color: theme.primary, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${state.pendingSyncCount} response(s) pending upload',
+                    style: GoogleFonts.lexendDeca(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
             if (state.pendingSyncCount > 0)
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  context.read<HomeCubit>().manualSync();
-                },
-                child: const Text('Sync Now'),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.read<HomeCubit>().manualSync();
+                  },
+                  icon: const Icon(HugeIcons.strokeRoundedRefresh),
+                  label: Text(
+                    'Sync Now',
+                    style: GoogleFonts.lexendDeca(fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(
+              'Close',
+              style: GoogleFonts.lexendDeca(
+                  color: theme.onSurfaceVariant, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),

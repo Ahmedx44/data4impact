@@ -463,6 +463,114 @@ class _NavigationViewState extends State<NavigationView>
     }
   }
 
+  // Responsive bottom navigation bar with the new UI and ALWAYS visible text
+  Widget _buildResponsiveBottomNavigationBar() {
+    final theme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Determine the device type based on screen width
+    final bool isTablet = screenWidth >= 600;
+    final bool isLargeTablet = screenWidth >= 1024;
+    final bool isSmallPhone = screenWidth < 360;
+
+    // Responsive sizing
+    final double iconSize =
+        isTablet ? (isLargeTablet ? 26.0 : 24.0) : (isSmallPhone ? 20.0 : 22.0);
+
+    final double fontSize =
+        isTablet ? (isLargeTablet ? 13.0 : 12.0) : (isSmallPhone ? 10.0 : 11.0);
+
+    final double paddingVertical =
+        isTablet ? (isLargeTablet ? 16.0 : 14.0) : (isSmallPhone ? 10.0 : 12.0);
+
+    final double itemSpacing = isTablet ? 6.0 : 4.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(items.length, (index) {
+              final item = items[index];
+              final isSelected = index == visit;
+
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          visit = index;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          vertical: paddingVertical,
+                          horizontal: 4.0,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: isSelected
+                              ? theme.primary.withOpacity(0.1)
+                              : Colors.transparent,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              item.icon as IconData,
+                              size: iconSize,
+                              color: isSelected
+                                  ? theme.primary
+                                  : theme.onSurface.withOpacity(0.7),
+                            ),
+                            SizedBox(height: itemSpacing),
+                            Text(
+                              item.title as String,
+                              style: TextStyle(
+                                fontSize: fontSize,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? theme.primary
+                                    : theme.onSurface.withOpacity(0.7),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -523,19 +631,7 @@ class _NavigationViewState extends State<NavigationView>
                 ),
                 bottomNavigationBar: _showStaticScreen
                     ? null
-                    : BottomBarDefault(
-                        items: items,
-                        backgroundColor: theme.surface,
-                        color: theme.onSurface,
-                        colorSelected: theme.primary,
-                        indexSelected: visit,
-                        paddingVertical: 15,
-                        onTap: (int index) {
-                          setState(() {
-                            visit = index;
-                          });
-                        },
-                      ),
+                    : _buildResponsiveBottomNavigationBar(), // Using the new custom UI with text
               );
             },
           );
