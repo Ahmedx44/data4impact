@@ -5,6 +5,7 @@ import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class ProjectDrawer extends StatefulWidget {
   const ProjectDrawer({super.key});
@@ -42,126 +43,147 @@ class _ProjectDrawerState extends State<ProjectDrawer> {
 
     return projects.where((project) {
       final titleMatch = project.title.toLowerCase().contains(query);
-      final descriptionMatch = project.description?.toLowerCase().contains(query) ?? false;
+      final descriptionMatch =
+          project.description?.toLowerCase().contains(query) ?? false;
       return titleMatch || descriptionMatch;
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final theme = Theme.of(context).colorScheme;
     final cubit = context.read<HomeCubit>();
 
     return Drawer(
-      width: MediaQuery.of(context).size.width * 0.8,
-      elevation: 16,
+      width: MediaQuery.of(context).size.width * 0.85,
+      elevation: 0,
+      backgroundColor: theme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark
-              ? theme.colorScheme.surface.withOpacity(0.95)
-              : theme.colorScheme.surface,
-          borderRadius: const BorderRadius.horizontal(
-            right: Radius.circular(24),
-          ),
-        ),
-        child: Column(
-          children: [
-            // Header with close button
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 36, 24, 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.1),
-                  ),
+      child: Column(
+        children: [
+          // Header with close button
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
+            decoration: BoxDecoration(
+              color: theme.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.outline.withOpacity(0.1),
                 ),
               ),
-              child: Row(
-                children: [
-                  Text(
-                    'My Projects',
-                    style: GoogleFonts.lexendDeca(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(Icons.close,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6)),
-                    onPressed: () => Navigator.pop(context),
-                    splashRadius: 20,
-                  ),
-                ],
-              ),
             ),
-
-            // Main content
-            Expanded(
-              child: BlocBuilder<HomeCubit, HomeState>(
-                builder: (context, state) {
-                  if (state.fetchingProjects) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
-                    );
-                  }
-
-                  if (state.projects.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.folder_off,
-                              size: 48,
-                              color: theme.colorScheme.onSurface.withOpacity(0.4)),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No projects available',
-                            style: GoogleFonts.lexendDeca(
-                              fontSize: 16,
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton(
-                            onPressed: cubit.fetchAllProjects,
-                            child: const Text('Refresh'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final filteredProjects = _filterProjects(state.projects, _searchQuery);
-
-                  if (filteredProjects.isEmpty && _searchQuery.isNotEmpty) {
-                    return Column(
-                      children: [
-                        // Search bar
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          child: _buildSearchField(theme),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    HugeIcons.strokeRoundedFolder01,
+                    color: theme.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'My Projects',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: theme.onSurface,
                         ),
-                        Center(
+                      ),
+                      Text(
+                        'Switch workspace',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 12,
+                          color: theme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(HugeIcons.strokeRoundedCancel01,
+                      color: theme.onSurfaceVariant),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+
+          // Main content
+          Expanded(
+            child: BlocBuilder<HomeCubit, HomeState>(
+              builder: (context, state) {
+                if (state.fetchingProjects) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(theme.primary),
+                    ),
+                  );
+                }
+
+                if (state.projects.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(HugeIcons.strokeRoundedFolderRemove,
+                            size: 48, color: theme.onSurface.withOpacity(0.4)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No projects available',
+                          style: GoogleFonts.lexendDeca(
+                            fontSize: 16,
+                            color: theme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: cubit.fetchAllProjects,
+                          icon: const Icon(HugeIcons.strokeRoundedRefresh),
+                          label: const Text('Refresh'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final filteredProjects =
+                    _filterProjects(state.projects, _searchQuery);
+
+                if (filteredProjects.isEmpty && _searchQuery.isNotEmpty) {
+                  return Column(
+                    children: [
+                      // Search bar
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: _buildSearchField(theme),
+                      ),
+                      Expanded(
+                        child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.search_off,
+                              Icon(HugeIcons.strokeRoundedSearch02,
                                   size: 48,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                                  color: theme.onSurface.withOpacity(0.4)),
                               const SizedBox(height: 16),
                               Text(
                                 'No projects found',
                                 style: GoogleFonts.lexendDeca(
                                   fontSize: 16,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                  color: theme.onSurface.withOpacity(0.6),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -169,196 +191,200 @@ class _ProjectDrawerState extends State<ProjectDrawer> {
                                 'Try a different search term',
                                 style: GoogleFonts.lexendDeca(
                                   fontSize: 14,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                  color: theme.onSurface.withOpacity(0.4),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    );
-                  }
-
-                  return Column(
-                    children: [
-                      // Search bar
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: _buildSearchField(theme),
                       ),
+                    ],
+                  );
+                }
 
-                      // Project count
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          children: [
-                            Text(
-                              '${filteredProjects.length} ${filteredProjects.length == 1 ? 'project' : 'projects'} found',
-                              style: GoogleFonts.lexendDeca(
-                                fontSize: 12,
-                                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                return Column(
+                  children: [
+                    // Search bar
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildSearchField(theme),
+                    ),
+
+                    // Project count
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        children: [
+                          Text(
+                            '${filteredProjects.length} ${filteredProjects.length == 1 ? 'project' : 'projects'} found',
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: theme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Project List
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredProjects.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final project = filteredProjects[index];
+                          final isSelected =
+                              state.selectedProject?.id == project.id;
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? theme.primary.withOpacity(0.05)
+                                  : theme.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected
+                                    ? theme.primary.withOpacity(0.2)
+                                    : theme.outline.withOpacity(0.1),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () {
+                                Navigator.pop(context);
 
-                      // Project List
-                      Expanded(
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                          itemCount: filteredProjects.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final project = filteredProjects[index];
-                            final isSelected =
-                                state.selectedProject?.id == project.id;
+                                if (!isSelected) {
+                                  try {
+                                    context
+                                        .read<HomeCubit>()
+                                        .switchProject(project);
 
-                            return Card(
-                              elevation: 0,
-                              margin: EdgeInsets.zero,
-                              color: isSelected
-                                  ? theme.colorScheme.primary.withOpacity(0.1)
-                                  : Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: isSelected
-                                    ? BorderSide(
-                                    color: theme.colorScheme.primary
-                                        .withOpacity(0.3),
-                                    width: 1)
-                                    : BorderSide.none,
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () {
-                                  Navigator.pop(context);
-
-                                  if (!isSelected) {
-                                    try {
-                                      context.read<HomeCubit>().switchProject(project);
-
-                                      // Refresh studies for the new project
-                                      final studyCubit = context.read<StudyCubit>();
-                                      studyCubit.fetchStudies(project.slug);
-
-                                    } catch (e) {
-                                      // Handle error (already shown via ToastService)
-                                    }
+                                    // Refresh studies for the new project
+                                    final studyCubit =
+                                        context.read<StudyCubit>();
+                                    studyCubit.fetchStudies(project.slug);
+                                  } catch (e) {
+                                    // Handle error (already shown via ToastService)
                                   }
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary
-                                              .withOpacity(0.08),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          Icons.folder_rounded,
-                                          size: 24,
-                                          color: isSelected
-                                              ? theme.colorScheme.primary
-                                              : theme.colorScheme.onSurface
-                                              .withOpacity(0.6),
-                                        ),
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? theme.primary
+                                            : theme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              project.title,
-                                              style: GoogleFonts.lexendDeca(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
-                                                color: theme.colorScheme.onSurface,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                      child: Icon(
+                                        HugeIcons.strokeRoundedFolder01,
+                                        size: 20,
+                                        color: isSelected
+                                            ? theme.onPrimary
+                                            : theme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            project.title,
+                                            style: GoogleFonts.lexendDeca(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.onSurface,
                                             ),
-                                            if (project.description != null &&
-                                                project.description!.isNotEmpty)
-                                              const SizedBox(height: 4),
-                                            if (project.description != null &&
-                                                project.description!.isNotEmpty)
-                                              Text(
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if (project.description != null &&
+                                              project.description!.isNotEmpty)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 4),
+                                              child: Text(
                                                 project.description!,
                                                 style: GoogleFonts.lexendDeca(
-                                                  fontSize: 13,
-                                                  color: theme.colorScheme
-                                                      .onSurface
-                                                      .withOpacity(0.6),
+                                                  fontSize: 12,
+                                                  color: theme.onSurfaceVariant,
                                                 ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
-                                          ],
-                                        ),
+                                            ),
+                                        ],
                                       ),
+                                    ),
+                                    if (isSelected)
                                       Icon(
-                                        Icons.chevron_right,
-                                        size: 24,
-                                        color: theme.colorScheme.onSurface
-                                            .withOpacity(0.4),
+                                        HugeIcons
+                                            .strokeRoundedCheckmarkCircle02,
+                                        size: 20,
+                                        color: theme.primary,
                                       ),
-                                    ],
-                                  ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                  ],
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  TextField _buildSearchField(ThemeData theme) {
+  Widget _buildSearchField(ColorScheme theme) {
     return TextField(
       controller: _searchController,
       decoration: InputDecoration(
         hintText: 'Search projects...',
-        prefixIcon: Icon(Icons.search,
-            color: theme.colorScheme.onSurface.withOpacity(0.4)),
+        hintStyle: GoogleFonts.lexendDeca(
+          color: theme.onSurfaceVariant.withOpacity(0.7),
+        ),
+        prefixIcon: Icon(HugeIcons.strokeRoundedSearch02,
+            color: theme.onSurfaceVariant),
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
-          icon: Icon(Icons.clear,
-              size: 20,
-              color: theme.colorScheme.onSurface.withOpacity(0.4)),
-          onPressed: () {
-            _searchController.clear();
-            setState(() {
-              _searchQuery = '';
-            });
-          },
-        )
+                icon: Icon(HugeIcons.strokeRoundedCancel01,
+                    size: 20, color: theme.onSurfaceVariant),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() {
+                    _searchQuery = '';
+                  });
+                },
+              )
             : null,
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         filled: true,
-        fillColor: theme.colorScheme.surfaceVariant
-            .withOpacity(0.4),
+        fillColor: theme.surfaceContainerHighest.withOpacity(0.5),
       ),
-      style: GoogleFonts.lexendDeca(),
+      style: GoogleFonts.lexendDeca(
+        color: theme.onSurface,
+      ),
     );
   }
 }
