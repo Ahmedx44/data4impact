@@ -1,6 +1,7 @@
 import 'package:data4impact/core/service/dialog_loading.dart';
 import 'package:data4impact/core/theme/color.dart';
-import 'package:data4impact/core/widget/AfiyaButton.dart';
+import 'package:data4impact/core/widget/custom_button.dart';
+
 import 'package:data4impact/features/forget_password/page/forget_password_page.dart';
 import 'package:data4impact/features/login/cubit/login_cubit.dart';
 import 'package:data4impact/features/login/cubit/login_state.dart';

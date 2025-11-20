@@ -1,10 +1,7 @@
-import 'package:data4impact/core/widget/AfiyaButton.dart';
+
+import 'package:data4impact/core/widget/custom_button.dart';
 import 'package:data4impact/features/data_collect/page/data_collection_page.dart';
 import 'package:data4impact/features/home/widget/actitity_card.dart';
-import 'package:data4impact/features/study_detail/widget/milestone_tracker.dart';
-import 'package:data4impact/features/study_detail/widget/response_time_distrubtion.dart';
-import 'package:data4impact/features/study_detail/widget/study_detail_actitity_card.dart';
-import 'package:data4impact/features/study_detail/widget/top_perfomer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -185,7 +182,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
             ),
           ),
 
-          // Continue Button (if not completed)
+          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.sizeOf(context).height*0.05)),
           if (widget.studyData['status'] != 'completed')
             SliverToBoxAdapter(
               child: Padding(

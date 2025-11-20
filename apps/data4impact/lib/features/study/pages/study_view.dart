@@ -241,8 +241,13 @@ class _StudyViewState extends State<StudyView>
                 } catch (e) {
                 }
 
-                return GestureDetector(
-                  onTap: () {
+                return StudyCard(
+                  title: study['name'] as String? ?? 'Untitled Study',
+                  description: study['description'] as String? ??
+                      'No description available',
+                  progress: progress,
+                  status: study['status'] as String? ?? 'unknown',
+                  callback: () {
                     final studyCubit = context.read<StudyCubit>();
                     final studyData =
                     studyCubit.getStudyById(study['_id'] as String);
@@ -259,30 +264,6 @@ class _StudyViewState extends State<StudyView>
                       );
                     }
                   },
-                  child: StudyCard(
-                    title: study['name'] as String? ?? 'Untitled Study',
-                    description: study['description'] as String? ??
-                        'No description available',
-                    progress: progress,
-                    status: study['status'] as String? ?? 'unknown',
-                    callback: () {
-                      final studyCubit = context.read<StudyCubit>();
-                      final studyData =
-                      studyCubit.getStudyById(study['_id'] as String);
-
-                      if (studyData != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute<Widget>(
-                            builder: (context) => StudyDetailPage(
-                              studyId: study['_id'] as String,
-                              studyData: studyData,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
                 );
               },
             ),
@@ -359,8 +340,13 @@ class _StudyViewState extends State<StudyView>
                 } catch (e) {
                 }
 
-                return GestureDetector(
-                  onTap: () {
+                return StudyCard(
+                  title: study['name'] as String? ?? 'Untitled Study',
+                  description: study['description'] as String? ??
+                      'No description available',
+                  progress: progress,
+                  status: study['status'] as String? ?? 'unknown',
+                  callback: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute<Widget>(
@@ -371,24 +357,6 @@ class _StudyViewState extends State<StudyView>
                       ),
                     );
                   },
-                  child: StudyCard(
-                    title: study['name'] as String? ?? 'Untitled Study',
-                    description: study['description'] as String? ??
-                        'No description available',
-                    progress: progress,
-                    status: study['status'] as String? ?? 'unknown',
-                    callback: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<Widget>(
-                          builder: (context) => StudyDetailPage(
-                            studyId: study['_id'] as String,
-                            studyData: study,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
                 );
               },
             ),

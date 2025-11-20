@@ -1,10 +1,11 @@
+import 'package:data4impact/core/widget/custom_button.dart';
 import 'package:data4impact/features/forget_password/cubit/forget_password_cubit.dart';
 import 'package:data4impact/features/forget_password/cubit/forget_password_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:data4impact/core/service/toast_service.dart';
-import 'package:data4impact/core/widget/AfiyaButton.dart';
+
 
 class ForgetPasswordView extends StatefulWidget {
   const ForgetPasswordView({super.key});

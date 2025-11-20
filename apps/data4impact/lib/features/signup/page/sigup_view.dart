@@ -1,5 +1,5 @@
 import 'package:data4impact/core/service/dialog_loading.dart';
-import 'package:data4impact/core/widget/AfiyaButton.dart';
+import 'package:data4impact/core/widget/custom_button.dart';
 import 'package:data4impact/features/login/page/login_page.dart';
 import 'package:data4impact/features/signup/cubit/signup_cubit.dart';
 import 'package:data4impact/features/signup/cubit/signup_state.dart';
