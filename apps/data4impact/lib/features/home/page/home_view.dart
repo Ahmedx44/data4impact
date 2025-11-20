@@ -75,8 +75,6 @@ class _HomeViewState extends State<HomeView> {
       listener: (context, state) {
         if (state.selectedProject != null) {
           context.read<StudyCubit>().fetchStudies(state.selectedProject!.slug);
-     /*     // Fetch collectors for the new project
-          context.read<HomeCubit>().fetchMyCollectors();*/
         }
       },
       child: Scaffold(
@@ -299,7 +297,7 @@ class _HomeViewState extends State<HomeView> {
                               GridView.builder(
                                 physics: const NeverScrollableScrollPhysics(),
                                 shrinkWrap: true,
-                                padding: EdgeInsets.all(0),
+                                padding: const EdgeInsets.all(0),
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
@@ -330,20 +328,20 @@ class _HomeViewState extends State<HomeView> {
                                   );
                                 },
                               ),
-                              if (state.collectors.isNotEmpty) ...[
-                                const SizedBox(height: 32),
-                                Text(
-                                  'Recent Assignments',
-                                  style: GoogleFonts.lexendDeca(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.onSurface,
-                                  ),
+
+                              // Always show the assignments section, but conditionally show skeleton or content
+                              const SizedBox(height: 32),
+                              Text(
+                                'Recent Assignments',
+                                style: GoogleFonts.lexendDeca(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.onSurface,
                                 ),
-                                const SizedBox(height: 16),
-                                AssignmentView(collectors: state.collectors),
-                              ],
-                              const SizedBox(height: 80), // Bottom padding
+                              ),
+                              const SizedBox(height: 16),
+                              AssignmentView(collectors: state.collectors),
+                              const SizedBox(height: 80),
                             ],
                           ),
                         ),

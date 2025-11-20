@@ -20,7 +20,7 @@ class HomeState {
   const HomeState({
     this.isLoading = false,
     this.fetchingProjects = false,
-    this.fetchingCollectors = false,
+    this.fetchingCollectors = true,
     this.isOffline = false,
     this.isSyncing = false,
     this.syncProgress = 0.0,

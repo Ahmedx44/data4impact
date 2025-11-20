@@ -343,7 +343,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> fetchAllProjects() async {
-    emit(state.copyWith(fetchingProjects:true,isLoading: true));
+    emit(state.copyWith(fetchingCollectors:true,isLoading: true,fetchingProjects: true));
 
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
@@ -361,6 +361,7 @@ class HomeCubit extends Cubit<HomeState> {
             state.copyWith(
               isLoading: false,
               fetchingProjects:false,
+              fetchingCollectors: false,
               projects: [],
               selectedProject: null,
               isOffline: false,
@@ -394,6 +395,7 @@ class HomeCubit extends Cubit<HomeState> {
           state.copyWith(
             isLoading: false,
             fetchingProjects:false,
+            fetchingCollectors: false,
             projects: projects,
             selectedProject: selectedProject,
             isOffline: false,
@@ -416,6 +418,7 @@ class HomeCubit extends Cubit<HomeState> {
           state.copyWith(
             isLoading: false,
             fetchingProjects:false,
+            fetchingCollectors: false,
             projects: projects,
             selectedProject: selectedProject,
             isOffline: false,
@@ -437,6 +440,7 @@ class HomeCubit extends Cubit<HomeState> {
         state.copyWith(
           isLoading: false,
           fetchingProjects:false,
+          fetchingCollectors: false,
           projects: projects,
           selectedProject: selectedProject,
           isOffline: true,
@@ -446,9 +450,14 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> fetchMyCollectors() async {
+    print('debug: fetchMyCollectors started');
+
     if (state.selectedProject == null) {
+      print('debug: No selected project, returning early');
       return;
     }
+
+    print('debug: Selected project ID: ${state.selectedProject!.id}');
 
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
@@ -456,79 +465,107 @@ class HomeCubit extends Cubit<HomeState> {
     );
 
     final isConnected = await connected.hasInternetConnection();
+    print('debug: Internet connection status: $isConnected');
 
     emit(state.copyWith(fetchingCollectors: true));
+    print('debug: Set fetchingCollectors to true');
 
     try {
       if (isConnected) {
+        print('debug: Online mode - fetching from API');
         // Online mode - fetch from API and save to local storage
         final collectors = await homeService.getMyCollectors(
           project: state.selectedProject!.id,
         );
 
+        print('debug: API response received, collectors count: ${collectors.length}');
+
         // Save to offline storage
+        print('debug: Saving collectors to offline storage');
         await OfflineModeDataRepo().saveCollectors(
           state.selectedProject!.id,
           collectors,
         );
+        print('debug: Collectors saved to offline storage');
 
         emit(state.copyWith(
           collectors: collectors,
           fetchingCollectors: false,
-        ),);
+        ));
+        print('debug: Updated state with collectors and set fetchingCollectors to false');
+
       } else {
+        print('debug: Offline mode - loading from local storage');
         // Offline mode - load from local storage
         final savedCollectors = await OfflineModeDataRepo().getSavedCollectors(
           state.selectedProject!.id,
         );
+
+        print('debug: Loaded saved collectors count: ${savedCollectors.length}');
 
         emit(state.copyWith(
           collectors: savedCollectors as List<Map<String,dynamic>>,
           fetchingCollectors: false,
           isOffline: true,
         ));
+        print('debug: Updated state with saved collectors and set fetchingCollectors to false');
 
         if (savedCollectors.isEmpty) {
+          print('debug: No cached collectors data available offline');
           ToastService.showWarningToast(
             message: 'No cached collectors data available offline',
           );
         } else {
+          print('debug: Showing cached collectors data');
           ToastService.showInfoToast(
             message: 'Showing cached collectors data',
           );
         }
       }
     } catch (e) {
+      print('debug: Error occurred: $e');
+      print('debug: Error type: ${e.runtimeType}');
+
       // If online fetch fails, try to load from cache
       if (isConnected) {
+        print('debug: Online fetch failed, trying to load from cache');
         try {
           final savedCollectors = await OfflineModeDataRepo().getSavedCollectors(
             state.selectedProject!.id,
           );
 
+          print('debug: Cache load successful, count: ${savedCollectors.length}');
+
           emit(state.copyWith(
             collectors: savedCollectors as List<Map<String,dynamic>>,
             fetchingCollectors: false,
           ));
+          print('debug: Updated state with cached collectors');
 
           ToastService.showWarningToast(
             message: 'Using cached data due to network error',
           );
         } catch (cacheError) {
+          print('debug: Cache load also failed: $cacheError');
           // Both online and cache failed
           emit(state.copyWith(
             fetchingCollectors: false,
           ));
+          print('debug: Set fetchingCollectors to false after both failures');
           ToastService.showErrorToast(message: 'Failed to fetch collectors');
         }
       } else {
+        print('debug: Offline mode and cache failed');
         // Offline mode and cache failed
         emit(state.copyWith(
           fetchingCollectors: false,
         ));
+        print('debug: Set fetchingCollectors to false after offline failure');
         ToastService.showErrorToast(message: 'No cached collectors data available');
       }
     }
+
+    print('debug: fetchMyCollectors completed');
   }
 
   Future<void> switchProject(Project project) async {
@@ -561,45 +598,6 @@ class HomeCubit extends Cubit<HomeState> {
       return result != ConnectivityResult.none;
     } catch (e) {
       return false;
-    }
-  }
-
-  Future<void> refreshData() async {
-    final bool isOnline = await _isConnected;
-
-    emit(state.copyWith(isOffline: !isOnline));
-
-    if (isOnline) {
-      await fetchAllProjects();
-      await fetchMyCollectors();
-    } else {
-      ToastService.showInfoToast(message: 'No internet connection available');
-
-      // Load projects from cache
-      final projects = await OfflineModeDataRepo().getSavedAllProjects();
-      final currentProjectId = await authService.getCurrentProjectId();
-      Project? selectedProject;
-
-      if (currentProjectId != null && projects.isNotEmpty) {
-        selectedProject = projects.firstWhere(
-              (p) => p.id == currentProjectId,
-        );
-      }
-
-      // Load collectors from cache if we have a selected project
-      List<dynamic> collectors = [];
-      if (selectedProject != null) {
-        collectors = await OfflineModeDataRepo().getSavedCollectors(selectedProject.id);
-      }
-
-      emit(
-        state.copyWith(
-          projects: projects,
-          selectedProject: selectedProject,
-          collectors: collectors as List<Map<String,dynamic>>,
-          isOffline: true,
-        ),
-      );
     }
   }
 
