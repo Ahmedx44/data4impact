@@ -5,7 +5,6 @@ import 'package:data4impact/features/team/cubit/team_cubit.dart';
 import 'package:data4impact/features/team/cubit/team_state.dart';
 import 'package:data4impact/features/team/widget/teams_stat_card.dart';
 import 'package:data4impact/features/home/cubit/home_cubit.dart';
-import 'package:data4impact/features/home/cubit/home_state.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +13,7 @@ import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+
 
 class TeamDetailView extends StatefulWidget {
   final TeamModel team;
@@ -29,22 +28,23 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   @override
   void initState() {
     super.initState();
-    // Load team members when view initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TeamCubit>().getTeamMembers(widget.team.id);
+      final teamCubit = context.read<TeamCubit>();
+      teamCubit.clearTeamDetail();
+      teamCubit.getTeamMembers(widget.team.id);
     });
   }
 
   @override
   void dispose() {
-    // Clear team detail state when leaving the view
     context.read<TeamCubit>().clearTeamDetail();
     super.dispose();
   }
 
   double _calculatePerformance(List<MemberModel> members) {
     if (members.isEmpty) return 0.0;
-    final activeMembers = members.where((member) => member.roles.isNotEmpty).length;
+    final activeMembers =
+        members.where((member) => member.roles.isNotEmpty).length;
     return (activeMembers / members.length) * 100;
   }
 
@@ -55,11 +55,17 @@ class _TeamDetailViewState extends State<TeamDetailView> {
   }
 
   int _calculatePendingMembers(List<MemberModel> members) {
-    return members.where((member) => member.roles.isEmpty || !member.roles.contains('pending')).length;
+    return members
+        .where((member) =>
+            member.roles.isEmpty || !member.roles.contains('pending'))
+        .length;
   }
 
   int _getInProgressStudiesCount(List<dynamic> studies) {
-    return studies.where((study) => study['status']?.toString().toLowerCase() == 'inprogress').length;
+    return studies
+        .where((study) =>
+            study['status']?.toString().toLowerCase() == 'inprogress')
+        .length;
   }
 
   Future<void> _exportToCSV(TeamState teamState) async {
@@ -100,7 +106,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
             final status = await Permission.manageExternalStorage.request();
             if (!status.isGranted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Storage permission is required to download CSV')),
+                const SnackBar(
+                    content:
+                        Text('Storage permission is required to download CSV')),
               );
               return;
             }
@@ -111,7 +119,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
             final status = await Permission.storage.request();
             if (!status.isGranted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Storage permission is required to download CSV')),
+                const SnackBar(
+                    content:
+                        Text('Storage permission is required to download CSV')),
               );
               return;
             }
@@ -161,7 +171,6 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         headers: headers,
         rows: rows,
       );
-
     } catch (e) {
       print('Export error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -216,7 +225,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
 
       if (filePath == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save file. Please check storage permissions.')),
+          const SnackBar(
+              content: Text(
+                  'Failed to save file. Please check storage permissions.')),
         );
         return;
       }
@@ -237,10 +248,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File was not created. Please try again.')),
+          const SnackBar(
+              content: Text('File was not created. Please try again.')),
         );
       }
-
     } catch (e) {
       print('Save CSV error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -249,7 +260,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
-  Future<String?> _saveForAndroidLegacy(String filename, String csvContent) async {
+  Future<String?> _saveForAndroidLegacy(
+      String filename, String csvContent) async {
     try {
       final downloadDir = Directory('/storage/emulated/0/Download');
       if (!await downloadDir.exists()) {
@@ -266,7 +278,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     return null;
   }
 
-  Future<String?> _saveForAndroid11Plus(String filename, String csvContent) async {
+  Future<String?> _saveForAndroid11Plus(
+      String filename, String csvContent) async {
     try {
       final downloadDir = Directory('/storage/emulated/0/Download');
       if (!await downloadDir.exists()) {
@@ -311,20 +324,23 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
-  Widget _buildStudyStat(IconData icon, String text, {Color? color, required BuildContext context}) {
+  Widget _buildStudyStat(IconData icon, String text,
+      {Color? color, required BuildContext context}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           icon,
           size: 12,
-          color: color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          color:
+              color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
         ),
         const SizedBox(width: 4),
         Text(
           text,
           style: TextStyle(
-            color: color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: color ??
+                Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             fontSize: 11,
             fontWeight: FontWeight.w500,
           ),
@@ -384,7 +400,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                     icon: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -411,10 +430,13 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                 // When members are loaded and expanded, load their studies
                 for (var member in teamState.currentTeamMembers) {
                   if (teamState.expandedMembers[member.id] == true &&
-                      (teamState.currentTeamMemberStudies[member.id] ?? []).isEmpty) {
+                      (teamState.currentTeamMemberStudies[member.id] ?? [])
+                          .isEmpty) {
                     // Get collectors from home state and load studies
                     final homeState = context.read<HomeCubit>().state;
-                    context.read<TeamCubit>().getMemberStudies(member.id, homeState.collectors);
+                    context
+                        .read<TeamCubit>()
+                        .getMemberStudies(member.id, homeState.collectors);
                   }
                 }
               },
@@ -425,8 +447,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
               return teamState.isLoading
                   ? _buildLoadingState()
                   : teamState.error != null
-                  ? _buildErrorState(teamState.error!)
-                  : _buildContent(teamState);
+                      ? _buildErrorState(teamState.error!)
+                      : _buildContent(teamState);
             },
           ),
         ),
@@ -447,7 +469,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           Text(
             'Loading Team Members...',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+              color:
+                  Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
               fontSize: 16,
             ),
           ),
@@ -489,17 +512,20 @@ class _TeamDetailViewState extends State<TeamDetailView> {
               error,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
                 fontSize: 14,
               ),
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: () => context.read<TeamCubit>().refreshTeamMembers(widget.team.id),
+              onPressed: () =>
+                  context.read<TeamCubit>().refreshTeamMembers(widget.team.id),
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
               child: const Text('Try Again'),
             ),
@@ -580,9 +606,11 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -632,7 +660,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                 children: [
                   // Member Header (Clickable)
                   InkWell(
-                    onTap: () => context.read<TeamCubit>().toggleMemberExpansion(member.id),
+                    onTap: () => context
+                        .read<TeamCubit>()
+                        .toggleMemberExpansion(member.id),
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -643,7 +673,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -662,7 +695,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                 Text(
                                   member.fullName,
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -671,7 +705,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                 Text(
                                   member.user.email,
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.7),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -681,39 +718,53 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                   runSpacing: 4,
                                   children: [
                                     ...member.roles.map((role) => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: _getRoleColor(role, context),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        role.toUpperCase(),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    )),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: _getRoleColor(role, context),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            role.toUpperCase(),
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        )),
                                     if (member.attributes.isNotEmpty)
-                                      ...member.attributes.entries.map((entry) => Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.surfaceVariant,
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(
-                                            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          '${entry.key}: ${entry.value}',
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      )),
+                                      ...member.attributes.entries
+                                          .map((entry) => Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .surfaceVariant,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  border: Border.all(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .outline
+                                                        .withOpacity(0.1),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  '${entry.key}: ${entry.value}',
+                                                  style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              )),
                                   ],
                                 ),
                               ],
@@ -725,7 +776,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                             children: [
                               if (inProgressStudiesCount > 0)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: Colors.orange.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
@@ -744,7 +796,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                 isExpanded
                                     ? Icons.expand_less_rounded
                                     : Icons.expand_more_rounded,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.5),
                                 size: 24,
                               ),
                             ],
@@ -771,9 +826,14 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                     value: studySelections.isNotEmpty &&
                                         studies.asMap().entries.every((entry) {
                                           final index = entry.key;
-                                          return index < studySelections.length ? studySelections[index] : false;
+                                          return index < studySelections.length
+                                              ? studySelections[index]
+                                              : false;
                                         }),
-                                    onChanged: (value) => context.read<TeamCubit>().toggleSelectAllStudies(member.id, value),
+                                    onChanged: (value) => context
+                                        .read<TeamCubit>()
+                                        .toggleSelectAllStudies(
+                                            member.id, value),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(4),
                                     ),
@@ -782,7 +842,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                   Text(
                                     'Select All Studies',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                       fontWeight: FontWeight.w500,
                                       fontSize: 14,
                                     ),
@@ -791,7 +853,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                   Text(
                                     '$inProgressStudiesCount in progress studies',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6),
                                       fontSize: 12,
                                     ),
                                   ),
@@ -804,25 +869,38 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                             ...studies.asMap().entries.map((entry) {
                               final studyIndex = entry.key;
                               final study = entry.value;
-                              final isSelected = studyIndex < studySelections.length
-                                  ? studySelections[studyIndex]
-                                  : false;
+                              final isSelected =
+                                  studyIndex < studySelections.length
+                                      ? studySelections[studyIndex]
+                                      : false;
 
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? Theme.of(context).colorScheme.primary.withOpacity(0.05)
-                                      : Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withOpacity(0.05)
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .surfaceVariant
+                                          .withOpacity(0.3),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outline
+                                        .withOpacity(0.1),
                                   ),
                                 ),
                                 child: Material(
                                   color: Colors.transparent,
                                   child: InkWell(
-                                    onTap: () => context.read<TeamCubit>().toggleStudySelection(member.id, studyIndex, !isSelected),
+                                    onTap: () => context
+                                        .read<TeamCubit>()
+                                        .toggleStudySelection(
+                                            member.id, studyIndex, !isSelected),
                                     borderRadius: BorderRadius.circular(8),
                                     child: Padding(
                                       padding: const EdgeInsets.all(12),
@@ -830,34 +908,51 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                         children: [
                                           Checkbox(
                                             value: isSelected,
-                                            onChanged: (value) => context.read<TeamCubit>().toggleStudySelection(member.id, studyIndex, value),
+                                            onChanged: (value) => context
+                                                .read<TeamCubit>()
+                                                .toggleStudySelection(member.id,
+                                                    studyIndex, value),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(4),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                             ),
                                           ),
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  study['name'] as String? ?? 'Unnamed Study',
+                                                  study['name'] as String? ??
+                                                      'Unnamed Study',
                                                   style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface,
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 4),
-                                                if (study['description'] != null && study['description'].toString().isNotEmpty)
+                                                if (study['description'] !=
+                                                        null &&
+                                                    study['description']
+                                                        .toString()
+                                                        .isNotEmpty)
                                                   Text(
-                                                    study['description'].toString(),
+                                                    study['description']
+                                                        .toString(),
                                                     style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.7),
                                                       fontSize: 12,
                                                     ),
                                                     maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
                                                 const SizedBox(height: 6),
                                                 Wrap(
@@ -869,17 +964,24 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                                       context: context,
                                                     ),
                                                     _buildStudyStat(
-                                                      HugeIcons.strokeRoundedLimitation,
+                                                      HugeIcons
+                                                          .strokeRoundedLimitation,
                                                       'Max: ${study['maxLimit'] ?? 0}',
                                                       context: context,
                                                     ),
                                                     _buildStudyStat(
                                                       Icons.circle_rounded,
-                                                      study['status'] as String? ?? '',
-                                                      color: _getStatusColor(study['status'] as String?, context),
+                                                      study['status']
+                                                              as String? ??
+                                                          '',
+                                                      color: _getStatusColor(
+                                                          study['status']
+                                                              as String?,
+                                                          context),
                                                       context: context,
                                                     ),
-                                                    if (study['allowOffline'] == true)
+                                                    if (study['allowOffline'] ==
+                                                        true)
                                                       _buildStudyStat(
                                                         Icons.wifi_off_rounded,
                                                         'Offline',
@@ -904,7 +1006,10 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceVariant
+                                    .withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -914,14 +1019,18 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     'Loading studies...',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
                                       fontSize: 14,
                                     ),
                                   ),
@@ -934,21 +1043,30 @@ class _TeamDetailViewState extends State<TeamDetailView> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceVariant
+                                    .withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.info_outline_rounded,
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.5),
                                     size: 20,
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     'No in progress studies',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
                                       fontSize: 14,
                                     ),
                                   ),
@@ -976,13 +1094,17 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+              color:
+                  Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.people_alt_outlined,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withOpacity(0.5),
             ),
           ),
           const SizedBox(height: 24),
@@ -999,7 +1121,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
             'This team has no members yet. Add members to get started with data collection.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
+              color:
+                  Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
               fontSize: 14,
             ),
           ),

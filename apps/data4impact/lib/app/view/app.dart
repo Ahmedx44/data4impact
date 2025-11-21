@@ -87,21 +87,18 @@ class App extends StatelessWidget {
                 profileService: profileService,
                 secureStorage: secureStorage),
           ),
-          BlocProvider(
-            create: (_) => TeamCubit(
-              teamService: teamService
-            )
-          ),
+          BlocProvider(create: (_) => TeamCubit(teamService: teamService)),
           BlocProvider(
             create: (_) => HomeCubit(
-                authService: authService,
-                secureStorage: secureStorage,
-                projectService: projectService,
-                segmentService: segmentService,
-                studyService: studyService,
-                fileUploadService: fileUploadService,
-                connectivity: connectivity,
-                homeService: homeService),
+              authService: authService,
+              secureStorage: secureStorage,
+              projectService: projectService,
+              segmentService: segmentService,
+              studyService: studyService,
+              fileUploadService: fileUploadService,
+              connectivity: connectivity,
+              homeService: homeService,
+            ),
           ),
           BlocProvider(
             create: (_) => StudyCubit(studyService: studyService),

@@ -32,9 +32,9 @@ class _HomeViewState extends State<HomeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await context.read<HomeCubit>().fetchAllProjects();
       final state = context.read<HomeCubit>().state;
-     if (state.selectedProject != null) {
+    /* if (state.selectedProject != null) {
         await context.read<HomeCubit>().fetchMyCollectors();
-      }
+      }*/
     });
   }
 

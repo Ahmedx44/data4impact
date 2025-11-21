@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:awesome_bottom_bar/awesome_bottom_bar.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/contributors/page/contributors_page.dart';
@@ -470,8 +472,8 @@ class _NavigationViewState extends State<NavigationView>
     }
   }
 
-  // Enhanced bottom navigation bar with modern design
-  Widget _buildEnhancedBottomNavigationBar() {
+  // Glass effect floating island-style bottom navigation bar using Stack
+  Widget _buildFloatingGlassBottomNavigationBar() {
     final theme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -479,116 +481,144 @@ class _NavigationViewState extends State<NavigationView>
     final bool isTablet = screenWidth >= 600;
     final double iconSize = isTablet ? 24.0 : 22.0;
     final double fontSize = isTablet ? 12.0 : 11.0;
-    final double itemPadding = isTablet ? 5 : 5.0;
+    final double barHeight = isTablet ? 72 : 68;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(
-            color: theme.outline.withOpacity(0.2),
-            width: 1,
-          ),
+    return Stack(
+      children: [
+        Container(
+          height: barHeight + 16,
         ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Container(
-          height: isTablet ? 72 : 68,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              final isSelected = index == visit;
-
-              return Expanded(
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 16,
+          child: Container(
+            height: barHeight,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(50),
+              color: theme.brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.08)
+                  : Colors.white.withOpacity(0.85),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              border: Border.all(
+                color: theme.outline.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: 5.0,
+                  sigmaY: 5.0,
+                ),
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          visit = index;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeInOut,
-                        padding: EdgeInsets.symmetric(
-                          vertical: itemPadding,
-                          horizontal: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: isSelected
-                              ? theme.primary.withOpacity(0.12)
-                              : Colors.transparent,
-                          border: isSelected
-                              ? Border.all(
-                            color: theme.primary.withOpacity(0.3),
-                            width: 1,
-                          )
-                              : null,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Icon with smooth transition
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              transform: Matrix4.identity()
-                                ..scale(isSelected ? 1.1 : 1.0),
-                              child: Icon(
-                                item.icon as IconData,
-                                size: iconSize,
-                                color: isSelected
-                                    ? theme.primary
-                                    : theme.onSurface.withOpacity(0.6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(items.length, (index) {
+                      final item = items[index];
+                      final isSelected = index == visit;
+
+                      return Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  visit = index;
+                                });
+                              },
+                              splashColor: Colors.transparent,
+                              borderRadius: BorderRadius.circular(100),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isSelected
+                                      ? theme.primary.withOpacity(0.15)
+                                      : Colors.transparent,
+                                  border: isSelected
+                                      ? Border.all(
+                                    color: theme.primary.withOpacity(0.4),
+                                    width: 1.5,
+                                  )
+                                      : null,
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Icon with smooth transition and floating effect
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                                      transform: Matrix4.identity()
+                                        ..scale(isSelected ? 1.15 : 1.0)
+                                        ..translate(
+                                          0.0,
+                                          isSelected ? -2.0 : 0.0,
+                                        ),
+                                      child: Icon(
+                                        item.icon as IconData,
+                                        size: iconSize,
+                                        color: isSelected
+                                            ? theme.primary
+                                            : theme.onSurface.withOpacity(0.7),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    // Text with smooth color transition
+                                    AnimatedDefaultTextStyle(
+                                      duration: const Duration(milliseconds: 300),
+                                      style: TextStyle(
+                                        fontSize: fontSize,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.normal,
+                                        color: isSelected
+                                            ? theme.primary
+                                            : theme.onSurface.withOpacity(0.7),
+                                        letterSpacing: isSelected ? 0.5 : 0.0,
+                                      ),
+                                      child: Text(
+                                        item.title as String,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            // Text with smooth color transition
-                            AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 200),
-                              style: TextStyle(
-                                fontSize: fontSize,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                                color: isSelected
-                                    ? theme.primary
-                                    : theme.onSurface.withOpacity(0.6),
-                              ),
-                              child: Text(
-                                item.title as String,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    }),
                   ),
                 ),
-              );
-            }),
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -639,15 +669,25 @@ class _NavigationViewState extends State<NavigationView>
               }
 
               return Scaffold(
-                body: IndexedStack(
-                  index: visit,
+                body: Stack(
                   children: [
-                    for (int i = 0; i < items.length; i++) _buildPage(i),
+                    // Main content
+                    IndexedStack(
+                      index: visit,
+                      children: [
+                        for (int i = 0; i < items.length; i++) _buildPage(i),
+                      ],
+                    ),
+                    // Floating glass bottom navigation bar
+                    if (!_showStaticScreen)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: _buildFloatingGlassBottomNavigationBar(),
+                      ),
                   ],
                 ),
-                bottomNavigationBar: _showStaticScreen
-                    ? null
-                    : _buildEnhancedBottomNavigationBar(),
               );
             },
           );

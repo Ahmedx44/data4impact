@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({Key? key}) : super(key: key);
@@ -108,8 +109,8 @@ class _ProfilePageState extends State<ProfileView> {
             title: Text(
               'Profile',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             actions: [
               IconButton(
@@ -135,80 +136,41 @@ class _ProfilePageState extends State<ProfileView> {
   }
 
   Widget _buildProfileContent(BuildContext context, ProfileState state) {
-    // Show loading only for initial load, not for saving
-    if (state.isLoading && state.user == null) {
-      return _buildLoadingState();
-    }
-
-    return Stack(
-      children: [
-        CustomScrollView(
-          slivers: [
-            // Profile Header Section
-            SliverToBoxAdapter(
-              child: _buildProfileHeader(context, state),
-            ),
-
-            // Personal Information Section
-            SliverToBoxAdapter(
-              child: _buildPersonalInfoSection(context, state),
-            ),
-
-            // Organization Section
-            SliverToBoxAdapter(
-              child: _buildOrganizationSection(context, state),
-            ),
-
-            // Security Overview Section
-            SliverToBoxAdapter(
-              child: _buildSecurityOverviewSection(context),
-            ),
-
-            // Logout Button Section
-            SliverToBoxAdapter(
-              child: _buildLogoutButton(context),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
-          ],
-        ),
-
-        // Show loading overlay only when saving
-        if (state.isLoading && state.user != null)
-          Container(
-            color: Colors.black.withOpacity(0.3),
-            child: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Skeletonizer(
+      enabled: state.isLoading,
+      child: Stack(
         children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
+          CustomScrollView(
+            slivers: [
+              // Profile Header Section
+              SliverToBoxAdapter(
+                child: _buildProfileHeader(context, state),
+              ),
+
+              // Personal Information Section
+              SliverToBoxAdapter(
+                child: _buildPersonalInfoSection(context, state),
+              ),
+
+              // Organization Section
+              SliverToBoxAdapter(
+                child: _buildOrganizationSection(context, state),
+              ),
+
+              // Security Overview Section
+              SliverToBoxAdapter(
+                child: _buildSecurityOverviewSection(context),
+              ),
+
+              // Logout Button Section
+              SliverToBoxAdapter(
+                child: _buildLogoutButton(context),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 70)),
+            ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Loading your profile...',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onBackground
-                      .withOpacity(0.6),
-                ),
-          ),
+
         ],
       ),
     );
@@ -258,18 +220,18 @@ class _ProfilePageState extends State<ProfileView> {
                 child: ClipOval(
                   child: state.tempProfileImage != null
                       ? Image.file(
-                          state.tempProfileImage!,
-                          fit: BoxFit.cover,
-                        )
+                    state.tempProfileImage!,
+                    fit: BoxFit.cover,
+                  )
                       : user?.imageUrl != null
-                          ? Image.network(
-                              user!.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return _buildPlaceholderAvatar(colorScheme);
-                              },
-                            )
-                          : _buildPlaceholderAvatar(colorScheme),
+                      ? Image.network(
+                    user!.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildPlaceholderAvatar(colorScheme);
+                    },
+                  )
+                      : _buildPlaceholderAvatar(colorScheme),
                 ),
               ),
               Positioned(
@@ -317,7 +279,7 @@ class _ProfilePageState extends State<ProfileView> {
           Text(
             user?.roles.isNotEmpty == true
                 ? (user!.roles.first['name'] as String?)?.toUpperCase() ??
-                    'USER'
+                'USER'
                 : 'USER',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onPrimary.withOpacity(0.9),
@@ -363,8 +325,6 @@ class _ProfilePageState extends State<ProfileView> {
     final theme = Theme.of(context);
     final user = state.user;
 
-    if (user == null) return const SizedBox();
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -385,7 +345,7 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, CurrentUser user) {
+  Widget _buildInfoCard(BuildContext context, CurrentUser? user) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -410,22 +370,24 @@ class _ProfilePageState extends State<ProfileView> {
               context,
               icon: Icons.email_outlined,
               label: 'Email',
-              value: user.email,
-              isVerified: user.emailVerified,
+              value: user?.email ?? 'loading@example.com',
+              isVerified: user?.emailVerified ?? false,
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               context,
               icon: Icons.phone_outlined,
               label: 'Phone',
-              value: user.phone ?? 'Not provided',
+              value: user?.phone ?? 'Not provided',
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               context,
               icon: Icons.calendar_today_outlined,
               label: 'Member Since',
-              value: formatMemberSince(DateTime.parse(user.createdAt)),
+              value: user != null
+                  ? formatMemberSince(DateTime.parse(user.createdAt))
+                  : '01/01/2024',
             ),
           ],
         ),
@@ -589,21 +551,21 @@ class _ProfilePageState extends State<ProfileView> {
                 ),
                 child: imageUrl.isNotEmpty
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildOrganizationPlaceholder(
-                                colorScheme, org.name);
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return _buildOrganizationPlaceholder(
-                                colorScheme, org.name);
-                          },
-                        ),
-                      )
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildOrganizationPlaceholder(
+                          colorScheme, org.name);
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return _buildOrganizationPlaceholder(
+                          colorScheme, org.name);
+                    },
+                  ),
+                )
                     : _buildOrganizationPlaceholder(colorScheme, org.name),
               ),
               const SizedBox(width: 12),
@@ -638,22 +600,22 @@ class _ProfilePageState extends State<ProfileView> {
                         children: userOrg.roles
                             .map(
                               (role) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _getRoleColor(role.name, colorScheme),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  role.name.toUpperCase(),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getRoleColor(role.name, colorScheme),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              role.name.toUpperCase(),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
                               ),
-                            )
+                            ),
+                          ),
+                        )
                             .toList(),
                       ),
                   ],
@@ -806,9 +768,9 @@ class _ProfilePageState extends State<ProfileView> {
             Text(
               'Logout',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -965,12 +927,12 @@ class _ProfilePageState extends State<ProfileView> {
   }
 
   Widget _buildSecurityItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        required VoidCallback onTap,
+      }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -1007,13 +969,13 @@ class _ProfilePageState extends State<ProfileView> {
   }
 
   Widget _buildInfoRow(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    bool isVerified = false,
-    bool showCopyButton = false,
-  }) {
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required String value,
+        bool isVerified = false,
+        bool showCopyButton = false,
+      }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -1091,8 +1053,8 @@ class _ProfilePageState extends State<ProfileView> {
         value: context.read<ProfileCubit>(),
         child: state.user != null
             ? EditProfileDialog(
-                user: state.user!,
-              )
+          user: state.user!,
+        )
             : const SizedBox(),
       ),
     );
@@ -1212,9 +1174,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                     onPressed: state.isLoading
                         ? null
                         : () {
-                            context.read<ProfileCubit>().cancelEditing();
-                            Navigator.of(context).pop();
-                          },
+                      context.read<ProfileCubit>().cancelEditing();
+                      Navigator.of(context).pop();
+                    },
                     icon: Icon(Icons.close,
                         color: colorScheme.onSurface.withOpacity(0.6)),
                     padding: EdgeInsets.zero,
@@ -1259,7 +1221,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: colorScheme.primary, width: 2),
+                    BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1291,7 +1253,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: colorScheme.primary, width: 2),
+                    BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1324,7 +1286,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: colorScheme.primary, width: 2),
+                    BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1360,7 +1322,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: colorScheme.primary, width: 2),
+                    BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1374,9 +1336,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                       onPressed: state.isLoading
                           ? null
                           : () {
-                              context.read<ProfileCubit>().cancelEditing();
-                              Navigator.of(context).pop();
-                            },
+                        context.read<ProfileCubit>().cancelEditing();
+                        Navigator.of(context).pop();
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorScheme.onSurface,
                         side: BorderSide(color: colorScheme.outline),
@@ -1401,14 +1363,14 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                       ),
                       child: state.isLoading
                           ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    colorScheme.onPrimary),
-                              ),
-                            )
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary),
+                        ),
+                      )
                           : const Text('Save Changes'),
                     ),
                   ),
@@ -1431,10 +1393,10 @@ class ChangePasswordDialog extends StatefulWidget {
 
 class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   final TextEditingController _currentPasswordController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
@@ -1565,7 +1527,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   hintText: 'Enter current password',
                   suffixIcon: IconButton(
                     onPressed: () => setState(() =>
-                        _obscureCurrentPassword = !_obscureCurrentPassword),
+                    _obscureCurrentPassword = !_obscureCurrentPassword),
                     icon: Icon(
                       _obscureCurrentPassword
                           ? Icons.visibility
@@ -1584,7 +1546,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: colorScheme.primary, width: 2),
+                    BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1607,7 +1569,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   hintText: 'Enter new password',
                   suffixIcon: IconButton(
                     onPressed: () => setState(
-                        () => _obscureNewPassword = !_obscureNewPassword),
+                            () => _obscureNewPassword = !_obscureNewPassword),
                     icon: Icon(
                       _obscureNewPassword
                           ? Icons.visibility
@@ -1626,7 +1588,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: colorScheme.primary, width: 2),
+                    BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1656,7 +1618,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   hintText: 'Confirm your new password',
                   suffixIcon: IconButton(
                     onPressed: () => setState(() =>
-                        _obscureConfirmPassword = !_obscureConfirmPassword),
+                    _obscureConfirmPassword = !_obscureConfirmPassword),
                     icon: Icon(
                       _obscureConfirmPassword
                           ? Icons.visibility
@@ -1675,7 +1637,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: colorScheme.primary, width: 2),
+                    BorderSide(color: colorScheme.primary, width: 2),
                   ),
                 ),
               ),
@@ -1687,7 +1649,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed:
-                          _isLoading ? null : () => Navigator.of(context).pop(),
+                      _isLoading ? null : () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorScheme.onSurface,
                         side: BorderSide(color: colorScheme.outline),
@@ -1712,18 +1674,18 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                       ),
                       child: _isLoading
                           ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    colorScheme.onPrimary),
-                              ),
-                            )
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary),
+                        ),
+                      )
                           : const Text(
-                              'Update Password',
-                              style: TextStyle(fontSize: 12),
-                            ),
+                        'Update Password',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
                   ),
                 ],

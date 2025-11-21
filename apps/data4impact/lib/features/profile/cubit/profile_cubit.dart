@@ -27,7 +27,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
 
   Future<void> fetchCurrentUser() async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true,));
 
     final connected = InternetConnectionMonitor(checkOnInterval: false);
 

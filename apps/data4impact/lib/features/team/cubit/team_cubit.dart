@@ -110,9 +110,6 @@ class TeamCubit extends Cubit<TeamState> {
             message: 'No cached teams data available offline',
           );
         } else {
-          ToastService.showInfoToast(
-            message: 'Showing cached teams data',
-          );
         }
       }
     } catch (e) {
@@ -195,6 +192,10 @@ class TeamCubit extends Cubit<TeamState> {
 
   // Team Detail Methods
   Future<void> getTeamMembers(String teamId) async {
+    emit(state.copyWith(
+      isLoading: true
+    ));
+
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
       checkInterval: const Duration(seconds: 5),
@@ -279,9 +280,6 @@ class TeamCubit extends Cubit<TeamState> {
             message: 'No cached team members data available offline',
           );
         } else {
-          ToastService.showInfoToast(
-            message: 'Showing cached team members data',
-          );
         }
       }
     } catch (e) {
