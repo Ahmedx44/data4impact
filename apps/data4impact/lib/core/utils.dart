@@ -1,7 +1,7 @@
 // HIVE BOXES NAMES
 const projectsBox = 'projects_box';
-const studysBox='studys_box';
-const currentUserBox='current_user_box';
+const studysBox = 'studys_box';
+const currentUserBox = 'current_user_box';
 const studyQuestionsBox = 'study_questions_box';
 const offlineAnswersBox = 'offline_answers_box';
 const studyCohortsBox = 'study_cohorts_box';
@@ -10,11 +10,13 @@ const studyRespondentsBox = 'study_respondents_box';
 const studyGroupsBox = 'study_groups_box';
 const studySubjectsBox = 'study_subjects_box';
 const collectorsBox = 'collectors_box';
+const teamsBox = 'teams_box';
+const teamMembersBox = 'team_members_box';
 
 /// Key for storing offline mode local data
 const projectsKey = 'projects_key';
 const studysKey = 'studys_key';
-const currentUserKey='current_user_key';
+const currentUserKey = 'current_user_key';
 const studyQuestionsKey = 'study_questions_key';
 const offlineAnswersKey = 'offline_answers_key';
 const studyCohortsKey = 'study_cohorts_key';
@@ -23,11 +25,12 @@ const studyRespondentsKey = 'study_respondents_key';
 const studyGroupsKey = 'study_groups_key';
 const studySubjectsKey = 'study_subjects_key';
 const collectorsKey = 'collectors_key';
+const teamsKey = 'teams';
 
 // Hive BOXES IDs
 const projectsBoxId = 0;
 const studysBoxId = 1;
-const currentUserId=2;
+const currentUserId = 2;
 const studyQuestionsBoxId = 3;
 const offlineAnswersBoxId = 4;
 const studyCohortsBoxId = 5;

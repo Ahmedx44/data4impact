@@ -6,8 +6,8 @@ class MemberModel {
   final String organization;
   final String userId;
   final Map<String, dynamic> attributes;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final User user;
 
   MemberModel({
@@ -18,8 +18,8 @@ class MemberModel {
     required this.organization,
     required this.userId,
     required this.attributes,
-    required this.createdAt,
-    required this.updatedAt,
+    required  this.createdAt,
+     required this.updatedAt,
     required this.user,
   });
 
@@ -49,10 +49,10 @@ class User {
   final List<String> roles;
   final String phone;
   final String email;
-  final bool emailVerified;
-  final bool active;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final bool? emailVerified;
+  final bool? active;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final String? imageUrl;
 
   User({

@@ -39,26 +39,26 @@ class _InboxViewState extends State<InboxView>
     return Scaffold(
       appBar: (widget.showAppBar == true)
           ? AppBar(
-              leading: Padding(
-                padding: const EdgeInsets.all(5),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(50),
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedArrowLeft01,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              title: const Text(
-                'Inbox',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            )
+        leading: Padding(
+          padding: const EdgeInsets.all(5),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(50),
+            onTap: () {
+              Navigator.pop(context);
+            },
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowLeft01,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+        title: const Text(
+          'Inbox',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      )
           : null,
       backgroundColor: colorScheme.surface,
       body: BlocListener<InboxCubit, InboxState>(
@@ -88,7 +88,7 @@ class _InboxViewState extends State<InboxView>
                           horizontal: 4, vertical: 6),
                       labelColor: colorScheme.primary,
                       unselectedLabelColor:
-                          colorScheme.onSurface.withAlpha(255),
+                      colorScheme.onSurface.withAlpha(255),
                       labelStyle: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -123,8 +123,18 @@ class _InboxViewState extends State<InboxView>
   }
 
   Widget _buildNotificationTab(ColorScheme colorScheme, ThemeData theme) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.notifications_none_outlined, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No Notifications',
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+        ],
+      ),
     );
   }
 

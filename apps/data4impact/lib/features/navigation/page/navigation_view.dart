@@ -76,11 +76,9 @@ class _NavigationViewState extends State<NavigationView>
     final homeCubit = context.read<HomeCubit>();
     final profileCubit = context.read<ProfileCubit>();
 
-    // Sequential initialization - wait for each step to complete
     await homeCubit.fetchAllProjects();
     await profileCubit.fetchCurrentUser();
 
-    // Only fetch collectors if we have a valid project
     if (homeCubit.state.selectedProject != null) {
       await homeCubit.fetchMyCollectors();
     }
@@ -463,7 +461,7 @@ class _NavigationViewState extends State<NavigationView>
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginPage()),
-        (route) => false,
+            (route) => false,
       );
 
       ToastService.showSuccessToast(message: 'Logout successful');
@@ -472,106 +470,123 @@ class _NavigationViewState extends State<NavigationView>
     }
   }
 
-  // Responsive bottom navigation bar with the new UI and ALWAYS visible text
-  Widget _buildResponsiveBottomNavigationBar() {
+  // Enhanced bottom navigation bar with modern design
+  Widget _buildEnhancedBottomNavigationBar() {
     final theme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Determine the device type based on screen width
+    // Adaptive sizing based on screen width
     final bool isTablet = screenWidth >= 600;
-    final bool isLargeTablet = screenWidth >= 1024;
-    final bool isSmallPhone = screenWidth < 360;
-
-    // Responsive sizing
-    final double iconSize =
-        isTablet ? (isLargeTablet ? 26.0 : 24.0) : (isSmallPhone ? 20.0 : 22.0);
-
-    final double fontSize =
-        isTablet ? (isLargeTablet ? 13.0 : 12.0) : (isSmallPhone ? 10.0 : 11.0);
-
-    final double paddingVertical =
-        isTablet ? (isLargeTablet ? 16.0 : 14.0) : (isSmallPhone ? 10.0 : 12.0);
-
-    final double itemSpacing = isTablet ? 6.0 : 4.0;
+    final double iconSize = isTablet ? 24.0 : 22.0;
+    final double fontSize = isTablet ? 12.0 : 11.0;
+    final double itemPadding = isTablet ? 5 : 5.0;
 
     return Container(
       decoration: BoxDecoration(
         color: theme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
           ),
         ],
+        border: Border(
+          top: BorderSide(
+            color: theme.outline.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(items.length, (index) {
-            final item = items[index];
-            final isSelected = index == visit;
+        child: Container(
+          height: isTablet ? 72 : 68,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(items.length, (index) {
+              final item = items[index];
+              final isSelected = index == visit;
 
-            return Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2.0),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        visit = index;
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: paddingVertical,
-                        horizontal: 4.0,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: isSelected
-                            ? theme.primary.withOpacity(0.1)
-                            : Colors.transparent,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            item.icon as IconData,
-                            size: iconSize,
-                            color: isSelected
-                                ? theme.primary
-                                : theme.onSurface.withOpacity(0.7),
-                          ),
-                          SizedBox(height: itemSpacing),
-                          Text(
-                            item.title as String,
-                            style: TextStyle(
-                              fontSize: fontSize,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                              color: isSelected
-                                  ? theme.primary
-                                  : theme.onSurface.withOpacity(0.7),
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          visit = index;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        padding: EdgeInsets.symmetric(
+                          vertical: itemPadding,
+                          horizontal: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: isSelected
+                              ? theme.primary.withOpacity(0.12)
+                              : Colors.transparent,
+                          border: isSelected
+                              ? Border.all(
+                            color: theme.primary.withOpacity(0.3),
+                            width: 1,
+                          )
+                              : null,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Icon with smooth transition
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              transform: Matrix4.identity()
+                                ..scale(isSelected ? 1.1 : 1.0),
+                              child: Icon(
+                                item.icon as IconData,
+                                size: iconSize,
+                                color: isSelected
+                                    ? theme.primary
+                                    : theme.onSurface.withOpacity(0.6),
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            // Text with smooth color transition
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
+                              style: TextStyle(
+                                fontSize: fontSize,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? theme.primary
+                                    : theme.onSurface.withOpacity(0.6),
+                              ),
+                              child: Text(
+                                item.title as String,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
       ),
     );
@@ -632,7 +647,7 @@ class _NavigationViewState extends State<NavigationView>
                 ),
                 bottomNavigationBar: _showStaticScreen
                     ? null
-                    : _buildResponsiveBottomNavigationBar(),
+                    : _buildEnhancedBottomNavigationBar(),
               );
             },
           );

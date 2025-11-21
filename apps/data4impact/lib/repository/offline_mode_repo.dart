@@ -86,6 +86,49 @@ class OfflineModeDataRepo {
     }
   }
 
+
+  Future<void> saveTeamMembers(String teamId, List<dynamic> members) async {
+    try {
+      final hiveBox = await Hive.openBox(teamMembersBox);
+
+      // Convert to JSON string for consistent storage
+      final membersJson = jsonEncode(members);
+      await hiveBox.put('team_members_$teamId', membersJson);
+
+      AppLogger.logInfo('Saved ${members.length} members for team $teamId to offline storage');
+    } catch (e) {
+      AppLogger.logError('Error saving team members: $e');
+    }
+  }
+
+// Team Members - Get saved team members data
+  Future<List<dynamic>> getSavedTeamMembers(String teamId) async {
+    try {
+      final hiveBox = await Hive.openBox(teamMembersBox);
+      final membersData = hiveBox.get('team_members_$teamId');
+
+      if (membersData == null) {
+        return [];
+      }
+
+      // Handle both String (JSON) and List types
+      if (membersData is String) {
+        final decoded = jsonDecode(membersData);
+        if (decoded is List) {
+          return decoded;
+        }
+      } else if (membersData is List) {
+        return membersData;
+      }
+
+      return [];
+    } catch (e) {
+      AppLogger.logError('Error loading saved team members: $e');
+      return [];
+    }
+  }
+
+
   Future<CurrentUser?> getSavedCurrentUser() async {
     try {
       if (Hive.isBoxOpen(currentUserBox)) {
@@ -326,10 +369,13 @@ class OfflineModeDataRepo {
   }
 
   Future<void> saveCollectors(
-      String projectId, List<dynamic> collectors) async {
+      String projectId, List<Map<String, dynamic>> collectors) async {
     try {
       final hiveBox = await Hive.openBox(collectorsBox);
-      await hiveBox.put('${collectorsKey}_$projectId', jsonEncode(collectors));
+
+      final collectorsJson = jsonEncode(collectors);
+      await hiveBox.put('${collectorsKey}_$projectId', collectorsJson);
+
       AppLogger.logInfo(
           'Saved ${collectors.length} collectors for project $projectId');
     } catch (e) {
@@ -337,23 +383,90 @@ class OfflineModeDataRepo {
     }
   }
 
-  Future<List<dynamic>> getSavedCollectors(String projectId) async {
+  Future<List<Map<String, dynamic>>> getSavedCollectors(
+      String projectId) async {
     try {
       final hiveBox = await Hive.openBox(collectorsBox);
-      final collectorsJson = hiveBox.get('${collectorsKey}_$projectId');
+      final collectorsData = hiveBox.get('${collectorsKey}_$projectId');
 
-      if (collectorsJson == null) {
+      if (collectorsData == null) {
         return [];
       }
 
-      final List<dynamic> decoded =
-          jsonDecode(collectorsJson.toString()) as List<dynamic>;
-      return decoded;
+      List<Map<String, dynamic>> result = [];
+
+      if (collectorsData is String) {
+        final decoded = jsonDecode(collectorsData);
+
+        if (decoded is List) {
+          result = _convertToListOfStringMap(decoded);
+        }
+      } else if (collectorsData is List) {
+        result = _convertToListOfStringMap(collectorsData);
+      }
+
+      return result;
     } catch (e) {
       AppLogger.logError('Error loading saved collectors: $e');
+
       return [];
     }
   }
+
+  List<Map<String, dynamic>> _convertToListOfStringMap(List<dynamic> list) {
+    return list.map((item) {
+      if (item is Map) {
+        final convertedMap = <String, dynamic>{};
+        item.forEach((key, value) {
+          convertedMap[key.toString()] = value;
+        });
+        return convertedMap;
+      }
+      return <String, dynamic>{};
+    }).toList();
+  }
+
+  Future<void> saveTeams(List<dynamic> teams) async {
+    try {
+      final hiveBox = await Hive.openBox(teamsBox);
+
+      // Convert to JSON string for consistent storage
+      final teamsJson = jsonEncode(teams);
+      await hiveBox.put(teamsKey, teamsJson);
+
+      AppLogger.logInfo('Saved ${teams.length} teams to offline storage');
+    } catch (e) {
+      AppLogger.logError('Error saving teams: $e');
+    }
+  }
+
+// Teams - Get saved teams data
+  Future<List<dynamic>> getSavedTeams() async {
+    try {
+      final hiveBox = await Hive.openBox(teamsBox);
+      final teamsData = hiveBox.get(teamsKey);
+
+      if (teamsData == null) {
+        return [];
+      }
+
+      // Handle both String (JSON) and List types
+      if (teamsData is String) {
+        final decoded = jsonDecode(teamsData);
+        if (decoded is List) {
+          return decoded;
+        }
+      } else if (teamsData is List) {
+        return teamsData;
+      }
+
+      return [];
+    } catch (e) {
+      AppLogger.logError('Error loading saved teams: $e');
+      return [];
+    }
+  }
+
 
   Future<void> clearStudyData(String studyId) async {
     try {

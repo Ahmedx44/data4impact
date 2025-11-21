@@ -18,6 +18,7 @@ import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/profile/cubit/profile_cubit.dart';
 import 'package:data4impact/features/splash/page/splash_page.dart';
 import 'package:data4impact/features/study/cubit/study_cubit.dart';
+import 'package:data4impact/features/team/cubit/team_cubit.dart';
 import 'package:data4impact/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -85,6 +86,11 @@ class App extends StatelessWidget {
                 authService: authService,
                 profileService: profileService,
                 secureStorage: secureStorage),
+          ),
+          BlocProvider(
+            create: (_) => TeamCubit(
+              teamService: teamService
+            )
           ),
           BlocProvider(
             create: (_) => HomeCubit(

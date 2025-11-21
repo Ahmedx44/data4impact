@@ -62,7 +62,7 @@ class HomeCubit extends Cubit<HomeState> {
     final currentProjectId = await authService.getCurrentProjectId();
     if (currentProjectId != null && state.projects.isNotEmpty) {
       final project = state.projects.firstWhere(
-            (p) => p.id == currentProjectId,
+        (p) => p.id == currentProjectId,
         orElse: () => state.projects.first,
       );
       emit(state.copyWith(selectedProject: project));
@@ -72,10 +72,10 @@ class HomeCubit extends Cubit<HomeState> {
   void _setupConnectivityListener() {
     _connectivitySubscription =
         connectivity.onConnectivityChanged.listen((result) async {
-          if (result != ConnectivityResult.none) {
-            await _checkAndSyncOfflineData();
-          }
-        });
+      if (result != ConnectivityResult.none) {
+        await _checkAndSyncOfflineData();
+      }
+    });
   }
 
   void _startPeriodicSync() {
@@ -111,8 +111,10 @@ class HomeCubit extends Cubit<HomeState> {
 
       for (final key in keys) {
         if (key.toString().startsWith('offline_answers_key_')) {
-          final studyId = key.toString().replaceFirst('offline_answers_key_', '');
-          final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
+          final studyId =
+              key.toString().replaceFirst('offline_answers_key_', '');
+          final offlineAnswers =
+              await OfflineModeDataRepo().getOfflineAnswers(studyId);
           totalCount += offlineAnswers.length;
         }
       }
@@ -142,8 +144,10 @@ class HomeCubit extends Cubit<HomeState> {
       int totalItems = 0;
       for (final key in keys) {
         if (key.toString().startsWith('offline_answers_key_')) {
-          final studyId = key.toString().replaceFirst('offline_answers_key_', '');
-          final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
+          final studyId =
+              key.toString().replaceFirst('offline_answers_key_', '');
+          final offlineAnswers =
+              await OfflineModeDataRepo().getOfflineAnswers(studyId);
           totalItems += offlineAnswers.length;
         }
       }
@@ -154,7 +158,8 @@ class HomeCubit extends Cubit<HomeState> {
 
       for (final key in keys) {
         if (key.toString().startsWith('offline_answers_key_')) {
-          final studyId = key.toString().replaceFirst('offline_answers_key_', '');
+          final studyId =
+              key.toString().replaceFirst('offline_answers_key_', '');
           final syncedCount = await _syncStudyOfflineAnswers(studyId);
           totalSynced += syncedCount;
         }
@@ -165,12 +170,10 @@ class HomeCubit extends Cubit<HomeState> {
 
       if (totalSynced > 0) {
         ToastService.showSuccessToast(
-            message: 'Successfully synced $totalSynced offline responses'
-        );
+            message: 'Successfully synced $totalSynced offline responses');
       } else if (totalItems > 0) {
         ToastService.showInfoToast(
-            message: 'No responses synced. Please check your connection'
-        );
+            message: 'No responses synced. Please check your connection');
       }
     } catch (e) {
       AppLogger.logError('Sync failed: ${e.toString()}');
@@ -187,14 +190,16 @@ class HomeCubit extends Cubit<HomeState> {
     int syncedCount = 0;
 
     try {
-      final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
+      final offlineAnswers =
+          await OfflineModeDataRepo().getOfflineAnswers(studyId);
 
       if (offlineAnswers.isEmpty) {
         AppLogger.logInfo('No offline answers to sync for study: $studyId');
         return 0;
       }
 
-      AppLogger.logInfo('Syncing ${offlineAnswers.length} offline answers for study: $studyId');
+      AppLogger.logInfo(
+          'Syncing ${offlineAnswers.length} offline answers for study: $studyId');
 
       final List<int> successfulIndices = [];
 
@@ -203,18 +208,21 @@ class HomeCubit extends Cubit<HomeState> {
           // Get the complete response object (not just the data array)
           final responseObject = Map<String, dynamic>.from(offlineAnswers[i]);
 
-          AppLogger.logInfo('Processing offline answer $i: ${jsonEncode(responseObject)}');
+          AppLogger.logInfo(
+              'Processing offline answer $i: ${jsonEncode(responseObject)}');
 
           // Handle audio file upload if present
           if (responseObject.containsKey('audioFilePath')) {
             final audioFilePath = responseObject['audioFilePath'] as String;
-            final audioUrl = await _uploadAudioFileForSync(audioFilePath, studyId);
+            final audioUrl =
+                await _uploadAudioFileForSync(audioFilePath, studyId);
 
             if (audioUrl != null) {
               responseObject['audioUrl'] = audioUrl;
               responseObject.remove('audioFilePath');
             } else {
-              AppLogger.logWarning('Audio upload failed for answer $i, skipping audio');
+              AppLogger.logWarning(
+                  'Audio upload failed for answer $i, skipping audio');
               responseObject.remove('audioFilePath');
             }
           }
@@ -223,7 +231,8 @@ class HomeCubit extends Cubit<HomeState> {
           if (!responseObject.containsKey('data') ||
               responseObject['data'] is! List ||
               (responseObject['data'] as List).isEmpty) {
-            AppLogger.logWarning('Invalid response structure for answer $i, skipping');
+            AppLogger.logWarning(
+                'Invalid response structure for answer $i, skipping');
             continue;
           }
 
@@ -245,7 +254,6 @@ class HomeCubit extends Cubit<HomeState> {
                 ? state.syncedSoFar / state.totalToSync
                 : 0.0,
           ));
-
         } catch (e) {
           AppLogger.logError('Failed to sync offline answer $i: $e');
           // Continue with next answer instead of stopping
@@ -256,31 +264,35 @@ class HomeCubit extends Cubit<HomeState> {
       // Remove successfully synced answers
       if (successfulIndices.isNotEmpty) {
         await _removeSyncedAnswers(studyId, successfulIndices);
-        AppLogger.logInfo('Removed ${successfulIndices.length} synced answers for study: $studyId');
+        AppLogger.logInfo(
+            'Removed ${successfulIndices.length} synced answers for study: $studyId');
       }
-
     } catch (e) {
-      AppLogger.logError('Error in _syncStudyOfflineAnswers for study $studyId: $e');
+      AppLogger.logError(
+          'Error in _syncStudyOfflineAnswers for study $studyId: $e');
     }
 
     return syncedCount;
   }
 
-  Future<String?> _uploadAudioFileForSync(String audioFilePath, String studyId) async {
+  Future<String?> _uploadAudioFileForSync(
+      String audioFilePath, String studyId) async {
     try {
       if (!await File(audioFilePath).exists()) {
         AppLogger.logWarning('Audio file not found: $audioFilePath');
         return null;
       }
 
-      final result = await fileUploadService.uploadAudioFile(studyId, audioFilePath);
+      final result =
+          await fileUploadService.uploadAudioFile(studyId, audioFilePath);
       final audioUrl = result['filename'] as String?;
 
       if (audioUrl != null) {
         // Delete the local file after successful upload
         try {
           await File(audioFilePath).delete();
-          AppLogger.logInfo('Deleted local audio file after successful upload: $audioFilePath');
+          AppLogger.logInfo(
+              'Deleted local audio file after successful upload: $audioFilePath');
         } catch (e) {
           AppLogger.logWarning('Failed to delete local audio file: $e');
         }
@@ -293,9 +305,11 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  Future<void> _removeSyncedAnswers(String studyId, List<int> indicesToRemove) async {
+  Future<void> _removeSyncedAnswers(
+      String studyId, List<int> indicesToRemove) async {
     try {
-      final offlineAnswers = await OfflineModeDataRepo().getOfflineAnswers(studyId);
+      final offlineAnswers =
+          await OfflineModeDataRepo().getOfflineAnswers(studyId);
 
       // Sort indices in descending order to avoid index shifting issues
       indicesToRemove.sort((a, b) => b.compareTo(a));
@@ -343,7 +357,8 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> fetchAllProjects() async {
-    emit(state.copyWith(fetchingCollectors:true,isLoading: true,fetchingProjects: true));
+    emit(state.copyWith(
+        fetchingCollectors: true, isLoading: true, fetchingProjects: true));
 
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
@@ -360,7 +375,7 @@ class HomeCubit extends Cubit<HomeState> {
           emit(
             state.copyWith(
               isLoading: false,
-              fetchingProjects:false,
+              fetchingProjects: false,
               fetchingCollectors: false,
               projects: [],
               selectedProject: null,
@@ -391,19 +406,64 @@ class HomeCubit extends Cubit<HomeState> {
           selectedProject = projects.first;
         }
 
-        emit(
-          state.copyWith(
-            isLoading: false,
-            fetchingProjects:false,
-            fetchingCollectors: false,
-            projects: projects,
-            selectedProject: selectedProject,
-            isOffline: false,
-          ),
-        );
+        // After setting projects and selected project, fetch collectors
+        if (selectedProject != null) {
+          try {
+            final collectors = await homeService.getMyCollectors(
+              project: selectedProject.id,
+            );
+
+            await OfflineModeDataRepo().saveCollectors(
+              selectedProject.id,
+              collectors,
+            );
+
+            emit(
+              state.copyWith(
+                isLoading: false,
+                fetchingProjects: false,
+                fetchingCollectors: false,
+                projects: projects,
+                selectedProject: selectedProject,
+                isOffline: false,
+                collectors: collectors,
+              ),
+            );
+          } catch (collectorError) {
+            // If collector fetch fails, try to load from cache
+            final savedCollectors = await OfflineModeDataRepo().getSavedCollectors(
+              selectedProject.id,
+            );
+
+            emit(
+              state.copyWith(
+                isLoading: false,
+                fetchingProjects: false,
+                fetchingCollectors: false,
+                projects: projects,
+                selectedProject: selectedProject,
+                isOffline: false,
+                collectors: savedCollectors,
+              ),
+            );
+          }
+        } else {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              fetchingProjects: false,
+              fetchingCollectors: false,
+              projects: projects,
+              selectedProject: selectedProject,
+              isOffline: false,
+              collectors: [],
+            ),
+          );
+        }
 
         await _checkAndSyncOfflineData();
       } catch (e) {
+        // Online fetch failed, try offline data
         final projects = await OfflineModeDataRepo().getSavedAllProjects();
         final currentProjectId = await authService.getCurrentProjectId();
         Project? selectedProject;
@@ -414,18 +474,32 @@ class HomeCubit extends Cubit<HomeState> {
           );
         }
 
+        // Try to load collectors from cache for the selected project
+        List<Map<String, dynamic>> collectors = [];
+        if (selectedProject != null) {
+          try {
+            collectors = await OfflineModeDataRepo().getSavedCollectors(
+              selectedProject.id,
+            );
+          } catch (cacheError) {
+            collectors = [];
+          }
+        }
+
         emit(
           state.copyWith(
             isLoading: false,
-            fetchingProjects:false,
+            fetchingProjects: false,
             fetchingCollectors: false,
             projects: projects,
             selectedProject: selectedProject,
-            isOffline: false,
+            isOffline: true,
+            collectors: collectors,
           ),
         );
       }
     } else {
+      // Offline mode
       final projects = await OfflineModeDataRepo().getSavedAllProjects();
       final currentProjectId = await authService.getCurrentProjectId();
       Project? selectedProject;
@@ -436,28 +510,36 @@ class HomeCubit extends Cubit<HomeState> {
         );
       }
 
+      // Load collectors from cache for the selected project
+      List<Map<String, dynamic>> collectors = [];
+      if (selectedProject != null) {
+        try {
+          collectors = await OfflineModeDataRepo().getSavedCollectors(
+            selectedProject.id,
+          );
+        } catch (cacheError) {
+          collectors = [];
+        }
+      }
+
       emit(
         state.copyWith(
           isLoading: false,
-          fetchingProjects:false,
+          fetchingProjects: false,
           fetchingCollectors: false,
           projects: projects,
           selectedProject: selectedProject,
           isOffline: true,
+          collectors: collectors,
         ),
       );
     }
   }
 
   Future<void> fetchMyCollectors() async {
-    print('debug: fetchMyCollectors started');
-
     if (state.selectedProject == null) {
-      print('debug: No selected project, returning early');
       return;
     }
-
-    print('debug: Selected project ID: ${state.selectedProject!.id}');
 
     final connected = InternetConnectionMonitor(
       checkOnInterval: false,
@@ -465,107 +547,88 @@ class HomeCubit extends Cubit<HomeState> {
     );
 
     final isConnected = await connected.hasInternetConnection();
-    print('debug: Internet connection status: $isConnected');
 
     emit(state.copyWith(fetchingCollectors: true));
-    print('debug: Set fetchingCollectors to true');
-
     try {
       if (isConnected) {
-        print('debug: Online mode - fetching from API');
-        // Online mode - fetch from API and save to local storage
         final collectors = await homeService.getMyCollectors(
           project: state.selectedProject!.id,
         );
 
-        print('debug: API response received, collectors count: ${collectors.length}');
-
-        // Save to offline storage
-        print('debug: Saving collectors to offline storage');
         await OfflineModeDataRepo().saveCollectors(
           state.selectedProject!.id,
           collectors,
         );
-        print('debug: Collectors saved to offline storage');
 
-        emit(state.copyWith(
-          collectors: collectors,
-          fetchingCollectors: false,
-        ));
-        print('debug: Updated state with collectors and set fetchingCollectors to false');
-
+        // EMIT SUCCESS STATE WITH DATA
+        emit(
+          state.copyWith(
+            collectors: collectors,
+            fetchingCollectors: false,
+            isOffline: false,
+          ),
+        );
       } else {
-        print('debug: Offline mode - loading from local storage');
-        // Offline mode - load from local storage
         final savedCollectors = await OfflineModeDataRepo().getSavedCollectors(
           state.selectedProject!.id,
         );
 
-        print('debug: Loaded saved collectors count: ${savedCollectors.length}');
-
-        emit(state.copyWith(
-          collectors: savedCollectors as List<Map<String,dynamic>>,
-          fetchingCollectors: false,
-          isOffline: true,
-        ));
-        print('debug: Updated state with saved collectors and set fetchingCollectors to false');
+        emit(
+          state.copyWith(
+            collectors: savedCollectors,
+            fetchingCollectors: false,
+            isOffline: true,
+          ),
+        );
 
         if (savedCollectors.isEmpty) {
-          print('debug: No cached collectors data available offline');
           ToastService.showWarningToast(
             message: 'No cached collectors data available offline',
           );
         } else {
-          print('debug: Showing cached collectors data');
-          ToastService.showInfoToast(
-            message: 'Showing cached collectors data',
-          );
+
         }
       }
     } catch (e) {
-      print('debug: Error occurred: $e');
-      print('debug: Error type: ${e.runtimeType}');
-
-      // If online fetch fails, try to load from cache
       if (isConnected) {
-        print('debug: Online fetch failed, trying to load from cache');
         try {
-          final savedCollectors = await OfflineModeDataRepo().getSavedCollectors(
+          final savedCollectors =
+              await OfflineModeDataRepo().getSavedCollectors(
             state.selectedProject!.id,
           );
 
-          print('debug: Cache load successful, count: ${savedCollectors.length}');
-
-          emit(state.copyWith(
-            collectors: savedCollectors as List<Map<String,dynamic>>,
-            fetchingCollectors: false,
-          ));
-          print('debug: Updated state with cached collectors');
+          emit(
+            state.copyWith(
+              collectors: savedCollectors,
+              fetchingCollectors: false,
+              isOffline: true,
+            ),
+          );
 
           ToastService.showWarningToast(
             message: 'Using cached data due to network error',
           );
         } catch (cacheError) {
-          print('debug: Cache load also failed: $cacheError');
-          // Both online and cache failed
-          emit(state.copyWith(
-            fetchingCollectors: false,
-          ));
-          print('debug: Set fetchingCollectors to false after both failures');
+          emit(
+            state.copyWith(
+              fetchingCollectors: false,
+              collectors: [],
+            ),
+          );
+
           ToastService.showErrorToast(message: 'Failed to fetch collectors');
         }
       } else {
-        print('debug: Offline mode and cache failed');
-        // Offline mode and cache failed
-        emit(state.copyWith(
-          fetchingCollectors: false,
-        ));
-        print('debug: Set fetchingCollectors to false after offline failure');
-        ToastService.showErrorToast(message: 'No cached collectors data available');
+        emit(
+          state.copyWith(
+            fetchingCollectors: false,
+            collectors: [],
+          ),
+        );
+        ToastService.showErrorToast(
+            message: 'No cached collectors data available');
       }
     }
-
-    print('debug: fetchMyCollectors completed');
   }
 
   Future<void> switchProject(Project project) async {

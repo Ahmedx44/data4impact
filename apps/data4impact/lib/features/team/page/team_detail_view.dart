@@ -1,14 +1,14 @@
-// team_detail_view.dart
 import 'package:csv/csv.dart';
-import 'package:data4impact/core/service/api_service/team_service.dart';
+import 'package:data4impact/core/service/api_service/Model/team_model.dart';
+import 'package:data4impact/core/service/api_service/Model/member_model.dart';
+import 'package:data4impact/features/team/cubit/team_cubit.dart';
+import 'package:data4impact/features/team/cubit/team_state.dart';
 import 'package:data4impact/features/team/widget/teams_stat_card.dart';
+import 'package:data4impact/features/home/cubit/home_cubit.dart';
+import 'package:data4impact/features/home/cubit/home_state.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:data4impact/core/service/api_service/Model/team_model.dart';
-import 'package:data4impact/core/service/api_service/Model/member_model.dart';
-import 'package:data4impact/features/home/cubit/home_cubit.dart';
-import 'package:data4impact/features/home/cubit/home_state.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -26,176 +26,51 @@ class TeamDetailView extends StatefulWidget {
 }
 
 class _TeamDetailViewState extends State<TeamDetailView> {
-  List<MemberModel> members = [];
-  Map<String, bool> expandedMembers = {};
-  Map<String, List<bool>> selectedStudies = {};
-  Map<String, List<dynamic>> memberStudies = {};
-  bool isLoading = true;
-  String? error;
-  bool selectAll = false;
-
   @override
   void initState() {
     super.initState();
-    _loadTeamMembers();
-  }
-
-  Future<void> _loadTeamMembers() async {
-    try {
-      final teamService = TeamService(
-        apiClient: context.read(),
-        secureStorage: context.read(),
-      );
-
-      final response = await teamService.getTeamMembers(widget.team.id);
-
-      // Handle the response properly - it's a List<dynamic>
-      if (response is List) {
-        setState(() {
-          members = response.map((memberData) {
-            return MemberModel.fromJson(memberData as Map<String,dynamic>);
-          }).toList();
-
-          for (var member in members) {
-            expandedMembers[member.id] = false;
-            memberStudies[member.id] = [];
-            selectedStudies[member.id] = [];
-          }
-
-          isLoading = false;
-          error = null;
-        });
-      } else {
-        throw Exception('Invalid response format from server');
-      }
-    } catch (e) {
-      print('Error loading team members: $e');
-      setState(() {
-        error = e.toString();
-        isLoading = false;
-      });
-    }
-  }
-
-  void _toggleMemberExpansion(String memberId) {
-    setState(() {
-      expandedMembers[memberId] = !expandedMembers[memberId]!;
-      if (expandedMembers[memberId]! && memberStudies[memberId]!.isEmpty) {
-        _loadMemberStudies(memberId);
-      }
+    // Load team members when view initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeamCubit>().getTeamMembers(widget.team.id);
     });
   }
 
-  Future<void> _loadMemberStudies(String memberId) async {
-    try {
-      // Get the member
-      final member = members.firstWhere((m) => m.id == memberId);
-
-      // Get collectors data from HomeCubit
-      final homeState = context.read<HomeCubit>().state;
-      final collectors = homeState.collectors;
-
-      // Since we're having trouble matching, let's show ALL collectors
-      List<dynamic> memberCollectors = List.from(collectors);
-
-      // Convert collectors to studies format
-      final studies = memberCollectors.map((collector) {
-        final studyData = collector['study'] as Map<String, dynamic>?;
-        final userData = collector['user'] as Map<String, dynamic>?;
-
-        final studyName = studyData?['name'] ?? 'Unnamed Study';
-        final studyStatus = collector['status'] ?? 'unknown';
-        final isActive = studyStatus.toString().toLowerCase() == 'inprogress';
-
-        print('🔍 Processing study: "$studyName" - status: $studyStatus, isActive: $isActive');
-
-        return {
-          'id': collector['_id'],
-          'name': studyName,
-          'description': studyData?['description'] ?? '',
-          'responseCount': collector['responseCount'] ?? 0,
-          'maxLimit': collector['maxLimit'] ?? 0,
-          'status': studyStatus,
-          'assignedDate': collector['assignedDate'] ?? '',
-          'completedDate': collector['completedDate'] ?? '',
-          'studyId': studyData?['_id'] ?? '',
-          'allowOffline': collector['allowOffline'] ?? false,
-          'project': collector['project'] ?? '',
-          'cohorts': collector['cohorts'] ?? [],
-          'userName': userData != null
-              ? '${userData['firstName']} ${userData['lastName']}'
-              : 'Unknown User',
-          'userEmail': userData?['email'] ?? '',
-          'createdAt': collector['createdAt'] ?? '',
-          'updatedAt': collector['updatedAt'] ?? '',
-          'isActive': isActive,
-        };
-      }).toList();
-
-      print('🎉 Final studies count for ${member.fullName}: ${studies.length}');
-      print('🎯 Active studies: ${studies.where((s) => s['isActive'] == true).length}');
-      print('✅ Completed studies: ${studies.where((s) => s['status']?.toString().toLowerCase() == 'completed').length}');
-
-      setState(() {
-        memberStudies[memberId] = studies;
-        selectedStudies[memberId] = List.generate(studies.length, (index) => false);
-      });
-
-    } catch (e) {
-      print('❌ Error loading studies for member $memberId: $e');
-      setState(() {
-        memberStudies[memberId] = [];
-        selectedStudies[memberId] = [];
-      });
-    }
+  @override
+  void dispose() {
+    // Clear team detail state when leaving the view
+    context.read<TeamCubit>().clearTeamDetail();
+    super.dispose();
   }
 
-  void _toggleStudySelection(String memberId, int studyIndex, bool? value) {
-    setState(() {
-      selectedStudies[memberId]![studyIndex] = value ?? false;
-    });
-  }
-
-  void _toggleSelectAllStudies(String memberId, bool? value) {
-    setState(() {
-      final newValue = value ?? false;
-      selectedStudies[memberId] = List.generate(
-          selectedStudies[memberId]!.length,
-              (index) => newValue
-      );
-    });
-  }
-
-  double _calculatePerformance() {
+  double _calculatePerformance(List<MemberModel> members) {
     if (members.isEmpty) return 0.0;
     final activeMembers = members.where((member) => member.roles.isNotEmpty).length;
     return (activeMembers / members.length) * 100;
   }
 
-  String _calculateGoalProgress() {
+  String _calculateGoalProgress(List<MemberModel> members) {
     const totalGoal = 15;
     final currentProgress = members.length;
     return '$currentProgress/$totalGoal';
   }
 
-  int _calculatePendingMembers() {
+  int _calculatePendingMembers(List<MemberModel> members) {
     return members.where((member) => member.roles.isEmpty || !member.roles.contains('pending')).length;
   }
 
-  int _getInProgressStudiesCount(String memberId) {
-    final studies = memberStudies[memberId] ?? [];
+  int _getInProgressStudiesCount(List<dynamic> studies) {
     return studies.where((study) => study['status']?.toString().toLowerCase() == 'inprogress').length;
   }
 
-  Future<void> _exportToCSV() async {
+  Future<void> _exportToCSV(TeamState teamState) async {
     try {
       // Collect all selected studies across all members
       final selectedStudyData = <Map<String, dynamic>>[];
 
-      for (var member in members) {
+      for (var member in teamState.currentTeamMembers) {
         final memberId = member.id;
-        final studies = memberStudies[memberId] ?? [];
-        final selections = selectedStudies[memberId] ?? [];
+        final studies = teamState.currentTeamMemberStudies[memberId] ?? [];
+        final selections = teamState.selectedStudies[memberId] ?? [];
 
         for (int i = 0; i < studies.length; i++) {
           if (selections.isNotEmpty && i < selections.length && selections[i]) {
@@ -436,6 +311,53 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     }
   }
 
+  Widget _buildStudyStat(IconData icon, String text, {Color? color, required BuildContext context}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 12,
+          color: color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            color: color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getStatusColor(String? status, BuildContext context) {
+    switch (status?.toLowerCase()) {
+      case 'inprogress':
+        return Colors.orange;
+      case 'completed':
+        return Colors.green;
+      case 'pending':
+        return Colors.blue;
+      default:
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    }
+  }
+
+  Color _getRoleColor(String role, BuildContext context) {
+    switch (role.toLowerCase()) {
+      case 'supervisor':
+        return Colors.blue.shade600;
+      case 'collector':
+        return Colors.green.shade600;
+      case 'admin':
+        return Colors.orange.shade600;
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -453,37 +375,60 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         actions: [
-          if (members.isNotEmpty)
-            Container(
-              margin: const EdgeInsets.only(right: 16),
-              child: IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
+          BlocBuilder<TeamCubit, TeamState>(
+            builder: (context, teamState) {
+              if (teamState.currentTeamMembers.isNotEmpty) {
+                return Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  child: IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.download_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 20,
+                      ),
+                    ),
+                    onPressed: () => _exportToCSV(teamState),
+                    tooltip: 'Export Selected Studies to CSV',
                   ),
-                  child: Icon(
-                    Icons.download_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  ),
-                ),
-                onPressed: _exportToCSV,
-                tooltip: 'Export Selected Studies to CSV',
-              ),
-            ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
         ],
       ),
       body: SafeArea(
-        child: BlocBuilder<HomeCubit, HomeState>(
-          builder: (context, homeState) {
-            return isLoading
-                ? _buildLoadingState()
-                : error != null
-                ? _buildErrorState()
-                : _buildContent(homeState);
-          },
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<TeamCubit, TeamState>(
+              listener: (context, teamState) {
+                // When members are loaded and expanded, load their studies
+                for (var member in teamState.currentTeamMembers) {
+                  if (teamState.expandedMembers[member.id] == true &&
+                      (teamState.currentTeamMemberStudies[member.id] ?? []).isEmpty) {
+                    // Get collectors from home state and load studies
+                    final homeState = context.read<HomeCubit>().state;
+                    context.read<TeamCubit>().getMemberStudies(member.id, homeState.collectors);
+                  }
+                }
+              },
+            ),
+          ],
+          child: BlocBuilder<TeamCubit, TeamState>(
+            builder: (context, teamState) {
+              return teamState.isLoading
+                  ? _buildLoadingState()
+                  : teamState.error != null
+                  ? _buildErrorState(teamState.error!)
+                  : _buildContent(teamState);
+            },
+          ),
         ),
       ),
     );
@@ -511,7 +456,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(String error) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -541,7 +486,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
             ),
             const SizedBox(height: 12),
             Text(
-              error!,
+              error,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -550,7 +495,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: _loadTeamMembers,
+              onPressed: () => context.read<TeamCubit>().refreshTeamMembers(widget.team.id),
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -564,14 +509,17 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     );
   }
 
-  Widget _buildContent(HomeState homeState) {
-    final performance = _calculatePerformance();
-    final goalProgress = _calculateGoalProgress();
-    final pendingMembers = _calculatePendingMembers();
+  Widget _buildContent(TeamState teamState) {
+    final members = teamState.currentTeamMembers;
+
+    // Calculate statistics using cubit state
+    final performance = _calculatePerformance(members);
+    final goalProgress = _calculateGoalProgress(members);
+    final pendingMembers = _calculatePendingMembers(members);
 
     return Column(
       children: [
-        // Stats Cards - Only 4 cards as requested
+        // Stats Cards
         Padding(
           padding: const EdgeInsets.all(20.0),
           child: GridView.count(
@@ -599,11 +547,11 @@ class _TeamDetailViewState extends State<TeamDetailView> {
               ),
               TeamStatsCard(
                 title: 'Goal',
-                value: 0, // We'll display custom text instead
+                value: 0,
                 subtitle: goalProgress,
                 icon: Icons.flag_rounded,
                 color: Colors.orange,
-                customValue: goalProgress, // Custom display for goal progress
+                customValue: goalProgress,
               ),
               TeamStatsCard(
                 title: 'Pending Members',
@@ -654,418 +602,369 @@ class _TeamDetailViewState extends State<TeamDetailView> {
         Expanded(
           child: members.isEmpty
               ? _buildEmptyState()
-              : Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: ListView.builder(
-              itemCount: members.length,
-              itemBuilder: (context, index) {
-                final member = members[index];
-                final isExpanded = expandedMembers[member.id] ?? false;
-                final studies = memberStudies[member.id] ?? [];
-                final studySelections = selectedStudies[member.id] ?? [];
-                final inProgressStudiesCount = _getInProgressStudiesCount(member.id);
+              : _buildMembersList(teamState),
+        ),
+      ],
+    );
+  }
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: Material(
-                    color: Theme.of(context).colorScheme.surface,
+  Widget _buildMembersList(TeamState teamState) {
+    final members = teamState.currentTeamMembers;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: ListView.builder(
+        itemCount: members.length,
+        itemBuilder: (context, index) {
+          final member = members[index];
+          final isExpanded = teamState.expandedMembers[member.id] ?? false;
+          final studies = teamState.currentTeamMemberStudies[member.id] ?? [];
+          final studySelections = teamState.selectedStudies[member.id] ?? [];
+          final inProgressStudiesCount = _getInProgressStudiesCount(studies);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              elevation: 1,
+              child: Column(
+                children: [
+                  // Member Header (Clickable)
+                  InkWell(
+                    onTap: () => context.read<TeamCubit>().toggleMemberExpansion(member.id),
                     borderRadius: BorderRadius.circular(12),
-                    elevation: 1,
-                    child: Column(
-                      children: [
-                        // Member Header (Clickable)
-                        InkWell(
-                          onTap: () => _toggleMemberExpansion(member.id),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          // Avatar
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.person_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+
+                          // Member Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Avatar
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.person_rounded,
-                                    color: Theme.of(context).colorScheme.primary,
-                                    size: 20,
+                                Text(
+                                  member.fullName,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-
-                                // Member Info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        member.fullName,
+                                const SizedBox(height: 2),
+                                Text(
+                                  member.user.email,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: [
+                                    ...member.roles.map((role) => Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _getRoleColor(role, context),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        role.toUpperCase(),
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSurface,
-                                          fontSize: 16,
+                                          color: Colors.white,
+                                          fontSize: 10,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        member.user.email,
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 4,
-                                        children: [
-                                          ...member.roles.map((role) => Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: _getRoleColor(role, context),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              role.toUpperCase(),
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          )),
-                                          if (member.attributes.isNotEmpty)
-                                            ...member.attributes.entries.map((entry) => Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context).colorScheme.surfaceVariant,
-                                                borderRadius: BorderRadius.circular(6),
-                                                border: Border.all(
-                                                  color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '${entry.key}: ${entry.value}',
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            )),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // Studies count and expand icon
-                                Column(
-                                  children: [
-                                    if (inProgressStudiesCount > 0)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    )),
+                                    if (member.attributes.isNotEmpty)
+                                      ...member.attributes.entries.map((entry) => Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: Colors.orange.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          '$inProgressStudiesCount active',
-                                          style: TextStyle(
-                                            color: Colors.orange,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
+                                          color: Theme.of(context).colorScheme.surfaceVariant,
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
                                           ),
                                         ),
-                                      ),
-                                    const SizedBox(height: 4),
-                                    Icon(
-                                      isExpanded
-                                          ? Icons.expand_less_rounded
-                                          : Icons.expand_more_rounded,
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                      size: 24,
-                                    ),
+                                        child: Text(
+                                          '${entry.key}: ${entry.value}',
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      )),
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                        ),
 
-                        // Studies List (Expandable) - Only show in progress studies
-                        if (isExpanded)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Studies Header with Select All
-                                if (inProgressStudiesCount > 0)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        Checkbox(
-                                          value: studySelections.isNotEmpty &&
-                                              studies.asMap().entries.where((entry) {
-                                                final study = entry.value;
-                                                return study['status']?.toString().toLowerCase() == 'inprogress';
-                                              }).every((entry) {
-                                                final index = entry.key;
-                                                return index < studySelections.length ? studySelections[index] : false;
-                                              }),
-                                          onChanged: (value) => _toggleSelectAllStudies(member.id, value),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Select All Studies',
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurface,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        Text(
-                                          '$inProgressStudiesCount in progress studies',
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
+                          // Studies count and expand icon
+                          Column(
+                            children: [
+                              if (inProgressStudiesCount > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '$inProgressStudiesCount active',
+                                    style: TextStyle(
+                                      color: Colors.orange,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
+                                ),
+                              const SizedBox(height: 4),
+                              Icon(
+                                isExpanded
+                                    ? Icons.expand_less_rounded
+                                    : Icons.expand_more_rounded,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                size: 24,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
-                                // Studies List - Only show in progress studies
-                                if (studies.isNotEmpty)
-                                  ...studies.asMap().entries.map((entry) {
-                                    final studyIndex = entry.key;
-                                    final study = entry.value;
-                                    final isSelected = studyIndex < studySelections.length
-                                        ? studySelections[studyIndex]
-                                        : false;
+                  // Studies List (Expandable)
+                  if (isExpanded)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Studies Header with Select All
+                          if (inProgressStudiesCount > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Row(
+                                children: [
+                                  Checkbox(
+                                    value: studySelections.isNotEmpty &&
+                                        studies.asMap().entries.every((entry) {
+                                          final index = entry.key;
+                                          return index < studySelections.length ? studySelections[index] : false;
+                                        }),
+                                    onChanged: (value) => context.read<TeamCubit>().toggleSelectAllStudies(member.id, value),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Select All Studies',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '$inProgressStudiesCount in progress studies',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                                    // REMOVED FILTERING - Show all studies
-                                    // final isActive = study['isActive'] == true ||
-                                    //                 study['status']?.toString().toLowerCase() == 'inprogress';
-                                    //
-                                    // if (!isActive) {
-                                    //   return const SizedBox.shrink();
-                                    // }
+                          // Studies List
+                          if (studies.isNotEmpty)
+                            ...studies.asMap().entries.map((entry) {
+                              final studyIndex = entry.key;
+                              final study = entry.value;
+                              final isSelected = studyIndex < studySelections.length
+                                  ? studySelections[studyIndex]
+                                  : false;
 
-                                    return Container(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? Theme.of(context).colorScheme.primary.withOpacity(0.05)
-                                            : Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                                        ),
-                                      ),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          onTap: () => _toggleStudySelection(member.id, studyIndex, !isSelected),
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(12),
-                                            child: Row(
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary.withOpacity(0.05)
+                                      : Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                                  ),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => context.read<TeamCubit>().toggleStudySelection(member.id, studyIndex, !isSelected),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Row(
+                                        children: [
+                                          Checkbox(
+                                            value: isSelected,
+                                            onChanged: (value) => context.read<TeamCubit>().toggleStudySelection(member.id, studyIndex, value),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Checkbox(
-                                                  value: isSelected,
-                                                  onChanged: (value) => _toggleStudySelection(member.id, studyIndex, value),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(4),
+                                                Text(
+                                                  study['name'] as String? ?? 'Unnamed Study',
+                                                  style: TextStyle(
+                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
                                                   ),
                                                 ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        study['name'] as String? ?? 'Unnamed Study',
-                                                        style: TextStyle(
-                                                          color: Theme.of(context).colorScheme.onSurface,
-                                                          fontSize: 14,
-                                                          fontWeight: FontWeight.w600,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      if (study['description'] != null && study['description'].toString().isNotEmpty)
-                                                        Text(
-                                                          study['description'].toString(),
-                                                          style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                                            fontSize: 12,
-                                                          ),
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                      const SizedBox(height: 6),
-                                                      Wrap(
-                                                        spacing: 12,
-                                                        children: [
-                                                          _buildStudyStat(
-                                                            Icons.assignment_rounded,
-                                                            '${study['responseCount'] ?? 0} responses',
-                                                          ),
-                                                          _buildStudyStat(
-                                                            HugeIcons.strokeRoundedLimitation,
-                                                            'Max: ${study['maxLimit'] ?? 0}',
-                                                          ),
-                                                          _buildStudyStat(
-                                                            Icons.circle_rounded,
-                                                            study['status'] as String? ?? '',
-                                                            color: _getStatusColor(study['status'] as String?),
-                                                          ),
-                                                          if (study['allowOffline'] == true)
-                                                            _buildStudyStat(
-                                                              Icons.wifi_off_rounded,
-                                                              'Offline',
-                                                              color: Colors.orange,
-                                                            ),
-                                                        ],
-                                                      ),
-                                                    ],
+                                                const SizedBox(height: 4),
+                                                if (study['description'] != null && study['description'].toString().isNotEmpty)
+                                                  Text(
+                                                    study['description'].toString(),
+                                                    style: TextStyle(
+                                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                                      fontSize: 12,
+                                                    ),
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
+                                                const SizedBox(height: 6),
+                                                Wrap(
+                                                  spacing: 12,
+                                                  children: [
+                                                    _buildStudyStat(
+                                                      Icons.assignment_rounded,
+                                                      '${study['responseCount'] ?? 0} responses',
+                                                      context: context,
+                                                    ),
+                                                    _buildStudyStat(
+                                                      HugeIcons.strokeRoundedLimitation,
+                                                      'Max: ${study['maxLimit'] ?? 0}',
+                                                      context: context,
+                                                    ),
+                                                    _buildStudyStat(
+                                                      Icons.circle_rounded,
+                                                      study['status'] as String? ?? '',
+                                                      color: _getStatusColor(study['status'] as String?, context),
+                                                      context: context,
+                                                    ),
+                                                    if (study['allowOffline'] == true)
+                                                      _buildStudyStat(
+                                                        Icons.wifi_off_rounded,
+                                                        'Offline',
+                                                        color: Colors.orange,
+                                                        context: context,
+                                                      ),
+                                                  ],
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    );
-                                  }).toList(),
-
-                                // Loading or Empty State for Studies
-                                if (studies.isEmpty)
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Theme.of(context).colorScheme.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          'Loading studies...',
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ),
+                                ),
+                              );
+                            }).toList(),
 
-                                // No in progress studies message
-                                if (studies.isNotEmpty && inProgressStudiesCount == 0)
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.info_outline_rounded,
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          'No in progress studies',
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
+                          // Loading or Empty State for Studies
+                          if (studies.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
                                   ),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Loading studies...',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                      ],
+
+                          // No in progress studies message
+                          if (studies.isNotEmpty && inProgressStudiesCount == 0)
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline_rounded,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'No in progress studies',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                ],
+              ),
             ),
-          ),
-        ),
-      ],
+          );
+        },
+      ),
     );
-  }
-
-  Widget _buildStudyStat(IconData icon, String text, {Color? color}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 12,
-          color: color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            color: color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Color _getStatusColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'inprogress':
-        return Colors.orange;
-      case 'completed':
-        return Colors.green;
-      case 'pending':
-        return Colors.blue;
-      default:
-        return Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
-    }
-  }
-
-  Color _getRoleColor(String role, BuildContext context) {
-    switch (role.toLowerCase()) {
-      case 'supervisor':
-        return Colors.blue.shade600;
-      case 'collector':
-        return Colors.green.shade600;
-      case 'admin':
-        return Colors.orange.shade600;
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
   }
 
   Widget _buildEmptyState() {
