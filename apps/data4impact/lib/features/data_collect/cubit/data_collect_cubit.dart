@@ -63,7 +63,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   void clearError() {
-    emit(state.copyWith(error: null));
+    emit(state.copyWith(clearError: true));
   }
 
   // Location methods
@@ -679,7 +679,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     );
   }
 
-  void nextQuestion({required String studyId}) {
+  void nextQuestion({required String studyId, String? flowType}) {
     final currentIndex = state.currentQuestionIndex;
     final study = state.study;
 
@@ -689,14 +689,14 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     // Check if we're at the last question and should submit
     if (currentIndex >= study.questions.length - 1) {
-      submitSurvey(studyId: studyId);
+      submitSurvey(studyId: studyId, flowType: flowType);
       return;
     }
 
     // Check if we're at a jump target and need to process it
     if (state.jumpTarget != null) {
       if (state.jumpTarget == 'end') {
-        submitSurvey(studyId: studyId);
+        submitSurvey(studyId: studyId, flowType: flowType);
         return;
       } else {
         final targetIndex = study.questions.indexWhere(
@@ -764,7 +764,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         _isNavigating = false;
       });
     } else {
-      submitSurvey(studyId: studyId);
+      submitSurvey(studyId: studyId, flowType: flowType);
     }
   }
 
@@ -895,13 +895,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
-  Future<void> submitSurvey({required String studyId}) async {
+  Future<void> submitSurvey({required String studyId, String? flowType}) async {
     final study = state.study;
     if (study == null) {
-      emit(state.copyWith(
-        isSubmitting: false,
-        error: 'No study data available',
-      ));
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          error: 'No study data available',
+        ),
+      );
       return;
     }
 
@@ -937,7 +939,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             audioUrl = result['filename'] as String?;
             emit(state.copyWith(audioUploadResult: result));
 
-            // Clean up local file after successful upload
             final file = File(state.audioFilePath!);
             if (await file.exists()) {
               await file.delete();
@@ -957,92 +958,214 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         }
       }
 
-      // Format ALL responses for submission (group discussion)
-      final bodyArray = _formatGroupResponsesForSubmission(studyId, audioUrl);
+      // Check the flow type and handle accordingly
+      if (state.selectedGroupRespondents.isNotEmpty) {
+        final bodyArray = _formatGroupResponsesForSubmission(studyId, audioUrl);
 
-      if (bodyArray.isEmpty) {
-        emit(state.copyWith(
-          isSubmitting: false,
-          error: 'No responses to submit',
-        ));
-        ToastService.showErrorToast(message: 'No responses to submit');
-        return;
-      }
-
-      // Check internet connection for submission
-      final connected = InternetConnectionMonitor(
-        checkOnInterval: false,
-        checkInterval: const Duration(seconds: 5),
-      );
-
-      final isConnected = await connected.hasInternetConnection();
-
-      if (isConnected) {
-        // Online submission - submit all responses at once
-        try {
-          final response = await studyService.submitSurveyResponse(
-            studyId: studyId,
-            responseData: bodyArray,
+        if (bodyArray.isEmpty) {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              error: 'No responses to submit',
+            ),
           );
-
-          // Success - update state and show success message
-          emit(state.copyWith(
-            isSubmitting: false,
-            submissionResult: response,
-            error: null,
-            storedGroupResponses: const {}, // Clear stored responses
-          ));
-
-          ToastService.showSuccessToast(
-            message: '${bodyArray.length} responses submitted successfully',
-          );
-
-          // Note: Navigation should be handled in the UI layer (widget)
-          // based on the state changes
-
-        } catch (e) {
-          emit(state.copyWith(
-            isSubmitting: false,
-            error: 'Failed to submit survey: $e',
-          ));
-          ToastService.showErrorToast(message: 'Failed to submit survey: $e');
+          ToastService.showErrorToast(message: 'No responses to submit');
+          return;
         }
+
+        await _submitResponses(studyId, bodyArray, 'group discussion');
       } else {
-        // Offline submission
-        try {
-          for (final response in bodyArray) {
-            await OfflineModeDataRepo().saveOfflineAnswer(studyId, response);
-          }
+        final bodyArray = _formatResponseForSubmission(
+          studyId,
+          audioUrl,
+        );
 
+        if (bodyArray.isEmpty) {
           emit(state.copyWith(
             isSubmitting: false,
-            error: null,
-            storedGroupResponses: const {}, // Clear stored responses
+            error: 'No responses to submit',
           ));
-
-          ToastService.showSuccessToast(
-            message: '${bodyArray.length} responses saved offline. Will sync when internet is available.',
-          );
-
-          // Note: Navigation should be handled in the UI layer (widget)
-          // based on the state changes
-
-        } catch (e) {
-          emit(state.copyWith(
-            isSubmitting: false,
-            error: 'Failed to save offline: $e',
-          ));
-          ToastService.showErrorToast(message: 'Failed to save offline: $e');
+          ToastService.showErrorToast(message: 'No responses to submit');
+          return;
         }
+
+        // Submit response
+        final finalFlowType = flowType ?? 'default';
+        await _submitResponses(studyId, bodyArray, finalFlowType);
       }
     } catch (e) {
-      // Handle any unexpected errors
       emit(state.copyWith(
         isSubmitting: false,
         error: 'Unexpected error during submission: $e',
       ));
       ToastService.showErrorToast(
           message: 'Unexpected error during submission: $e');
+    }
+  }
+
+// Helper method to submit responses (common logic for all flows)
+  Future<void> _submitResponses(
+      String studyId, List<Map<String, dynamic>> bodyArray, String type) async {
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
+
+    final isConnected = await connected.hasInternetConnection();
+
+    if (isConnected) {
+      try {
+        final response = await studyService.submitSurveyResponse(
+          studyId: studyId,
+          responseData: bodyArray,
+        );
+
+        if (type == 'longitudinal') {
+          // For longitudinal flow, we should stay in the subject selection screen
+          // but refresh the data to show updated completion status
+          final newState = state.copyWith(
+            isSubmitting: false,
+            submissionResult: response,
+            error: null,
+            storedGroupResponses: const {},
+            answers: {},
+            currentQuestionIndex: 0,
+            navigationHistory: const [],
+            logicJumps: const {},
+            jumpTarget: null,
+            isManagingSubjects: true, // Stay in subject management
+            selectedSubject: null, // Deselect the current subject
+          );
+
+          emit(newState);
+
+          // Reload subjects to get updated completion status
+          await loadStudySubjects(studyId);
+          await loadStudyWaves(studyId);
+
+          // Update selectedWave to reflect changes (e.g. new subject added to completed list)
+          if (state.selectedWave != null && state.waves.isNotEmpty) {
+            final updatedWave = state.waves.firstWhere(
+              (w) => w['_id'] == state.selectedWave!['_id'],
+              orElse: () => state.selectedWave!,
+            );
+            emit(state.copyWith(selectedWave: updatedWave));
+          }
+
+          ToastService.showSuccessToast(
+            message: 'Longitudinal data submitted successfully',
+          );
+        } else if (type == 'interview') {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              submissionResult: response,
+              error: null,
+              storedGroupResponses: const {},
+              answers: {},
+              currentQuestionIndex: 0,
+              navigationHistory: const [],
+              logicJumps: const {},
+              jumpTarget: null,
+              isManagingRespondents: true,
+              selectedRespondent: null,
+            ),
+          );
+          ToastService.showSuccessToast(
+            message: 'Interview data submitted successfully',
+          );
+        } else {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              submissionResult: response,
+              error: null,
+              storedGroupResponses: const {},
+            ),
+          );
+        }
+
+        ToastService.showSuccessToast(
+          message: type == 'group discussion'
+              ? '${bodyArray.length} responses submitted successfully'
+              : type == 'longitudinal'
+                  ? 'Longitudinal data submitted successfully'
+                  : 'Interview submitted successfully',
+        );
+      } catch (e) {
+        emit(state.copyWith(
+          isSubmitting: false,
+          error: 'Failed to submit $type: $e',
+        ));
+        ToastService.showErrorToast(message: 'Failed to submit $type: $e');
+      }
+    } else {
+      // Offline submission - similar fixes needed here
+      try {
+        for (final response in bodyArray) {
+          await OfflineModeDataRepo().saveOfflineAnswer(studyId, response);
+        }
+
+        if (type == 'longitudinal') {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              error: null,
+              submissionResult: ['response'],
+              storedGroupResponses: const {},
+              answers: {},
+              currentQuestionIndex: 0,
+              navigationHistory: const [],
+              logicJumps: const {},
+              jumpTarget: null,
+              isManagingSubjects: true, // Stay in subject management
+              selectedSubject: null, // Deselect the current subject
+            ),
+          );
+
+          // Reload subjects for offline mode too
+          await loadStudySubjects(studyId);
+        } else if (type == 'interview') {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              error: null,
+              submissionResult: ['response'],
+              storedGroupResponses: const {},
+              answers: {},
+              currentQuestionIndex: 0,
+              navigationHistory: const [],
+              logicJumps: const {},
+              jumpTarget: null,
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              error: null,
+              submissionResult: ['response'],
+              storedGroupResponses: const {},
+            ),
+          );
+        }
+
+        ToastService.showSuccessToast(
+          message: type == 'group discussion'
+              ? '${bodyArray.length} responses saved offline. Will sync when internet is available.'
+              : type == 'longitudinal'
+                  ? 'Longitudinal data saved offline. Will sync when internet is available.'
+                  : 'Interview saved offline. Will sync when internet is available.',
+        );
+      } catch (e) {
+        emit(
+          state.copyWith(
+            isSubmitting: false,
+            error: 'Failed to save offline: $e',
+          ),
+        );
+        ToastService.showErrorToast(message: 'Failed to save offline: $e');
+      }
     }
   }
 
@@ -1053,7 +1176,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     final List<Map<String, dynamic>> allResponses = [];
 
-    // Process each respondent's stored responses
     for (final respondent in state.selectedGroupRespondents) {
       final respondentId = respondent['_id'];
       final respondentAnswers = state.storedGroupResponses[respondentId] ?? {};
@@ -1070,7 +1192,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
               "questionId": question.id,
               "questionVariable": question.variable,
               "questionType":
-              question.type.toString().replaceAll('ApiQuestionType.', ''),
+                  question.type.toString().replaceAll('ApiQuestionType.', ''),
               "timestamp": DateTime.now().toIso8601String(),
             });
           }
@@ -1141,90 +1263,107 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     final study = state.study;
     if (study == null) return [];
 
-    // For single respondent (non-group discussion), use the existing logic
-    if (state.selectedGroupRespondents.isEmpty) {
-      // Convert answers to the required format
-      final List<Map<String, dynamic>> questionResponses = [];
+    // Convert answers to the required format
+    final List<Map<String, dynamic>> questionResponses = [];
 
-      for (final question in study.questions) {
-        final answer = state.answers[question.id];
-        if (answer != null) {
-          questionResponses.add({
-            "response": _formatAnswerValue(answer, question.type),
-            "questionId": question.id,
-            "questionVariable": question.variable,
-            "questionType":
-            question.type.toString().replaceAll('ApiQuestionType.', ''),
-            "timestamp": DateTime.now().toIso8601String(),
-          });
-        }
+    for (final question in study.questions) {
+      final answer = state.answers[question.id];
+      if (answer != null) {
+        questionResponses.add({
+          "response": _formatAnswerValue(answer, question.type),
+          "questionId": question.id,
+          "questionVariable": question.variable,
+          "questionType":
+              question.type.toString().replaceAll('ApiQuestionType.', ''),
+          "timestamp": DateTime.now().toIso8601String(),
+        });
       }
-
-      // Current respondent (for interview methodology)
-      final currentRespondent =
-      state.currentRespondentIndex < state.selectedGroupRespondents.length
-          ? state.selectedGroupRespondents[state.currentRespondentIndex]
-          : null;
-
-      // Main response object (NO geolocation yet)
-      final submission = {
-        "study": studyId,
-        "duration": state.recordingDuration,
-        "data": questionResponses,
-        "finished": state.currentRespondentIndex >=
-            state.selectedGroupRespondents.length - 1,
-        "deviceType": "mobile",
-        "respondent": currentRespondent?['_id'],
-        "submittedAt": DateTime.now().toIso8601String(),
-      };
-
-      final geo = state.locationData?.toJson();
-
-      bool hasValidGeo(Map<String, dynamic>? g) {
-        if (g == null) return false;
-        if (g["lat"] == null || g["lng"] == null) return false;
-        if (g["lat"] == "undefined" || g["lng"] == "undefined") return false;
-        if (g["lat"] is! num || g["lng"] is! num) return false;
-        return true;
-      }
-
-      if (hasValidGeo(geo)) {
-        submission["geolocation"] = geo;
-      }
-
-      if (state.selectedCohort != null) {
-        submission["cohort"] = state.selectedCohort!['_id'];
-      }
-
-      // Filtering Wave
-      if (state.selectedWave != null) {
-        submission["wave"] = state.selectedWave!['_id'];
-      }
-
-      // Filtering Subject
-      if (state.selectedSubject != null) {
-        submission["subject"] = state.selectedSubject!['_id'];
-      }
-
-      // Filtering Group
-      if (state.selectedGroup != null) {
-        submission["group"] = state.selectedGroup!['_id'];
-      }
-
-      // Filtering Audio
-      if (audioUrl != null) {
-        if (audioUrl.startsWith('/')) {
-          submission["audioFilePath"] = audioUrl;
-        } else {
-          submission["audioUrl"] = audioUrl;
-        }
-      }
-
-      return [submission];
-    } else {
-      // For group discussion, use the new method
-      return _formatGroupResponsesForSubmission(studyId, audioUrl);
     }
+
+    // Determine respondent ID - prioritize interview respondent
+    String? respondentId;
+
+    // For interview flow - use selected respondent
+    if (state.selectedRespondent != null) {
+      respondentId = state.selectedRespondent!['_id'] as String?;
+      print('Using selected respondent ID: $respondentId'); // Debug log
+    }
+    // For group discussion flow
+    else if (state.selectedGroupRespondents.isNotEmpty &&
+        state.currentRespondentIndex < state.selectedGroupRespondents.length) {
+      respondentId =
+          state.selectedGroupRespondents[state.currentRespondentIndex]['_id']
+              as String?;
+    }
+    // For longitudinal flow
+    else if (state.selectedSubject != null) {
+      respondentId = state.selectedSubject!['_id'] as String?;
+    }
+
+    // Main response object
+    final submission = {
+      "study": studyId,
+      "duration": state.recordingDuration,
+      "data": questionResponses,
+      "finished": true,
+      "deviceType": "mobile",
+      "submittedAt": DateTime.now().toIso8601String(),
+    };
+
+    // Add respondent ID if available
+    if (respondentId != null && respondentId.isNotEmpty) {
+      submission["respondent"] = respondentId;
+      print('Added respondent to submission: $respondentId'); // Debug log
+    } else {
+      print('No respondent ID available for submission'); // Debug log
+    }
+
+    // Add location data if available
+    final geo = state.locationData?.toJson();
+
+    bool hasValidGeo(Map<String, dynamic>? g) {
+      if (g == null) return false;
+      if (g["lat"] == null || g["lng"] == null) return false;
+      if (g["lat"] == "undefined" || g["lng"] == "undefined") return false;
+      if (g["lat"] is! num || g["lng"] is! num) return false;
+      return true;
+    }
+
+    if (hasValidGeo(geo)) {
+      submission["geolocation"] = geo as Map<String, dynamic>;
+    }
+
+    // Add cohort if available
+    if (state.selectedCohort != null) {
+      submission["cohort"] = state.selectedCohort!['_id'] as String;
+    }
+
+    // Add wave if available
+    if (state.selectedWave != null) {
+      submission["wave"] = state.selectedWave!['_id'] as String;
+    }
+
+    // Add subject if available
+    if (state.selectedSubject != null) {
+      submission["subject"] = state.selectedSubject!['_id'] as String;
+    }
+
+    // Add group if available
+    if (state.selectedGroup != null) {
+      submission["group"] = state.selectedGroup!['_id'] as String;
+    }
+
+    // Add audio if available
+    if (audioUrl != null) {
+      if (audioUrl.startsWith('/')) {
+        submission["audioFilePath"] = audioUrl;
+      } else {
+        submission["audioUrl"] = audioUrl;
+      }
+    }
+
+    print('Final submission: $submission'); // Debug log
+    return [submission];
   }
 
   dynamic _formatAnswerValue(dynamic answer, ApiQuestionType questionType) {
@@ -1695,6 +1834,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       navigationHistory: const [],
       logicJumps: const {},
       jumpTarget: null,
+      clearSubmissionResult: true,
     ));
   }
 
@@ -1980,7 +2120,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       // All respondents completed - show completion screen
       // Don't submit automatically, let user review and submit
       emit(state.copyWith(
-        currentRespondentIndex: nextIndex, // This will trigger completion screen
+        currentRespondentIndex:
+            nextIndex, // This will trigger completion screen
       ));
     }
   }
@@ -1988,12 +2129,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   void _storeCurrentRespondentResponses() {
     final currentRespondentIndex = state.currentRespondentIndex;
     if (currentRespondentIndex < state.selectedGroupRespondents.length) {
-      final currentRespondent = state.selectedGroupRespondents[currentRespondentIndex];
+      final currentRespondent =
+          state.selectedGroupRespondents[currentRespondentIndex];
       final respondentId = currentRespondent['_id'];
 
       // Store the responses for this respondent
-      final storedResponses = Map<String, Map<String, dynamic>>.from(state.storedGroupResponses);
-      storedResponses[respondentId as String] = Map<String, dynamic>.from(state.answers);
+      final storedResponses =
+          Map<String, Map<String, dynamic>>.from(state.storedGroupResponses);
+      storedResponses[respondentId as String] =
+          Map<String, dynamic>.from(state.answers);
 
       emit(state.copyWith(storedGroupResponses: storedResponses));
     }

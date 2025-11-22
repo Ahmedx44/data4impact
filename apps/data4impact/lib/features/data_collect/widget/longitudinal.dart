@@ -58,7 +58,10 @@ class _LongitudinalDataCollectionState
         }
 
         if (state.submissionResult != null) {
-          Navigator.pop(context);
+          if (state.isManagingSubjects) {
+          } else {
+            Navigator.pop(context);
+          }
         }
 
         // Handle loading dialogs
@@ -1842,13 +1845,13 @@ class _LongitudinalDataCollectionState
                             ? () {
                                 if (currentQuestionIndex ==
                                     study.questions.length - 1) {
-                                  context
-                                      .read<DataCollectCubit>()
-                                      .submitSurvey(studyId: widget.studyId);
+                                  context.read<DataCollectCubit>().submitSurvey(
+                                      studyId: widget.studyId,
+                                      flowType: 'longitudinal');
                                 } else {
-                                  context
-                                      .read<DataCollectCubit>()
-                                      .nextQuestion(studyId: widget.studyId);
+                                  context.read<DataCollectCubit>().nextQuestion(
+                                      studyId: widget.studyId,
+                                      flowType: 'longitudinal');
                                 }
                               }
                             : null,

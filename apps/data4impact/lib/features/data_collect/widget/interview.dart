@@ -12,7 +12,8 @@ class InterviewDataCollection extends StatefulWidget {
   const InterviewDataCollection({super.key, required this.studyId});
 
   @override
-  State<InterviewDataCollection> createState() => _InterviewDataCollectionState();
+  State<InterviewDataCollection> createState() =>
+      _InterviewDataCollectionState();
 }
 
 class _InterviewDataCollectionState extends State<InterviewDataCollection> {
@@ -30,7 +31,8 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
   @override
   void dispose() {
     _textControllers.values.forEach((controller) => controller.dispose());
-    _interviewAnswerControllers.values.forEach((controller) => controller.dispose());
+    _interviewAnswerControllers.values
+        .forEach((controller) => controller.dispose());
     _scrollController.dispose();
     super.dispose();
   }
@@ -65,8 +67,11 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
         }
 
         // Handle submission result
+        // Handle submission result
         if (state.submissionResult != null) {
-          Navigator.pop(context);
+          if (!state.isManagingRespondents) {
+            Navigator.pop(context);
+          }
         }
 
         // Handle loading dialogs
@@ -141,18 +146,22 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () {
-                  context.read<DataCollectCubit>().getStudyQuestions(widget.studyId);
+                  context
+                      .read<DataCollectCubit>()
+                      .getStudyQuestions(widget.studyId);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
                 child: const Text('Try Again'),
               ),
@@ -180,13 +189,13 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
           : _buildRespondentsList(state),
       floatingActionButton: !state.isCreatingRespondent
           ? FloatingActionButton(
-        onPressed: () {
-          context.read<DataCollectCubit>().showCreateRespondentForm();
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        child: const Icon(Icons.add),
-      )
+              onPressed: () {
+                context.read<DataCollectCubit>().showCreateRespondentForm();
+              },
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              child: const Icon(Icons.add),
+            )
           : null,
     );
   }
@@ -245,7 +254,10 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                             Text(
                               'Interview Session',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.7),
                                 fontSize: 14,
                               ),
                             ),
@@ -258,10 +270,16 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withOpacity(0.8),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.2),
                       ),
                     ),
                     child: Column(
@@ -270,7 +288,10 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                         Text(
                           state.study!.description,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.8),
                             fontSize: 14,
                             height: 1.4,
                           ),
@@ -297,130 +318,161 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
           Expanded(
             child: state.respondents.isEmpty
                 ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No Respondents Yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tap the + button to add your first respondent',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                    ),
-                  ),
-                ],
-              ),
-            )
-                : ListView.builder(
-              itemCount: state.respondents.length,
-              itemBuilder: (context, index) {
-                final respondent = state.respondents[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    leading: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                          width: 1.5,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 64,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.3),
                         ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${index + 1}',
+                        const SizedBox(height: 16),
+                        Text(
+                          'No Respondents Yet',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.5),
                           ),
                         ),
-                      ),
-                    ),
-                    title: Text(
-                      respondent['name']?.toString() ?? 'Unnamed Respondent',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Code: ${respondent['code']?.toString() ?? 'N/A'}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                            ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap the + button to add your first respondent',
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.4),
                           ),
-                          if (respondent['group'] != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Group: ${respondent['group']}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                            ),
-                          ],
-                          if (respondent['age'] != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Age: ${respondent['age']}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        context.read<DataCollectCubit>().selectRespondent(respondent);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  )
+                : ListView.builder(
+                    itemCount: state.respondents.length,
+                    itemBuilder: (context, index) {
+                      final respondent = state.respondents[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 1,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Start Interview',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: ListTile(
+                          leading: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.1),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            respondent['name']?.toString() ??
+                                'Unnamed Respondent',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Code: ${respondent['code']?.toString() ?? 'N/A'}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.7),
+                                  ),
+                                ),
+                                if (respondent['group'] != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Group: ${respondent['group']}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                                  ),
+                                ],
+                                if (respondent['age'] != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Age: ${respondent['age']}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: () {
+                              context
+                                  .read<DataCollectCubit>()
+                                  .selectRespondent(respondent);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Start Interview',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 16),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -439,12 +491,11 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
           Text(
             'Add New Respondent',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
           ),
           const SizedBox(height: 24),
-
           Expanded(
             child: ListView(
               children: [
@@ -456,10 +507,15 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceVariant
+                        .withOpacity(0.3),
                   ),
                   onChanged: (value) {
-                    context.read<DataCollectCubit>().updateNewRespondentData('name', value);
+                    context
+                        .read<DataCollectCubit>()
+                        .updateNewRespondentData('name', value);
                   },
                 ),
                 const SizedBox(height: 16),
@@ -474,10 +530,15 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                     ),
                     helperText: 'Auto-generated code, you can modify if needed',
                     filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceVariant
+                        .withOpacity(0.3),
                   ),
                   onChanged: (value) {
-                    context.read<DataCollectCubit>().updateNewRespondentData('code', value);
+                    context
+                        .read<DataCollectCubit>()
+                        .updateNewRespondentData('code', value);
                   },
                 ),
                 const SizedBox(height: 16),
@@ -489,12 +550,17 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceVariant
+                        .withOpacity(0.3),
                   ),
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     if (value.isNotEmpty) {
-                      context.read<DataCollectCubit>().updateNewRespondentData('age', int.tryParse(value));
+                      context
+                          .read<DataCollectCubit>()
+                          .updateNewRespondentData('age', int.tryParse(value));
                     }
                   },
                 ),
@@ -506,14 +572,17 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          context.read<DataCollectCubit>().cancelCreateRespondent();
+                          context
+                              .read<DataCollectCubit>()
+                              .cancelCreateRespondent();
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                          side: BorderSide(
+                              color: Theme.of(context).colorScheme.outline),
                         ),
                         child: Text(
                           'Cancel',
@@ -530,8 +599,10 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                           _createRespondent(state);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -564,7 +635,8 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
         .map((code) => int.tryParse(code.replaceAll('RES-', '')) ?? 0)
         .toList();
 
-    final maxNumber = numbers.isNotEmpty ? numbers.reduce((a, b) => a > b ? a : b) : 0;
+    final maxNumber =
+        numbers.isNotEmpty ? numbers.reduce((a, b) => a > b ? a : b) : 0;
     return 'RES-${maxNumber + 1}';
   }
 
@@ -572,17 +644,21 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
     final respondentData = Map<String, dynamic>.from(state.newRespondentData);
 
     // Ensure required fields are present
-    if (respondentData['name'] == null || respondentData['name'].toString().isEmpty) {
+    if (respondentData['name'] == null ||
+        respondentData['name'].toString().isEmpty) {
       ToastService.showErrorToast(message: 'Please enter respondent name');
       return;
     }
 
-    if (respondentData['code'] == null || respondentData['code'].toString().isEmpty) {
+    if (respondentData['code'] == null ||
+        respondentData['code'].toString().isEmpty) {
       ToastService.showErrorToast(message: 'Please enter respondent code');
       return;
     }
 
-    context.read<DataCollectCubit>().createRespondent(widget.studyId, respondentData);
+    context
+        .read<DataCollectCubit>()
+        .createRespondent(widget.studyId, respondentData);
   }
 
   Widget _buildInterviewQuestionsScreen(DataCollectState state) {
@@ -598,7 +674,8 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
     // Initialize answer controller for this question
     final answerController = _interviewAnswerControllers.putIfAbsent(
       question.id,
-          () => TextEditingController(text: state.answers[question.id]?.toString() ?? ''),
+      () => TextEditingController(
+          text: state.answers[question.id]?.toString() ?? ''),
     );
 
     if (state.answers[question.id]?.toString() != answerController.text) {
@@ -664,9 +741,12 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
           }
 
           // Handle submission result
+          // Handle submission result
           if (state.submissionResult != null) {
             // Navigate away or show success message
-            Navigator.pop(context);
+            if (!state.isManagingRespondents) {
+              Navigator.pop(context);
+            }
           }
 
           // Handle errors
@@ -689,8 +769,10 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                     children: [
                       // Progress bar
                       LinearProgressIndicator(
-                        value: (currentQuestionIndex + 1) / study.questions.length,
-                        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                        value:
+                            (currentQuestionIndex + 1) / study.questions.length,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.surfaceVariant,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           Theme.of(context).colorScheme.primary,
                         ),
@@ -710,11 +792,19 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                foregroundColor: Theme.of(context).colorScheme.primary,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.1),
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.primary,
                                 child: Text(
-                                  state.selectedRespondent?['code']?.toString().substring(4) ?? '?',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  state.selectedRespondent?['code']
+                                          ?.toString()
+                                          .substring(4) ??
+                                      '?',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -723,27 +813,37 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      state.selectedRespondent?['name']?.toString() ?? 'Unnamed Respondent',
+                                      state.selectedRespondent?['name']
+                                              ?.toString() ??
+                                          'Unnamed Respondent',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 16,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    if (state.selectedRespondent?['group'] != null)
+                                    if (state.selectedRespondent?['group'] !=
+                                        null)
                                       Text(
                                         'Group: ${state.selectedRespondent?['group']}',
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.7),
                                         ),
                                       ),
-                                    if (state.selectedRespondent?['age'] != null)
+                                    if (state.selectedRespondent?['age'] !=
+                                        null)
                                       Text(
                                         'Age: ${state.selectedRespondent?['age']}',
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.7),
                                         ),
                                       ),
                                   ],
@@ -769,7 +869,9 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                     ),
                                   ),
                                 ),
@@ -777,7 +879,8 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                                   Text(
                                     '*',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -787,18 +890,23 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                             const SizedBox(height: 8),
 
                             // Question subtitle
-                            if (question.getSubtitle(state.selectedLanguage) != null)
+                            if (question.getSubtitle(state.selectedLanguage) !=
+                                null)
                               Text(
                                 question.getSubtitle(state.selectedLanguage)!,
                                 style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.7),
                                   fontSize: 16,
                                 ),
                               ),
                             const SizedBox(height: 24),
 
                             // Probing questions
-                            if (question.probings != null && question.probings!.isNotEmpty)
+                            if (question.probings != null &&
+                                question.probings!.isNotEmpty)
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -807,31 +915,44 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   ...question.probings!.map((probing) {
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 4),
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             '•',
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.primary,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              probing['label']?[state.selectedLanguage].toString() ??
-                                                  probing['label']?['default'].toString() ?? '',
+                                              probing['label']?[state
+                                                          .selectedLanguage]
+                                                      .toString() ??
+                                                  probing['label']?['default']
+                                                      .toString() ??
+                                                  '',
                                               style: TextStyle(
                                                 fontSize: 14,
-                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withOpacity(0.8),
                                               ),
                                             ),
                                           ),
@@ -847,12 +968,15 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                             Container(
                               constraints: BoxConstraints(
                                 minHeight: 150,
-                                maxHeight: MediaQuery.of(context).size.height * 0.4,
+                                maxHeight:
+                                    MediaQuery.of(context).size.height * 0.4,
                               ),
                               child: TextField(
                                 controller: answerController,
                                 onChanged: (value) {
-                                  context.read<DataCollectCubit>().updateAnswer(question.id, value);
+                                  context
+                                      .read<DataCollectCubit>()
+                                      .updateAnswer(question.id, value);
                                 },
                                 onTap: _scrollToBottom,
                                 maxLines: null,
@@ -865,23 +989,34 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                    borderSide: BorderSide(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outline),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       width: 2,
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant
+                                      .withOpacity(0.3),
                                   errorText: question.required &&
-                                      (state.answers[question.id] == null ||
-                                          (state.answers[question.id] as String).isEmpty)
+                                          (state.answers[question.id] == null ||
+                                              (state.answers[question.id]
+                                                      as String)
+                                                  .isEmpty)
                                       ? 'This field is required'
                                       : null,
-                                  errorStyle: TextStyle(color: Theme.of(context).colorScheme.error),
+                                  errorStyle: TextStyle(
+                                      color:
+                                          Theme.of(context).colorScheme.error),
                                 ),
                               ),
                             ),
@@ -899,16 +1034,24 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                               onPressed: state.isSubmitting
                                   ? null
                                   : () {
-                                context.read<DataCollectCubit>().backToRespondentManagement();
-                              },
+                                      context
+                                          .read<DataCollectCubit>()
+                                          .backToRespondentManagement();
+                                    },
                               style: OutlinedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                                foregroundColor: Theme.of(context).colorScheme.onSurface,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceVariant,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onSurface,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                side: BorderSide(
+                                    color:
+                                        Theme.of(context).colorScheme.outline),
                               ),
                               child: const Text('Back to Respondents'),
                             ),
@@ -920,42 +1063,68 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                             child: ElevatedButton(
                               onPressed: state.isSubmitting
                                   ? null
-                                  : context.read<DataCollectCubit>().canProceed(question)
-                                  ? () {
-                                if (currentQuestionIndex == study.questions.length - 1) {
-                                  // Show loading dialog when submitting
-                                  context.read<DataCollectCubit>().submitSurvey(studyId: widget.studyId);
-                                } else {
-                                  context.read<DataCollectCubit>().nextQuestion(studyId: widget.studyId);
-                                }
-                              }
-                                  : null,
+                                  : context
+                                          .read<DataCollectCubit>()
+                                          .canProceed(question)
+                                      ? () {
+                                          if (currentQuestionIndex ==
+                                              study.questions.length - 1) {
+                                            // Show loading dialog when submitting
+                                            context
+                                                .read<DataCollectCubit>()
+                                                .submitSurvey(
+                                                    studyId: widget.studyId,
+                                                    flowType: 'interview');
+                                          } else {
+                                            context
+                                                .read<DataCollectCubit>()
+                                                .nextQuestion(
+                                                    studyId: widget.studyId,
+                                                    flowType: 'interview');
+                                          }
+                                        }
+                                      : null,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: context.read<DataCollectCubit>().canProceed(question) && !state.isSubmitting
+                                backgroundColor: context
+                                            .read<DataCollectCubit>()
+                                            .canProceed(question) &&
+                                        !state.isSubmitting
                                     ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.surfaceVariant,
-                                foregroundColor: context.read<DataCollectCubit>().canProceed(question) && !state.isSubmitting
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .surfaceVariant,
+                                foregroundColor: context
+                                            .read<DataCollectCubit>()
+                                            .canProceed(question) &&
+                                        !state.isSubmitting
                                     ? Theme.of(context).colorScheme.onPrimary
-                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.6),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               child: state.isSubmitting
                                   ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                      ),
+                                    )
                                   : Text(
-                                currentQuestionIndex == study.questions.length - 1
-                                    ? 'Submit Interview'
-                                    : 'Next Question',
-                              ),
+                                      currentQuestionIndex ==
+                                              study.questions.length - 1
+                                          ? 'Submit Interview'
+                                          : 'Next Question',
+                                    ),
                             ),
                           ),
                         ],
