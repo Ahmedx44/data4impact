@@ -29,7 +29,8 @@ class StudyService {
         final list = response.data as List;
         return list.map((item) => item as Map<String, dynamic>).toList();
       } else {
-        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+        throw Exception(
+            'Unexpected response format - Expected List but got ${response.data.runtimeType}');
       }
     } on DioException catch (e) {
       print('DioError: ${e.response?.data}');
@@ -92,7 +93,8 @@ class StudyService {
         final list = response.data as List;
         return list.map((item) => item as Map<String, dynamic>).toList();
       } else {
-        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+        throw Exception(
+            'Unexpected response format - Expected List but got ${response.data.runtimeType}');
       }
     } on DioException catch (e) {
       print('Error fetching respondents: ${e.message}');
@@ -162,13 +164,12 @@ class StudyService {
         }
       }
 
-      throw Exception('Unexpected response format: ${response.data.runtimeType}');
+      throw Exception(
+          'Unexpected response format: ${response.data.runtimeType}');
     } on DioException catch (e) {
-      if (e.response != null) {
-      }
+      if (e.response != null) {}
       rethrow;
     } catch (e) {
-
       rethrow;
     }
   }
@@ -187,7 +188,8 @@ class StudyService {
         final list = response.data as List;
         return list.map((item) => item as Map<String, dynamic>).toList();
       } else {
-        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+        throw Exception(
+            'Unexpected response format - Expected List but got ${response.data.runtimeType}');
       }
     } on DioException catch (e) {
       print('Error fetching cohorts: ${e.message}');
@@ -210,7 +212,8 @@ class StudyService {
         final list = response.data as List;
         return list.map((item) => item as Map<String, dynamic>).toList();
       } else {
-        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+        throw Exception(
+            'Unexpected response format - Expected List but got ${response.data.runtimeType}');
       }
     } on DioException catch (e) {
       print('Error fetching waves: ${e.message}');
@@ -249,7 +252,8 @@ class StudyService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getStudySubjects(String studyId, String waveId) async {
+  Future<List<Map<String, dynamic>>> getStudySubjects(
+      String studyId, String waveId) async {
     try {
       final cookie = await secureStorage.read(key: 'session_cookie');
       if (cookie == null) throw Exception('No authentication cookie found');
@@ -263,7 +267,8 @@ class StudyService {
         final list = response.data as List;
         return list.map((item) => item as Map<String, dynamic>).toList();
       } else {
-        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+        throw Exception(
+            'Unexpected response format - Expected List but got ${response.data.runtimeType}');
       }
     } on DioException catch (e) {
       print('Error fetching subjects: ${e.message}');
@@ -317,7 +322,8 @@ class StudyService {
         final list = response.data as List;
         return list.map((item) => item as Map<String, dynamic>).toList();
       } else {
-        throw Exception('Unexpected response format - Expected List but got ${response.data.runtimeType}');
+        throw Exception(
+            'Unexpected response format - Expected List but got ${response.data.runtimeType}');
       }
     } on DioException catch (e) {
       print('Error fetching groups: ${e.message}');

@@ -1207,12 +1207,20 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
       final respondents = await studyService.getStudyRespondents(studyId);
 
-      emit(state.copyWith(
-        isLoading: false,
-        respondents: respondents,
-        isCreatingRespondent: false,
-        newRespondentData: {},
-      ));
+      // Update the selectedGroup with the new respondents list
+      final updatedSelectedGroup =
+          Map<String, dynamic>.from(state.selectedGroup ?? {});
+      updatedSelectedGroup['respondents'] = respondents;
+
+      emit(
+        state.copyWith(
+          isLoading: false,
+          respondents: respondents,
+          selectedGroup: updatedSelectedGroup, // Update the selectedGroup too!
+          isCreatingRespondent: false,
+          newRespondentData: {},
+        ),
+      );
 
       ToastService.showSuccessToast(message: 'Respondent created successfully');
 
@@ -1221,7 +1229,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       emit(
         state.copyWith(
           isLoading: false,
-          error: 'Failed to create respondent: ${e.toString()}',
         ),
       );
 
@@ -1386,7 +1393,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             isLoading: false,
             waves: offlineWaves,
           ));
-
         } else {
           emit(state.copyWith(
             isLoading: false,
@@ -1485,7 +1491,6 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             isLoading: false,
             subjects: offlineSubjects,
           ));
-
         } else {
           emit(state.copyWith(
             isLoading: false,
@@ -1545,6 +1550,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         error: 'Failed to create subject: ${e.toString()}',
       ));
     }
+  }
+
+  // In DataCollectCubit
+  Future<void> refreshGroupData(String studyId) async {
+    await loadStudyGroups(studyId);
+    await loadGroupRespondents(studyId);
   }
 
   void selectCohortAndShowWaves(Map<String, dynamic> cohort) {
