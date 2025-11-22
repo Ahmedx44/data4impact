@@ -75,6 +75,7 @@ class DataCollectState extends Equatable {
   final List<Map<String, dynamic>> selectedGroupRespondents;
   final int currentRespondentIndex;
   final bool isSelectingRespondents;
+  final Map<String, Map<String, dynamic>> storedGroupResponses;
 
   const DataCollectState({
     this.study,
@@ -149,6 +150,7 @@ class DataCollectState extends Equatable {
     this.selectedGroupRespondents = const [],
     this.currentRespondentIndex = 0,
     this.isSelectingRespondents = false,
+    this.storedGroupResponses = const {},
   });
 
   DataCollectState copyWith({
@@ -224,6 +226,7 @@ class DataCollectState extends Equatable {
     List<Map<String, dynamic>>? selectedGroupRespondents,
     int? currentRespondentIndex,
     bool? isSelectingRespondents,
+    Map<String, Map<String, dynamic>>? storedGroupResponses,
   }) {
     return DataCollectState(
       study: study ?? this.study,
@@ -298,6 +301,7 @@ class DataCollectState extends Equatable {
       selectedGroupRespondents: selectedGroupRespondents ?? this.selectedGroupRespondents,
       currentRespondentIndex: currentRespondentIndex ?? this.currentRespondentIndex,
       isSelectingRespondents: isSelectingRespondents ?? this.isSelectingRespondents,
+      storedGroupResponses: storedGroupResponses ?? this.storedGroupResponses,
     );
   }
 
@@ -359,6 +363,7 @@ class DataCollectState extends Equatable {
     selectedGroupRespondents,
     currentRespondentIndex,
     isSelectingRespondents,
+    storedGroupResponses,
   ];
 
   @override

@@ -885,10 +885,8 @@ class _GroupDiscussionDataCollectionState
                                       Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
-                              // Show only Deselect All when all are selected, otherwise show both buttons
-                              if (state.selectedGroupRespondents.length ==
-                                      state.groupRespondents.length &&
-                                  state.groupRespondents.isNotEmpty)
+                              // Show only one button at a time
+                              if (state.selectedGroupRespondents.isNotEmpty)
                                 GestureDetector(
                                   onTap: () {
                                     // Deselect all currently selected respondents
@@ -916,7 +914,10 @@ class _GroupDiscussionDataCollectionState
                                       ),
                                     ),
                                     child: Text(
-                                      'Deselect All',
+                                      state.selectedGroupRespondents.length ==
+                                              state.groupRespondents.length
+                                          ? 'Deselect All'
+                                          : 'Deselect ${state.selectedGroupRespondents.length}',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
@@ -929,96 +930,37 @@ class _GroupDiscussionDataCollectionState
                                   ),
                                 )
                               else
-                                Row(
-                                  children: [
-                                    // Deselect All Button (only show if some are selected but not all)
-                                    if (state
-                                        .selectedGroupRespondents.isNotEmpty)
-                                      GestureDetector(
-                                        onTap: () {
-                                          // Deselect all currently selected respondents
-                                          for (final respondent in state
-                                              .selectedGroupRespondents) {
-                                            context
-                                                .read<DataCollectCubit>()
-                                                .toggleRespondentSelection(
-                                                    respondent);
-                                          }
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 6),
-                                          margin:
-                                              const EdgeInsets.only(right: 8),
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .surfaceVariant,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .outline
-                                                  .withOpacity(0.3),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'Deselect All',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface
-                                                  .withOpacity(0.7),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    // Select All Button
-                                    GestureDetector(
-                                      onTap: () {
-                                        // Select all respondents
-                                        for (final respondent
-                                            in state.groupRespondents) {
-                                          // Only select if not already selected
-                                          final isSelected = state
-                                              .selectedGroupRespondents
-                                              .any((r) =>
-                                                  r['_id'] ==
-                                                  respondent['_id']);
-                                          if (!isSelected) {
-                                            context
-                                                .read<DataCollectCubit>()
-                                                .toggleRespondentSelection(
-                                                    respondent);
-                                          }
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .surfaceVariant,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          'Select All',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                        ),
+                                GestureDetector(
+                                  onTap: () {
+                                    // Select all respondents
+                                    for (final respondent
+                                        in state.groupRespondents) {
+                                      context
+                                          .read<DataCollectCubit>()
+                                          .toggleRespondentSelection(
+                                              respondent);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceVariant,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      'Select All',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
                             ],
                           ),
@@ -1279,14 +1221,20 @@ class _GroupDiscussionDataCollectionState
   Widget _buildQuestionsScreen(DataCollectState state, Study study) {
     final currentQuestionIndex = state.currentQuestionIndex;
     final currentRespondent =
-        state.currentRespondentIndex < state.selectedGroupRespondents.length
-            ? state.selectedGroupRespondents[state.currentRespondentIndex]
-            : null;
+    state.currentRespondentIndex < state.selectedGroupRespondents.length
+        ? state.selectedGroupRespondents[state.currentRespondentIndex]
+        : null;
+
+    // Check if all respondents are completed - show completion screen
+    if (state.currentRespondentIndex >= state.selectedGroupRespondents.length) {
+      return _buildCompletionScreen(study, state);
+    }
 
     if (state.jumpTarget == 'end') {
       return _buildCompletionScreen(study, state);
     }
 
+    // If we've gone beyond the questions, move to next respondent
     if (currentQuestionIndex >= study.questions.length) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context
@@ -1460,7 +1408,7 @@ class _GroupDiscussionDataCollectionState
                                                 .error
                                                 .withOpacity(0.1),
                                             borderRadius:
-                                                BorderRadius.circular(6),
+                                            BorderRadius.circular(6),
                                           ),
                                           child: Text(
                                             'Required',
@@ -1476,7 +1424,7 @@ class _GroupDiscussionDataCollectionState
                                     ],
                                   ),
                                   if (question.getSubtitle(
-                                          state.selectedLanguage) !=
+                                      state.selectedLanguage) !=
                                       null) ...[
                                     const SizedBox(height: 8),
                                     Text(
@@ -1515,6 +1463,382 @@ class _GroupDiscussionDataCollectionState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildNavigationButtons(
+      DataCollectState state, Study study, int currentQuestionIndex) {
+    final cubit = context.read<DataCollectCubit>();
+    final question = study.questions[currentQuestionIndex];
+
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () {
+              cubit.backToRespondentSelection();
+            },
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+              ),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.arrow_back_rounded, size: 18),
+                SizedBox(width: 8),
+                Text('Back'),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: cubit.canProceed(question)
+                ? () {
+              // For group discussions on last question, move to next respondent
+              if (state.selectedGroupRespondents.isNotEmpty &&
+                  currentQuestionIndex == study.questions.length - 1) {
+                cubit.nextRespondentInGroup(studyId: widget.studyId);
+              } else {
+                cubit.nextQuestion(studyId: widget.studyId);
+              }
+            }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: cubit.canProceed(question)
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.surfaceVariant,
+              foregroundColor: cubit.canProceed(question)
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+              shadowColor:
+              Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _getButtonText(state, study, currentQuestionIndex),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  _getButtonIcon(state, study, currentQuestionIndex),
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getButtonText(DataCollectState state, Study study, int currentQuestionIndex) {
+    if (state.selectedGroupRespondents.isNotEmpty) {
+      if (currentQuestionIndex == study.questions.length - 1) {
+        if (state.currentRespondentIndex < state.selectedGroupRespondents.length - 1) {
+          return 'Next Participant';
+        } else {
+          return 'Finish';
+        }
+      }
+    }
+    return 'Next Question';
+  }
+
+  IconData _getButtonIcon(DataCollectState state, Study study, int currentQuestionIndex) {
+    if (state.selectedGroupRespondents.isNotEmpty) {
+      if (currentQuestionIndex == study.questions.length - 1) {
+        if (state.currentRespondentIndex < state.selectedGroupRespondents.length - 1) {
+          return Icons.person_rounded;
+        } else {
+          return Icons.done_all_rounded;
+        }
+      }
+    }
+    return Icons.arrow_forward_rounded;
+  }
+
+  Widget _buildRespondentTransitionScreen(DataCollectState state) {
+    final nextRespondentIndex = state.currentRespondentIndex;
+
+    if (nextRespondentIndex >= state.selectedGroupRespondents.length) {
+      return _buildCompletionScreen(state.study!, state);
+    }
+
+    final nextRespondent = state.selectedGroupRespondents[nextRespondentIndex];
+
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.switch_account_rounded,
+                size: 64,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Next Participant',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.1),
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        radius: 30,
+                        child: Text(
+                          '${nextRespondentIndex + 1}',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        nextRespondent['name']?.toString() ?? 'Participant',
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w600),
+                      ),
+                      if (nextRespondent['code'] != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Code: ${nextRespondent['code']}',
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  // The transition is automatic, but this button can be used to proceed immediately
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+                child: const Text('Continue'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompletionScreen(Study study, DataCollectState state) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SingleChildScrollView(
+        child: Container(
+          height: MediaQuery.of(context).size.height,
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Group Discussion Completed! 🎉',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  height: 1.3,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'You have successfully completed the group discussion with all ${state.selectedGroupRespondents.length} participants.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                        Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatItem(
+                          Icons.group_rounded,
+                          '${state.selectedGroupRespondents.length}',
+                          'Participants',
+                          Theme.of(context).colorScheme.primary,
+                        ),
+                        _buildStatItem(
+                          Icons.question_answer_rounded,
+                          '${study.questions.length}',
+                          'Questions',
+                          Theme.of(context).colorScheme.secondary,
+                        ),
+                        _buildStatItem(
+                          Icons.check_circle_rounded,
+                          '${state.storedGroupResponses.length}',
+                          'Responses',
+                          Theme.of(context).colorScheme.tertiary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      // Submit all responses
+                      context.read<DataCollectCubit>().submitSurvey(studyId: widget.studyId);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Submit All Responses',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.send_rounded, size: 20),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      _showResponseSummary(state, study);
+                    },
+                    child: Text(
+                      'Review Responses',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(
+      IconData icon, String value, String label, Color color) {
+    return Column(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 24, color: color),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1717,176 +2041,6 @@ class _GroupDiscussionDataCollectionState
                     ],
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavigationButtons(
-      DataCollectState state, Study study, int currentQuestionIndex) {
-    final cubit = context.read<DataCollectCubit>();
-    final question = study.questions[currentQuestionIndex];
-
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () {
-              cubit.backToRespondentSelection();
-            },
-            style: OutlinedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              foregroundColor: Theme.of(context).colorScheme.onSurface,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-              ),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.arrow_back_rounded, size: 18),
-                SizedBox(width: 8),
-                Text('Back'),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: cubit.canProceed(question)
-                ? () {
-                    cubit.nextQuestion(studyId: widget.studyId);
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: cubit.canProceed(question)
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.surfaceVariant,
-              foregroundColor: cubit.canProceed(question)
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 2,
-              shadowColor:
-                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  currentQuestionIndex == study.questions.length - 1
-                      ? 'Next Participant'
-                      : 'Next Question',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  currentQuestionIndex == study.questions.length - 1
-                      ? Icons.group_add_rounded
-                      : Icons.arrow_forward_rounded,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRespondentTransitionScreen(DataCollectState state) {
-    final nextRespondentIndex = state.currentRespondentIndex;
-
-    if (nextRespondentIndex >= state.selectedGroupRespondents.length) {
-      return _buildCompletionScreen(state.study!, state);
-    }
-
-    final nextRespondent = state.selectedGroupRespondents[nextRespondentIndex];
-
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.switch_account_rounded,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Next Participant',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.1),
-                        foregroundColor: Theme.of(context).colorScheme.primary,
-                        radius: 30,
-                        child: Text(
-                          '${nextRespondentIndex + 1}',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        nextRespondent['name']?.toString() ?? 'Participant',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600),
-                      ),
-                      if (nextRespondent['code'] != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Code: ${nextRespondent['code']}',
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () {
-                  // The cubit will automatically handle moving to the next respondent
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                ),
-                child: const Text('Continue'),
               ),
             ],
           ),
@@ -2567,185 +2721,46 @@ class _GroupDiscussionDataCollectionState
     );
   }
 
-  Widget _buildCompletionScreen(Study study, DataCollectState state) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: SingleChildScrollView(
-        child: Container(
-          height: MediaQuery.of(context).size.height,
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
+
+  void _showResponseSummary(DataCollectState state, Study study) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Response Summary'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: state.selectedGroupRespondents.length,
+            itemBuilder: (context, index) {
+              final respondent = state.selectedGroupRespondents[index];
+              final respondentId = respondent['_id'];
+              final responses = state.storedGroupResponses[respondentId] ?? {};
+              final completedQuestions = responses.length;
+
+              return ListTile(
+                leading: CircleAvatar(
+                  child: Text('${index + 1}'),
                 ),
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Discussion Completed! 🎉',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  height: 1.3,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'You have successfully completed the group discussion with all ${state.selectedGroupRespondents.length} participants.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                        Theme.of(context)
-                            .colorScheme
-                            .secondary
-                            .withOpacity(0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem(
-                          Icons.group_rounded,
-                          '${state.selectedGroupRespondents.length}',
-                          'Participants',
-                          Theme.of(context).colorScheme.primary,
-                        ),
-                        _buildStatItem(
-                          Icons.question_answer_rounded,
-                          '${study.questions.length}',
-                          'Questions',
-                          Theme.of(context).colorScheme.secondary,
-                        ),
-                        _buildStatItem(
-                          Icons.timer_rounded,
-                          'Completed',
-                          '100%',
-                          Theme.of(context).colorScheme.tertiary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 40, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Finish Discussion',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(Icons.done_all_rounded, size: 20),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () {
-                      // Option to start new discussion or view results
-                    },
-                    child: Text(
-                      'View Discussion Summary',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                title: Text(respondent['name']  as String ?? 'Unknown'),
+                subtitle: Text('$completedQuestions/${study.questions.length} questions answered'),
+                trailing: completedQuestions == study.questions.length
+                    ? Icon(Icons.check_circle, color: Colors.green)
+                    : Icon(Icons.warning, color: Colors.orange),
+              );
+            },
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatItem(
-      IconData icon, String value, String label, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, size: 24, color: color),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-          ),
-        ),
-      ],
-    );
-  }
 
   void _showCreateGroupDialog() {
     final currentState = context.read<DataCollectCubit>().state;
