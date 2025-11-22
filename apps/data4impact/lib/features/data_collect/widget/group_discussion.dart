@@ -885,25 +885,141 @@ class _GroupDiscussionDataCollectionState
                                       Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceVariant,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'Select All',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                              // Show only Deselect All when all are selected, otherwise show both buttons
+                              if (state.selectedGroupRespondents.length ==
+                                      state.groupRespondents.length &&
+                                  state.groupRespondents.isNotEmpty)
+                                GestureDetector(
+                                  onTap: () {
+                                    // Deselect all currently selected respondents
+                                    for (final respondent
+                                        in state.selectedGroupRespondents) {
+                                      context
+                                          .read<DataCollectCubit>()
+                                          .toggleRespondentSelection(
+                                              respondent);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceVariant,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outline
+                                            .withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Deselect All',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7),
+                                      ),
+                                    ),
                                   ),
+                                )
+                              else
+                                Row(
+                                  children: [
+                                    // Deselect All Button (only show if some are selected but not all)
+                                    if (state
+                                        .selectedGroupRespondents.isNotEmpty)
+                                      GestureDetector(
+                                        onTap: () {
+                                          // Deselect all currently selected respondents
+                                          for (final respondent in state
+                                              .selectedGroupRespondents) {
+                                            context
+                                                .read<DataCollectCubit>()
+                                                .toggleRespondentSelection(
+                                                    respondent);
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 6),
+                                          margin:
+                                              const EdgeInsets.only(right: 8),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceVariant,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .outline
+                                                  .withOpacity(0.3),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Deselect All',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withOpacity(0.7),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    // Select All Button
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Select all respondents
+                                        for (final respondent
+                                            in state.groupRespondents) {
+                                          // Only select if not already selected
+                                          final isSelected = state
+                                              .selectedGroupRespondents
+                                              .any((r) =>
+                                                  r['_id'] ==
+                                                  respondent['_id']);
+                                          if (!isSelected) {
+                                            context
+                                                .read<DataCollectCubit>()
+                                                .toggleRespondentSelection(
+                                                    respondent);
+                                          }
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .surfaceVariant,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          'Select All',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
                             ],
                           ),
                         ),
