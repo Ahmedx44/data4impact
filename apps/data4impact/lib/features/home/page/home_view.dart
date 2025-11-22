@@ -3,7 +3,6 @@ import 'package:data4impact/features/home/cubit/home_state.dart';
 import 'package:data4impact/features/home/widget/actitity_card.dart';
 import 'package:data4impact/features/home/widget/assignment_view.dart';
 import 'package:data4impact/features/home/widget/project_drawer.dart';
-import 'package:data4impact/features/join_with_link/page/join_with_link_page.dart';
 import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,7 +31,7 @@ class _HomeViewState extends State<HomeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await context.read<HomeCubit>().fetchAllProjects();
       final state = context.read<HomeCubit>().state;
-    /* if (state.selectedProject != null) {
+      /* if (state.selectedProject != null) {
         await context.read<HomeCubit>().fetchMyCollectors();
       }*/
     });
@@ -154,33 +153,6 @@ class _HomeViewState extends State<HomeView> {
                         tooltip: 'Sync Now',
                       );
                     },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16, left: 8),
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute<Widget>(
-                            builder: (context) => const JoinWithLinkPage(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(HugeIcons.strokeRoundedLink01, size: 18),
-                      label: Text(
-                        'Join',
-                        style: GoogleFonts.lexendDeca(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -345,7 +317,6 @@ class _HomeViewState extends State<HomeView> {
                               ),
                               const SizedBox(height: 16),
                               AssignmentView(collectors: state.collectors),
-                              const SizedBox(height: 80),
                             ],
                           ),
                         ),

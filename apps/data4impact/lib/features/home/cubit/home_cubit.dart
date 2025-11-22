@@ -14,7 +14,6 @@ import 'package:data4impact/core/service/app_logger.dart';
 import 'package:data4impact/core/service/internt_connection_monitor.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/home/cubit/home_state.dart';
-import 'package:data4impact/features/join_with_link/page/accept_invitation_view.dart';
 import 'package:data4impact/features/login/page/login_page.dart';
 import 'package:data4impact/repository/offline_mode_repo.dart';
 import 'package:flutter/cupertino.dart';
@@ -399,7 +398,7 @@ class HomeCubit extends Cubit<HomeState> {
 
         if (currentProjectId != null && projects.isNotEmpty) {
           selectedProject = projects.firstWhere(
-                (p) => p.id == currentProjectId,
+            (p) => p.id == currentProjectId,
             orElse: () => projects.first,
           );
         } else if (projects.isNotEmpty) {
@@ -431,7 +430,8 @@ class HomeCubit extends Cubit<HomeState> {
             );
           } catch (collectorError) {
             // If collector fetch fails, try to load from cache
-            final savedCollectors = await OfflineModeDataRepo().getSavedCollectors(
+            final savedCollectors =
+                await OfflineModeDataRepo().getSavedCollectors(
               selectedProject.id,
             );
 
@@ -470,7 +470,7 @@ class HomeCubit extends Cubit<HomeState> {
 
         if (currentProjectId != null && projects.isNotEmpty) {
           selectedProject = projects.firstWhere(
-                (p) => p.id == currentProjectId,
+            (p) => p.id == currentProjectId,
           );
         }
 
@@ -506,7 +506,7 @@ class HomeCubit extends Cubit<HomeState> {
 
       if (currentProjectId != null && projects.isNotEmpty) {
         selectedProject = projects.firstWhere(
-              (p) => p.id == currentProjectId,
+          (p) => p.id == currentProjectId,
         );
       }
 
@@ -585,9 +585,7 @@ class HomeCubit extends Cubit<HomeState> {
           ToastService.showWarningToast(
             message: 'No cached collectors data available offline',
           );
-        } else {
-
-        }
+        } else {}
       }
     } catch (e) {
       if (isConnected) {
@@ -661,46 +659,6 @@ class HomeCubit extends Cubit<HomeState> {
       return result != ConnectivityResult.none;
     } catch (e) {
       return false;
-    }
-  }
-
-  Future<void> joinSegmentViaLink(String url, BuildContext context) async {
-    emit(state.copyWith(invitationLoading: true));
-
-    try {
-      final uri = Uri.parse(url);
-      final pathSegments = uri.pathSegments;
-
-      final projectSlug = pathSegments[0];
-      final segmentId = pathSegments[2];
-
-      final response = await segmentService.getSegmentById(
-        segmentId: segmentId,
-        projectSlug: projectSlug,
-      );
-
-      emit(state.copyWith(invitationLoading: false));
-
-      if (context.mounted) {
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => AcceptInvitationView(
-              segmentData: response,
-              homeState: state,
-              projectSlug: projectSlug,
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      emit(state.copyWith(invitationLoading: false));
-      if (context.mounted) {
-        ToastService.showErrorToast(
-          context: context,
-          message: 'Failed to join segment: ${e.toString()}',
-        );
-      }
-      rethrow;
     }
   }
 }
