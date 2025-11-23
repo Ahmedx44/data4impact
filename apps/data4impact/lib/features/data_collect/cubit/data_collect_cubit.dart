@@ -1349,7 +1349,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
 
     // Add group if available
-    if (state.selectedGroup != null) {
+    if (state.selectedGroup != null && state.selectedGroup!['_id'] != null) {
       submission["group"] = state.selectedGroup!['_id'] as String;
     }
 
@@ -1463,16 +1463,18 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
       final respondents = await studyService.getStudyRespondents(studyId);
 
-      // Update the selectedGroup with the new respondents list
-      final updatedSelectedGroup =
-          Map<String, dynamic>.from(state.selectedGroup ?? {});
-      updatedSelectedGroup['respondents'] = respondents;
+      // Update the selectedGroup with the new respondents list ONLY if we have a selected group
+      Map<String, dynamic>? updatedSelectedGroup;
+      if (state.selectedGroup != null) {
+        updatedSelectedGroup = Map<String, dynamic>.from(state.selectedGroup!);
+        updatedSelectedGroup['respondents'] = respondents;
+      }
 
       emit(
         state.copyWith(
           isLoading: false,
           respondents: respondents,
-          selectedGroup: updatedSelectedGroup, // Update the selectedGroup too!
+          selectedGroup: updatedSelectedGroup, // Will only update if not null
           isCreatingRespondent: false,
           newRespondentData: {},
         ),
@@ -1497,6 +1499,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       state.copyWith(
         selectedRespondent: respondent,
         isManagingRespondents: false,
+        clearSubmissionResult: true, 
       ),
     );
   }
