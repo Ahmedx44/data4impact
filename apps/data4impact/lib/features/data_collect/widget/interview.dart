@@ -481,7 +481,8 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
 
   Widget _buildCreateRespondentForm(DataCollectState state) {
     final homogeneityGroups = state.study?.homogeneity!.groups ?? [];
-    final nextCode = _generateNextRespondentCode(state.respondents);
+    // Use the new auto-generation method that works like group discussion
+    final nextCode = _generateNextRespondentCode(state, state.respondents);
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -522,7 +523,7 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
 
                 // Respondent Code (auto-generated but editable)
                 TextFormField(
-                  initialValue: nextCode,
+                  controller: TextEditingController(text: nextCode),
                   decoration: InputDecoration(
                     labelText: 'Respondent Code *',
                     border: OutlineInputBorder(
@@ -542,6 +543,7 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
                   },
                 ),
                 const SizedBox(height: 16),
+
                 // Age
                 TextFormField(
                   decoration: InputDecoration(
@@ -621,23 +623,39 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
     );
   }
 
-  String _generateNextRespondentCode(List<Map<String, dynamic>> respondents) {
-    final existingCodes = respondents
-        .map((r) => r['code']?.toString() ?? '')
-        .where((code) => code.startsWith('RES-'))
-        .toList();
+  String _generateNextRespondentCode(
+      DataCollectState state, List<Map<String, dynamic>> respondents) {
+    // Always use RES as prefix
+    String studyPrefix = 'RES';
 
-    if (existingCodes.isEmpty) {
-      return 'RES-1';
+    // Extract all numbers from existing codes that match our prefix pattern
+    final codePattern = RegExp('^$studyPrefix-(\\d+)\$');
+    final numbers = <int>[];
+
+    for (final respondent in respondents) {
+      final code = respondent['code']?.toString() ?? '';
+      if (code.isNotEmpty) {
+        final match = codePattern.firstMatch(code);
+        if (match != null) {
+          final numberStr = match.group(1) ?? '0';
+          final number = int.tryParse(numberStr) ?? 0;
+          numbers.add(number);
+        }
+      }
     }
 
-    final numbers = existingCodes
-        .map((code) => int.tryParse(code.replaceAll('RES-', '')) ?? 0)
-        .toList();
+    // Find the highest number used so far
+    int nextNumber;
+    if (numbers.isNotEmpty) {
+      final highestNumber = numbers.reduce((a, b) => a > b ? a : b);
+      nextNumber = highestNumber + 1;
+    } else {
+      // No existing codes with this pattern, start from 1
+      nextNumber = 1;
+    }
 
-    final maxNumber =
-        numbers.isNotEmpty ? numbers.reduce((a, b) => a > b ? a : b) : 0;
-    return 'RES-${maxNumber + 1}';
+    // Format with leading zeros for better sorting
+    return '$studyPrefix-${nextNumber.toString().padLeft(2, '0')}';
   }
 
   void _createRespondent(DataCollectState state) {
@@ -650,10 +668,14 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
       return;
     }
 
+    // Auto-generate code if not provided or empty
     if (respondentData['code'] == null ||
         respondentData['code'].toString().isEmpty) {
-      ToastService.showErrorToast(message: 'Please enter respondent code');
-      return;
+      final autoCode = _generateNextRespondentCode(state, state.respondents);
+      respondentData['code'] = autoCode;
+      context
+          .read<DataCollectCubit>()
+          .updateNewRespondentData('code', autoCode);
     }
 
     context
