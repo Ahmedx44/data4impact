@@ -1,19 +1,23 @@
-
 import 'package:data4impact/core/widget/custom_button.dart';
 import 'package:data4impact/features/data_collect/page/data_collection_page.dart';
 import 'package:data4impact/features/home/widget/actitity_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:data4impact/core/service/toast_service.dart';
 
 class StudyDetailView extends StatefulWidget {
   final String studyId;
   final Map<String, dynamic> studyData;
+  final int? collectorResponseCount;
+  final int? collectorMaxLimit;
 
   const StudyDetailView({
     super.key,
     required this.studyId,
     required this.studyData,
+    this.collectorResponseCount,
+    this.collectorMaxLimit,
   });
 
   @override
@@ -64,12 +68,17 @@ class _StudyDetailViewState extends State<StudyDetailView>
     final colorScheme = theme.colorScheme;
 
     // Use actual study data instead of static values
-    final currentResponses = widget.studyData['responseCount'] ?? 0;
-    final totalResponses = widget.studyData['sampleSize'] ?? 0;
+    final currentResponses =
+        widget.collectorResponseCount ?? widget.studyData['responseCount'] ?? 0;
+    final totalResponses =
+        widget.collectorMaxLimit ?? widget.studyData['sampleSize'] ?? 0;
     final progress =
-    totalResponses as int > 0 ? currentResponses / totalResponses : 0;
+        totalResponses as int > 0 ? currentResponses / totalResponses : 0;
     final collectorCount = widget.studyData['collectorCount'] ?? 0;
     final questionCount = widget.studyData['questionCount'] ?? 0;
+
+    final isLimitReached = (totalResponses as int) > 0 &&
+        (currentResponses as int) >= (totalResponses as int);
 
     // Calculate days remaining
     final daysRemaining = _calculateDaysRemaining(widget.studyData);
@@ -108,14 +117,14 @@ class _StudyDetailViewState extends State<StudyDetailView>
         slivers: [
           // Progress Overview Card
           SliverToBoxAdapter(
-            child: _buildProgressOverviewCard(
-              context,
-              currentResponses: currentResponses as int,
-              totalResponses: totalResponses as int,
-              daysRemaining: daysRemaining,
-              progress: (progress as int).toDouble(),
-            ),
-          ),
+              child: _buildProgressOverviewCard(
+            context,
+            currentResponses: currentResponses as int,
+            totalResponses: totalResponses as int,
+            daysRemaining: daysRemaining,
+            progress: (progress as num).toDouble(),
+            isLimitReached: isLimitReached,
+          )),
 
           // Study Type Badge
           SliverToBoxAdapter(
@@ -127,13 +136,13 @@ class _StudyDetailViewState extends State<StudyDetailView>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
-                    (context, index) {
+                (context, index) {
                   final List<StatCardData> stats = [
                     StatCardData(
                       title: 'Total Response',
                       value: totalResponses.toString(),
                       subtitle:
-                      '${totalResponses - currentResponses} Remaining',
+                          '${totalResponses - currentResponses} Remaining',
                       icon: Icons.assignment_turned_in_rounded,
                       color: Colors.blue,
                     ),
@@ -141,7 +150,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                       title: 'Response Rate',
                       value: '${(progress * 100).toStringAsFixed(1)}%',
                       subtitle:
-                      '${(progress * 100).toStringAsFixed(1)}% completion',
+                          '${(progress * 100).toStringAsFixed(1)}% completion',
                       icon: Icons.trending_up_rounded,
                       color: Colors.green,
                       isPercentage: true,
@@ -182,7 +191,9 @@ class _StudyDetailViewState extends State<StudyDetailView>
             ),
           ),
 
-          SliverToBoxAdapter(child: SizedBox(height: MediaQuery.sizeOf(context).height*0.05)),
+          SliverToBoxAdapter(
+              child:
+                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.05)),
           if (widget.studyData['status'] != 'completed')
             SliverToBoxAdapter(
               child: Padding(
@@ -193,10 +204,17 @@ class _StudyDetailViewState extends State<StudyDetailView>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                      if (!(totalResponses > 0 &&
+                          (currentResponses as int) >= (totalResponses as int)))
+                        const Icon(Icons.play_arrow_rounded,
+                            color: Colors.white),
                       const SizedBox(width: 8),
                       Text(
-                        'Continue ${_getStudyTypeDisplayName()}',
+                        (totalResponses > 0 &&
+                                (currentResponses as int) >=
+                                    (totalResponses as int))
+                            ? 'Limit Reached'
+                            : 'Continue ${_getStudyTypeDisplayName()}',
                         style: GoogleFonts.lexendDeca(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -206,6 +224,14 @@ class _StudyDetailViewState extends State<StudyDetailView>
                     ],
                   ),
                   onTap: () {
+                    if (totalResponses > 0 &&
+                        (currentResponses as int) >= (totalResponses as int)) {
+                      ToastService.showErrorToast(
+                        message:
+                            'Maximum response limit reached for this study.',
+                      );
+                      return;
+                    }
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute<Widget>(
@@ -214,7 +240,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                           studyType: _getStudyType(),
                           approach: widget.studyData['approach'].toString(),
                           designType:
-                          widget.studyData['design']['type'].toString(),
+                              widget.studyData['design']['type'].toString(),
                         ),
                       ),
                     );
@@ -284,12 +310,13 @@ class _StudyDetailViewState extends State<StudyDetailView>
   }
 
   Widget _buildProgressOverviewCard(
-      BuildContext context, {
-        required int currentResponses,
-        required int totalResponses,
-        required int daysRemaining,
-        required double progress,
-      }) {
+    BuildContext context, {
+    required int currentResponses,
+    required int totalResponses,
+    required int daysRemaining,
+    required double progress,
+    required bool isLimitReached,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -330,11 +357,13 @@ class _StudyDetailViewState extends State<StudyDetailView>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Progress',
+                        isLimitReached ? 'Limit Reached' : 'Progress',
                         style: GoogleFonts.lexendDeca(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurfaceVariant,
+                          color: isLimitReached
+                              ? theme.colorScheme.error
+                              : colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -343,7 +372,9 @@ class _StudyDetailViewState extends State<StudyDetailView>
                         style: GoogleFonts.lexendDeca(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
+                          color: isLimitReached
+                              ? theme.colorScheme.error
+                              : colorScheme.onSurface,
                         ),
                       ),
                       Text(
@@ -362,12 +393,17 @@ class _StudyDetailViewState extends State<StudyDetailView>
                         height: 80,
                         width: 80,
                         child: CircularProgressIndicator(
-                          value: progress,
+                          value: progress > 1 ? 1 : progress,
                           strokeWidth: 8,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            progress >= 1 ? Colors.green : colorScheme.primary,
+                            isLimitReached
+                                ? theme.colorScheme.error
+                                : (progress >= 1
+                                    ? Colors.green
+                                    : colorScheme.primary),
                           ),
-                          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.5),
+                          backgroundColor:
+                              colorScheme.surfaceVariant.withOpacity(0.5),
                         ),
                       ),
                       Column(
@@ -377,14 +413,18 @@ class _StudyDetailViewState extends State<StudyDetailView>
                             style: GoogleFonts.lexendDeca(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
+                              color: isLimitReached
+                                  ? theme.colorScheme.error
+                                  : colorScheme.onSurface,
                             ),
                           ),
                           Text(
-                            'Complete',
+                            isLimitReached ? 'Full' : 'Complete',
                             style: GoogleFonts.lexendDeca(
                               fontSize: 10,
-                              color: colorScheme.onSurfaceVariant,
+                              color: isLimitReached
+                                  ? theme.colorScheme.error
+                                  : colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],

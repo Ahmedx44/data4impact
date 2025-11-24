@@ -293,6 +293,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         final study = Study.fromJson(data);
         final studyJson = jsonEncode(data);
 
+        // Check for limit
+        if (study.sampleSize > 0 && study.responseCount >= study.sampleSize) {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'Maximum response limit reached for this study.',
+          ));
+          return;
+        }
+
         // Save to offline storage
         await OfflineModeDataRepo().saveStudyQuestions(studyId, studyJson);
 
@@ -329,6 +338,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         }
 
         final study = Study.fromJson(savedData);
+
+        if (study.sampleSize > 0 && study.responseCount >= study.sampleSize) {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'Maximum response limit reached for this study.',
+          ));
+          return;
+        }
+
         await _processStudyData(study);
       } catch (e) {
         emit(state.copyWith(
@@ -1499,7 +1517,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       state.copyWith(
         selectedRespondent: respondent,
         isManagingRespondents: false,
-        clearSubmissionResult: true, 
+        clearSubmissionResult: true,
       ),
     );
   }

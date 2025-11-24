@@ -2,6 +2,7 @@ import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:data4impact/features/study_detail/pages/study_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:data4impact/core/service/toast_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
@@ -19,8 +20,11 @@ class AssignmentCard extends StatelessWidget {
     final study = collector['study'] as Map<String, dynamic>? ?? {};
     final studyName = study['name'] as String? ?? 'Unknown Study';
     final studyDescription = study['description'] as String? ?? '';
-    final responseCount = collector['responseCount'] as int? ?? 0;
-    final maxLimit = collector['maxLimit'] as int? ?? 0;
+    final responseCount = collector['responseCount'] as int? ??
+        study['responseCount'] as int? ??
+        0;
+    final maxLimit =
+        collector['maxLimit'] as int? ?? study['sampleSize'] as int? ?? 0;
     final status = collector['study']['status'] as String? ?? '';
     final assignedDate = collector['assignedDate'] as String? ?? '';
     final completedDate = collector['completedDate'] as String? ?? '';
@@ -29,10 +33,12 @@ class AssignmentCard extends StatelessWidget {
     // Calculate progress
     final progress = maxLimit > 0 ? responseCount / maxLimit : 0.0;
     final progressPercentage = (progress * 100).toInt();
+    final isLimitReached = maxLimit > 0 && responseCount >= maxLimit;
 
     // Determine status and colors
     final isCompleted = status == 'completed';
-    final dueStatus = _getDueStatus(assignedDate, dueDate, completedDate, isCompleted);
+    final dueStatus =
+        _getDueStatus(assignedDate, dueDate, completedDate, isCompleted);
 
     // Get appropriate colors based on status
     final statusColors = _getStatusColors(theme, dueStatus, isCompleted);
@@ -158,7 +164,8 @@ class AssignmentCard extends StatelessWidget {
                         return AnimatedContainer(
                           duration: const Duration(milliseconds: 600),
                           curve: Curves.easeOut,
-                          width: constraints.maxWidth * progress.clamp(0.0, 1.0),
+                          width:
+                              constraints.maxWidth * progress.clamp(0.0, 1.0),
                           height: 8,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -240,8 +247,17 @@ class AssignmentCard extends StatelessWidget {
                     backgroundColor: statusColors.iconColor,
                   ),
                   onPressed: () {
+                    if (isLimitReached) {
+                      ToastService.showErrorToast(
+                        message:
+                            'Maximum response limit reached for this study.',
+                      );
+                      return;
+                    }
+
                     final studyCubit = context.read<StudyCubit>();
-                    final studyData = studyCubit.getStudyById(study['_id'] as String);
+                    final studyData =
+                        studyCubit.getStudyById(study['_id'] as String);
 
                     if (studyData != null) {
                       Navigator.push(
@@ -250,6 +266,8 @@ class AssignmentCard extends StatelessWidget {
                           builder: (context) => StudyDetailPage(
                             studyId: study['_id'] as String,
                             studyData: studyData,
+                            collectorResponseCount: responseCount,
+                            collectorMaxLimit: maxLimit,
                           ),
                         ),
                       );
@@ -258,11 +276,15 @@ class AssignmentCard extends StatelessWidget {
                   icon: Icon(
                     isCompleted
                         ? HugeIcons.strokeRoundedView
-                        : HugeIcons.strokeRoundedArrowRight01,
+                        : (isLimitReached
+                            ? HugeIcons.strokeRoundedCancel01
+                            : HugeIcons.strokeRoundedArrowRight01),
                     size: 16,
                   ),
                   label: Text(
-                    isCompleted ? 'View' : 'Continue',
+                    isCompleted
+                        ? 'View'
+                        : (isLimitReached ? 'Limit Reached' : 'Continue'),
                     style: GoogleFonts.lexendDeca(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -277,12 +299,15 @@ class AssignmentCard extends StatelessWidget {
     );
   }
 
-  DueStatus _getDueStatus(String assignedDate, String dueDate, String completedDate, bool isCompleted) {
+  DueStatus _getDueStatus(String assignedDate, String dueDate,
+      String completedDate, bool isCompleted) {
     if (isCompleted) {
       final completed = _parseDate(completedDate);
       return DueStatus(
         statusText: 'Completed',
-        daysRemaining: completed != null ? 'on ${DateFormat('MMM dd, yyyy').format(completed)}' : null,
+        daysRemaining: completed != null
+            ? 'on ${DateFormat('MMM dd, yyyy').format(completed)}'
+            : null,
       );
     }
 
@@ -331,7 +356,8 @@ class AssignmentCard extends StatelessWidget {
     }
   }
 
-  StatusColors _getStatusColors(ColorScheme theme, DueStatus dueStatus, bool isCompleted) {
+  StatusColors _getStatusColors(
+      ColorScheme theme, DueStatus dueStatus, bool isCompleted) {
     if (isCompleted) {
       return StatusColors(
         iconColor: Colors.green,

@@ -8,6 +8,7 @@ class StudyCard extends StatelessWidget {
   final String status;
   final VoidCallback callback;
   final Color? accentColor;
+  final bool isLimitReached;
 
   const StudyCard({
     super.key,
@@ -17,6 +18,7 @@ class StudyCard extends StatelessWidget {
     required this.status,
     required this.callback,
     this.accentColor,
+    this.isLimitReached = false,
   });
 
   @override
@@ -25,7 +27,8 @@ class StudyCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final cardColor = accentColor ?? colorScheme.primary;
 
-    final (statusColor, statusIcon, displayStatus) = _getStatusDetails(status, colorScheme);
+    final (statusColor, statusIcon, displayStatus) =
+        _getStatusDetails(status, colorScheme);
 
     return Card(
       elevation: 0,
@@ -77,7 +80,8 @@ class StudyCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: statusColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
@@ -203,7 +207,9 @@ class StudyCard extends StatelessWidget {
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 800),
                               curve: Curves.easeOutQuart,
-                              width: MediaQuery.of(context).size.width * 0.7 * progress,
+                              width: MediaQuery.of(context).size.width *
+                                  0.7 *
+                                  progress,
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -234,7 +240,8 @@ class StudyCard extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -248,7 +255,7 @@ class StudyCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Continue Study',
+                            isLimitReached ? 'Limit Reached' : 'Continue Study',
                             style: GoogleFonts.lexendDeca(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -257,7 +264,9 @@ class StudyCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Icon(
-                            Icons.arrow_forward_rounded,
+                            isLimitReached
+                                ? Icons.block_rounded
+                                : Icons.arrow_forward_rounded,
                             size: 18,
                             color: colorScheme.onPrimary,
                           ),
@@ -275,16 +284,29 @@ class StudyCard extends StatelessWidget {
   }
 
   // Helper method to get status details
-  (Color, IconData, String) _getStatusDetails(String status, ColorScheme colorScheme) {
+  (Color, IconData, String) _getStatusDetails(
+      String status, ColorScheme colorScheme) {
     switch (status.toLowerCase()) {
       case 'inprogress':
         return (colorScheme.primary, Icons.play_arrow_rounded, 'In Progress');
       case 'completed':
-        return (const Color(0xFF10B981), Icons.check_circle_rounded, 'Completed');
+        return (
+          const Color(0xFF10B981),
+          Icons.check_circle_rounded,
+          'Completed'
+        );
       case 'draft':
-        return (colorScheme.onSurface.withOpacity(0.6), Icons.edit_note_rounded, 'Draft');
+        return (
+          colorScheme.onSurface.withOpacity(0.6),
+          Icons.edit_note_rounded,
+          'Draft'
+        );
       case 'overdue':
-        return (const Color(0xFFEF4444), Icons.warning_amber_rounded, 'Attention Needed');
+        return (
+          const Color(0xFFEF4444),
+          Icons.warning_amber_rounded,
+          'Attention Needed'
+        );
       case 'pending':
         return (const Color(0xFFF59E0B), Icons.schedule_rounded, 'Pending');
       default:

@@ -9,6 +9,7 @@ import 'package:data4impact/features/study_detail/pages/study_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:data4impact/core/service/toast_service.dart';
 
 class StudyView extends StatefulWidget {
   const StudyView({super.key});
@@ -74,9 +75,7 @@ class _StudyViewState extends State<StudyView>
           _currentProjectSlug = projectSlug;
 
           context.read<StudyCubit>().fetchStudies(projectSlug);
-        } else if (projectSlug.isEmpty) {
-
-        }
+        } else if (projectSlug.isEmpty) {}
       },
       builder: (context, homeState) {
         final projectSlug = homeState.selectedProject?.slug ?? '';
@@ -127,10 +126,11 @@ class _StudyViewState extends State<StudyView>
                       ),
                       splashFactory: NoSplash.splashFactory,
                       indicatorSize: TabBarIndicatorSize.tab,
-                      indicatorPadding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                      indicatorPadding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 6),
                       labelColor: colorScheme.primary,
-                      unselectedLabelColor: colorScheme.onSurface.withAlpha(255),
+                      unselectedLabelColor:
+                          colorScheme.onSurface.withAlpha(255),
                       labelStyle: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -151,7 +151,8 @@ class _StudyViewState extends State<StudyView>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildActiveStudiesTab(projectSlug),
+                        _buildActiveStudiesTab(
+                            projectSlug, homeState.collectors),
                         _buildOldStudiesTab(projectSlug),
                       ],
                     ),
@@ -165,9 +166,8 @@ class _StudyViewState extends State<StudyView>
     );
   }
 
-  Widget _buildActiveStudiesTab(String projectSlug) {
-
-
+  Widget _buildActiveStudiesTab(
+      String projectSlug, List<Map<String, dynamic>> collectors) {
     return BlocConsumer<StudyCubit, StudyState>(
       listener: (context, studyState) {
         if (studyState.studies.isNotEmpty) {
@@ -183,7 +183,7 @@ class _StudyViewState extends State<StudyView>
         } else if (studyState.hasError && studyState.studies.isEmpty) {
           return ApiErrorWidget(
             errorMessage:
-            _getUserFriendlyErrorMessage(studyState.errorMessage!),
+                _getUserFriendlyErrorMessage(studyState.errorMessage!),
             errorDetails: studyState.errorDetails!,
             onRetry: () {
               if (projectSlug.isNotEmpty) {
@@ -231,15 +231,44 @@ class _StudyViewState extends State<StudyView>
               itemCount: activeStudies.length,
               itemBuilder: (context, index) {
                 final study = activeStudies[index];
+                final studyId = study['_id'] as String;
 
-
-                double progress = 0.0;
+                // Find matching collector
+                Map<String, dynamic>? matchingCollector;
                 try {
-                  final responses = study['responseCount'] as int? ?? 0;
-                  final sample = study['sampleSize'] as int? ?? 0;
-                  progress = sample > 0 ? responses / sample : 0.0;
+                  matchingCollector = collectors.firstWhere(
+                    (c) {
+                      final cStudy = c['study'];
+                      if (cStudy is Map) {
+                        return cStudy['_id'] == studyId;
+                      } else if (cStudy is String) {
+                        return cStudy == studyId;
+                      }
+                      return false;
+                    },
+                  );
                 } catch (e) {
+                  // No matching collector found
                 }
+
+                // Calculate limit reached using collector data if available
+                int responses = 0;
+                int sample = 0;
+
+                if (matchingCollector != null) {
+                  responses = matchingCollector['responseCount'] as int? ??
+                      study['responseCount'] as int? ??
+                      0;
+                  sample = matchingCollector['maxLimit'] as int? ??
+                      study['sampleSize'] as int? ??
+                      0;
+                } else {
+                  responses = study['responseCount'] as int? ?? 0;
+                  sample = study['sampleSize'] as int? ?? 0;
+                }
+
+                final isLimitReached = sample > 0 && responses >= sample;
+                final progress = sample > 0 ? responses / sample : 0.0;
 
                 return StudyCard(
                   title: study['name'] as String? ?? 'Untitled Study',
@@ -247,10 +276,19 @@ class _StudyViewState extends State<StudyView>
                       'No description available',
                   progress: progress,
                   status: study['status'] as String? ?? 'unknown',
+                  isLimitReached: isLimitReached,
                   callback: () {
+                    if (isLimitReached) {
+                      ToastService.showErrorToast(
+                        message:
+                            'Maximum response limit reached for this study.',
+                      );
+                      return;
+                    }
+
                     final studyCubit = context.read<StudyCubit>();
                     final studyData =
-                    studyCubit.getStudyById(study['_id'] as String);
+                        studyCubit.getStudyById(study['_id'] as String);
 
                     if (studyData != null) {
                       Navigator.push(
@@ -259,6 +297,8 @@ class _StudyViewState extends State<StudyView>
                           builder: (context) => StudyDetailPage(
                             studyId: study['_id'] as String,
                             studyData: studyData,
+                            collectorResponseCount: responses,
+                            collectorMaxLimit: sample,
                           ),
                         ),
                       );
@@ -274,17 +314,15 @@ class _StudyViewState extends State<StudyView>
   }
 
   Widget _buildOldStudiesTab(String projectSlug) {
-
     return BlocConsumer<StudyCubit, StudyState>(
-      listener: (context, studyState) {
-      },
+      listener: (context, studyState) {},
       builder: (context, studyState) {
         if (studyState.isLoading && studyState.studies.isEmpty) {
           return _buildSkeletonStudyList(projectSlug);
         } else if (studyState.hasError && studyState.studies.isEmpty) {
           return ApiErrorWidget(
             errorMessage:
-            _getUserFriendlyErrorMessage(studyState.errorMessage!),
+                _getUserFriendlyErrorMessage(studyState.errorMessage!),
             errorDetails: studyState.errorDetails!,
             onRetry: () {
               if (projectSlug.isNotEmpty) {
@@ -337,8 +375,7 @@ class _StudyViewState extends State<StudyView>
                   final responses = study['responseCount'] as int? ?? 0;
                   final sample = study['sampleSize'] as int? ?? 0;
                   progress = sample > 0 ? responses / sample : 0.0;
-                } catch (e) {
-                }
+                } catch (e) {}
 
                 return StudyCard(
                   title: study['name'] as String? ?? 'Untitled Study',
@@ -367,7 +404,6 @@ class _StudyViewState extends State<StudyView>
   }
 
   Widget _buildSkeletonStudyList(String projectSlug) {
-
     return RefreshIndicator(
       onRefresh: () async {
         if (projectSlug.isNotEmpty) {
