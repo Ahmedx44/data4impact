@@ -86,7 +86,6 @@ class OfflineModeDataRepo {
     }
   }
 
-
   Future<void> saveTeamMembers(String teamId, List<dynamic> members) async {
     try {
       final hiveBox = await Hive.openBox(teamMembersBox);
@@ -95,7 +94,8 @@ class OfflineModeDataRepo {
       final membersJson = jsonEncode(members);
       await hiveBox.put('team_members_$teamId', membersJson);
 
-      AppLogger.logInfo('Saved ${members.length} members for team $teamId to offline storage');
+      AppLogger.logInfo(
+          'Saved ${members.length} members for team $teamId to offline storage');
     } catch (e) {
       AppLogger.logError('Error saving team members: $e');
     }
@@ -127,7 +127,6 @@ class OfflineModeDataRepo {
       return [];
     }
   }
-
 
   Future<CurrentUser?> getSavedCurrentUser() async {
     try {
@@ -467,7 +466,6 @@ class OfflineModeDataRepo {
     }
   }
 
-
   Future<void> clearStudyData(String studyId) async {
     try {
       final cohortsBox = await Hive.openBox(studyCohortsBox);
@@ -489,6 +487,79 @@ class OfflineModeDataRepo {
       AppLogger.logInfo('Cleared all offline data for study $studyId');
     } catch (e) {
       AppLogger.logError('Error clearing study data: $e');
+    }
+  }
+
+  Future<void> incrementStudyResponseCount(String studyId) async {
+    try {
+      // 1. Update Study List
+      final sBox = await Hive.openBox(studysBox);
+      final studysJson = sBox.get(studysKey);
+      if (studysJson != null) {
+        final List<dynamic> studys =
+            jsonDecode(studysJson.toString()) as List<dynamic>;
+        bool changed = false;
+        for (var i = 0; i < studys.length; i++) {
+          if (studys[i]['_id'] == studyId) {
+            studys[i]['responseCount'] = (studys[i]['responseCount'] ?? 0) + 1;
+            changed = true;
+            break;
+          }
+        }
+        if (changed) {
+          await sBox.put(studysKey, jsonEncode(studys));
+        }
+      }
+
+      // 2. Update Study Questions (Single Study)
+      final qBox = await Hive.openBox(studyQuestionsBox);
+      final questionsJson = qBox.get('${studyQuestionsKey}_$studyId');
+      if (questionsJson != null) {
+        final Map<String, dynamic> study =
+            jsonDecode(questionsJson.toString()) as Map<String, dynamic>;
+        study['responseCount'] = (study['responseCount'] ?? 0) + 1;
+        await qBox.put('${studyQuestionsKey}_$studyId', jsonEncode(study));
+      }
+
+      // 3. Update Collectors
+      final cBox = await Hive.openBox(collectorsBox);
+      for (final key in cBox.keys) {
+        if (key.toString().startsWith(collectorsKey)) {
+          final collectorsJson = cBox.get(key);
+          if (collectorsJson != null) {
+            final List<dynamic> collectors =
+                jsonDecode(collectorsJson.toString()) as List<dynamic>;
+            bool changed = false;
+            for (var i = 0; i < collectors.length; i++) {
+              final collectorStudy = collectors[i]['study'];
+              String? cStudyId;
+              if (collectorStudy is Map) {
+                cStudyId = collectorStudy['_id'] as String?;
+              } else if (collectorStudy is String) {
+                cStudyId = collectorStudy;
+              }
+
+              if (cStudyId == studyId) {
+                collectors[i]['responseCount'] =
+                    (collectors[i]['responseCount'] ?? 0) + 1;
+                // Also update the nested study object if it exists
+                if (collectors[i]['study'] is Map) {
+                  collectors[i]['study']['responseCount'] =
+                      (collectors[i]['study']['responseCount'] ?? 0) + 1;
+                }
+                changed = true;
+              }
+            }
+            if (changed) {
+              await cBox.put(key, jsonEncode(collectors));
+            }
+          }
+        }
+      }
+      AppLogger.logInfo(
+          'Incremented offline response count for study $studyId');
+    } catch (e) {
+      AppLogger.logError('Error incrementing response count: $e');
     }
   }
 }

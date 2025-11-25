@@ -167,7 +167,17 @@ class StudyService {
       throw Exception(
           'Unexpected response format: ${response.data.runtimeType}');
     } on DioException catch (e) {
-      if (e.response != null) {}
+      if (e.response != null) {
+        // Extract error message from response
+        final responseData = e.response!.data;
+        if (responseData is Map && responseData.containsKey('message')) {
+          throw Exception(responseData['message']);
+        } else if (responseData is Map && responseData.containsKey('error')) {
+          throw Exception(responseData['error']);
+        } else if (responseData is String) {
+          throw Exception(responseData);
+        }
+      }
       rethrow;
     } catch (e) {
       rethrow;

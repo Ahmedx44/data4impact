@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 
 class AssignmentCard extends StatelessWidget {
@@ -14,7 +13,8 @@ class AssignmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     // Extract data from collector
     final study = collector['study'] as Map<String, dynamic>? ?? {};
@@ -32,7 +32,6 @@ class AssignmentCard extends StatelessWidget {
 
     // Calculate progress
     final progress = maxLimit > 0 ? responseCount / maxLimit : 0.0;
-    final progressPercentage = (progress * 100).toInt();
     final isLimitReached = maxLimit > 0 && responseCount >= maxLimit;
 
     // Determine status and colors
@@ -41,257 +40,308 @@ class AssignmentCard extends StatelessWidget {
         _getDueStatus(assignedDate, dueDate, completedDate, isCompleted);
 
     // Get appropriate colors based on status
-    final statusColors = _getStatusColors(theme, dueStatus, isCompleted);
+    final cardColor = _getCardColor(colorScheme, dueStatus, isCompleted);
+    final (statusColor, statusIcon, displayStatus) =
+        _getStatusDetails(dueStatus.statusText, isCompleted, colorScheme);
 
     return Card(
-      elevation: 2,
-      shadowColor: theme.shadow.withOpacity(0.1),
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         side: BorderSide(
-          color: theme.outline.withOpacity(0.08),
+          color: colorScheme.outline.withOpacity(0.1),
           width: 1,
         ),
       ),
-      color: Theme.of(context).brightness == Brightness.light
-          ? Colors.white
-          : theme.surface,
+      color: colorScheme.surface,
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surface,
+              colorScheme.surfaceVariant.withOpacity(0.3),
+            ],
+          ),
+        ),
+        child: Stack(
           children: [
-            // Header with icon and status
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: statusColors.iconBackground,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isCompleted
-                        ? HugeIcons.strokeRoundedCheckmarkCircle02
-                        : HugeIcons.strokeRoundedTask01,
-                    color: statusColors.iconColor,
-                    size: 22,
-                  ),
+            // Background decorative elements
+            Positioned(
+              right: -20,
+              top: -20,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: cardColor.withOpacity(0.03),
+                  shape: BoxShape.circle,
                 ),
-                _StatusBadge(
-                  text: dueStatus.statusText,
-                  color: statusColors.badgeBackground,
-                  textColor: statusColors.badgeText,
-                ),
-              ],
+              ),
             ),
 
-            const SizedBox(height: 20),
-
-            // Progress percentage with animated appearance
-            TweenAnimationBuilder(
-              duration: const Duration(milliseconds: 800),
-              tween: Tween<double>(begin: 0.0, end: progressPercentage / 100.0),
-              builder: (context, value, child) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${(value * 100).toInt()}%',
-                      style: GoogleFonts.lexendDeca(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: theme.onSurface,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      studyName,
-                      style: GoogleFonts.lexendDeca(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: theme.onSurface.withOpacity(0.9),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Response count and progress bar
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Responses',
-                      style: GoogleFonts.lexendDeca(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: theme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      '$responseCount/$maxLimit',
-                      style: GoogleFonts.lexendDeca(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: statusColors.iconColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Stack(
-                  children: [
-                    Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: theme.surfaceContainerHighest.withOpacity(0.4),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 600),
-                          curve: Curves.easeOut,
-                          width:
-                              constraints.maxWidth * progress.clamp(0.0, 1.0),
-                          height: 8,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                statusColors.iconColor,
-                                statusColors.iconColor.withOpacity(0.7),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                            boxShadow: [
-                              BoxShadow(
-                                color: statusColors.iconColor.withOpacity(0.3),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Footer with due date and action button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Due date information
-                Expanded(
-                  child: Row(
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  /// Header with status and progress percentage
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(
-                        HugeIcons.strokeRoundedTime01,
-                        size: 16,
-                        color: statusColors.iconColor,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: statusColor.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
+                            Icon(
+                              statusIcon,
+                              size: 14,
+                              color: statusColor,
+                            ),
+                            const SizedBox(width: 6),
                             Text(
-                              dueStatus.statusText,
+                              displayStatus,
                               style: GoogleFonts.lexendDeca(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: statusColors.badgeText,
+                                color: statusColor,
                               ),
                             ),
-                            if (dueStatus.daysRemaining != null)
-                              Text(
-                                dueStatus.daysRemaining!,
-                                style: GoogleFonts.lexendDeca(
-                                  fontSize: 11,
-                                  color: theme.onSurfaceVariant,
+                          ],
+                        ),
+                      ),
+
+                      // Progress percentage in circle
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: cardColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: cardColor.withOpacity(0.2),
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${(progress * 100).toInt()}%',
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: cardColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// Title
+                  Text(
+                    studyName,
+                    style: GoogleFonts.lexendDeca(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  /// Description or due date info
+                  if (studyDescription.isNotEmpty)
+                    Text(
+                      studyDescription,
+                      style: GoogleFonts.lexendDeca(
+                        fontSize: 14,
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                        height: 1.5,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  else if (dueStatus.daysRemaining != null)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 16,
+                          color: statusColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          dueStatus.daysRemaining!,
+                          style: GoogleFonts.lexendDeca(
+                            fontSize: 14,
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  /// Progress bar with labels
+                  Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Collection Progress',
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                          Text(
+                            '$responseCount/$maxLimit Responses',
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: cardColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Progress bar with gradient
+                      Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceVariant.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Stack(
+                          children: [
+                            // Progress fill with gradient
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 800),
+                              curve: Curves.easeOutQuart,
+                              width: MediaQuery.of(context).size.width *
+                                  0.7 *
+                                  progress,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    cardColor,
+                                    cardColor.withOpacity(0.8),
+                                  ],
                                 ),
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: cardColor.withOpacity(0.3),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
                               ),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ),
 
-                const SizedBox(width: 12),
+                  const SizedBox(height: 24),
 
-                // Continue/View button
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    backgroundColor: statusColors.iconColor,
-                  ),
-                  onPressed: () {
-                    if (isLimitReached) {
-                      ToastService.showErrorToast(
-                        message:
-                            'Maximum response limit reached for this study.',
-                      );
-                      return;
-                    }
-
-                    final studyCubit = context.read<StudyCubit>();
-                    final studyData =
-                        studyCubit.getStudyById(study['_id'] as String);
-
-                    if (studyData != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<Widget>(
-                          builder: (context) => StudyDetailPage(
-                            studyId: study['_id'] as String,
-                            studyData: studyData,
-                            collectorResponseCount: responseCount,
-                            collectorMaxLimit: maxLimit,
-                          ),
+                  /// Action button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                      );
-                    }
-                  },
-                  icon: Icon(
-                    isCompleted
-                        ? HugeIcons.strokeRoundedView
-                        : (isLimitReached
-                            ? HugeIcons.strokeRoundedCancel01
-                            : HugeIcons.strokeRoundedArrowRight01),
-                    size: 16,
-                  ),
-                  label: Text(
-                    isCompleted
-                        ? 'View'
-                        : (isLimitReached ? 'Limit Reached' : 'Continue'),
-                    style: GoogleFonts.lexendDeca(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                        backgroundColor: cardColor,
+                        foregroundColor: colorScheme.onPrimary,
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                      ),
+                      onPressed: () {
+                        // if (isLimitReached) {
+                        //   ToastService.showErrorToast(
+                        //     message:
+                        //         'Maximum response limit reached for this study.',
+                        //   );
+                        //   return;
+                        // }
+
+                        final studyCubit = context.read<StudyCubit>();
+                        final studyData =
+                            studyCubit.getStudyById(study['_id'] as String);
+
+                        if (studyData != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute<Widget>(
+                              builder: (context) => StudyDetailPage(
+                                studyId: study['_id'] as String,
+                                studyData: studyData,
+                                collectorResponseCount: responseCount,
+                                collectorMaxLimit: maxLimit,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isCompleted
+                                ? 'View Details'
+                                : (isLimitReached
+                                    ? 'Limit Reached'
+                                    : 'Continue Study'),
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            isCompleted
+                                ? Icons.visibility_rounded
+                                : (isLimitReached
+                                    ? Icons.block_rounded
+                                    : Icons.arrow_forward_rounded),
+                            size: 18,
+                            color: colorScheme.onPrimary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -299,21 +349,25 @@ class AssignmentCard extends StatelessWidget {
     );
   }
 
-  DueStatus _getDueStatus(String assignedDate, String dueDate,
-      String completedDate, bool isCompleted) {
+  DueStatus _getDueStatus(
+    String assignedDate,
+    String dueDate,
+    String completedDate,
+    bool isCompleted,
+  ) {
     if (isCompleted) {
       final completed = _parseDate(completedDate);
       return DueStatus(
         statusText: 'Completed',
         daysRemaining: completed != null
-            ? 'on ${DateFormat('MMM dd, yyyy').format(completed)}'
+            ? 'Completed on ${DateFormat('MMM dd, yyyy').format(completed)}'
             : null,
       );
     }
 
     final due = _parseDate(dueDate);
     if (due == null) {
-      return DueStatus(statusText: 'No due date');
+      return DueStatus(statusText: 'In Progress');
     }
 
     final now = DateTime.now();
@@ -322,27 +376,27 @@ class AssignmentCard extends StatelessWidget {
     if (difference.inDays < 0) {
       return DueStatus(
         statusText: 'Overdue',
-        daysRemaining: '${difference.inDays.abs()} days ago',
+        daysRemaining: 'Overdue by ${difference.inDays.abs()} days',
       );
     } else if (difference.inDays == 0) {
       return DueStatus(
         statusText: 'Due Today',
-        daysRemaining: 'Ends today',
+        daysRemaining: 'Due today',
       );
     } else if (difference.inDays == 1) {
       return DueStatus(
         statusText: 'Due Tomorrow',
-        daysRemaining: '1 day remaining',
+        daysRemaining: 'Due tomorrow',
       );
     } else if (difference.inDays <= 7) {
       return DueStatus(
         statusText: 'Due Soon',
-        daysRemaining: '${difference.inDays} days remaining',
+        daysRemaining: 'Due in ${difference.inDays} days',
       );
     } else {
       return DueStatus(
         statusText: 'In Progress',
-        daysRemaining: 'Due ${DateFormat('MMM dd').format(due)}',
+        daysRemaining: 'Due ${DateFormat('MMM dd, yyyy').format(due)}',
       );
     }
   }
@@ -356,40 +410,77 @@ class AssignmentCard extends StatelessWidget {
     }
   }
 
-  StatusColors _getStatusColors(
-      ColorScheme theme, DueStatus dueStatus, bool isCompleted) {
+  Color _getCardColor(
+    ColorScheme colorScheme,
+    DueStatus dueStatus,
+    bool isCompleted,
+  ) {
     if (isCompleted) {
-      return StatusColors(
-        iconColor: Colors.green,
-        iconBackground: Colors.green.withOpacity(0.1),
-        badgeBackground: Colors.green.withOpacity(0.1),
-        badgeText: Colors.green,
-      );
+      return const Color(0xFF10B981); // Green
     }
 
     switch (dueStatus.statusText) {
       case 'Overdue':
-        return StatusColors(
-          iconColor: theme.error,
-          iconBackground: theme.error.withOpacity(0.1),
-          badgeBackground: theme.error.withOpacity(0.1),
-          badgeText: theme.error,
-        );
+        return const Color(0xFFEF4444); // Red
       case 'Due Today':
       case 'Due Tomorrow':
       case 'Due Soon':
-        return StatusColors(
-          iconColor: Colors.orange,
-          iconBackground: Colors.orange.withOpacity(0.1),
-          badgeBackground: Colors.orange.withOpacity(0.1),
-          badgeText: Colors.orange,
+        return const Color(0xFFF59E0B); // Orange
+      default:
+        return colorScheme.primary;
+    }
+  }
+
+  // Helper method to get status details
+  (Color, IconData, String) _getStatusDetails(
+    String statusText,
+    bool isCompleted,
+    ColorScheme colorScheme,
+  ) {
+    if (isCompleted) {
+      return (
+        const Color(0xFF10B981),
+        Icons.check_circle_rounded,
+        'Completed',
+      );
+    }
+
+    switch (statusText) {
+      case 'Overdue':
+        return (
+          const Color(0xFFEF4444),
+          Icons.warning_amber_rounded,
+          'Overdue'
+        );
+      case 'Due Today':
+        return (
+          const Color(0xFFF59E0B),
+          Icons.schedule_rounded,
+          'Due Today',
+        );
+      case 'Due Tomorrow':
+        return (
+          const Color(0xFFF59E0B),
+          Icons.schedule_rounded,
+          'Due Tomorrow'
+        );
+      case 'Due Soon':
+        return (
+          const Color(0xFFF59E0B),
+          Icons.schedule_rounded,
+          'Due Soon',
+        );
+      case 'In Progress':
+        return (
+          colorScheme.primary,
+          Icons.play_arrow_rounded,
+          'In Progress',
         );
       default:
-        return StatusColors(
-          iconColor: theme.primary,
-          iconBackground: theme.primary.withOpacity(0.1),
-          badgeBackground: theme.primary.withOpacity(0.1),
-          badgeText: theme.primary,
+        return (
+          colorScheme.primary,
+          Icons.help_outline_rounded,
+          statusText,
         );
     }
   }
@@ -400,58 +491,4 @@ class DueStatus {
   final String? daysRemaining;
 
   DueStatus({required this.statusText, this.daysRemaining});
-}
-
-class StatusColors {
-  final Color iconColor;
-  final Color iconBackground;
-  final Color badgeBackground;
-  final Color badgeText;
-
-  StatusColors({
-    required this.iconColor,
-    required this.iconBackground,
-    required this.badgeBackground,
-    required this.badgeText,
-  });
-}
-
-/// Status badge component
-class _StatusBadge extends StatelessWidget {
-  final String text;
-  final Color color;
-  final Color textColor;
-  final double fontSize;
-  final EdgeInsets padding;
-
-  const _StatusBadge({
-    required this.text,
-    required this.color,
-    required this.textColor,
-    this.fontSize = 12,
-    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: textColor.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.lexendDeca(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-        ),
-      ),
-    );
-  }
 }

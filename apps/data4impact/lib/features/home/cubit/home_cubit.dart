@@ -254,7 +254,23 @@ class HomeCubit extends Cubit<HomeState> {
                 : 0.0,
           ));
         } catch (e) {
-          AppLogger.logError('Failed to sync offline answer $i: $e');
+          final errorMessage = e.toString().toLowerCase();
+          final isRespondentAlreadyResponded =
+              errorMessage.contains('already') &&
+                  errorMessage.contains('respond');
+
+          // If respondent already responded, mark this answer for removal
+          if (isRespondentAlreadyResponded) {
+            AppLogger.logWarning(
+                'Respondent already responded for answer $i, marking for removal');
+            successfulIndices.add(i); // Add to removal list
+            ToastService.showWarningToast(
+              message:
+                  'Skipped duplicate response - respondent already responded',
+            );
+          } else {
+            AppLogger.logError('Failed to sync offline answer $i: $e');
+          }
           // Continue with next answer instead of stopping
           continue;
         }

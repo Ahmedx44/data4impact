@@ -348,6 +348,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         }
 
         await _processStudyData(study);
+
+        // For interview studies, load respondents from offline storage
+        if (study.methodology == 'interview') {
+          await loadStudyRespondents(studyId);
+        }
       } catch (e) {
         emit(state.copyWith(
           isLoading: false,
@@ -1038,9 +1043,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           responseData: bodyArray,
         );
 
+        await OfflineModeDataRepo().incrementStudyResponseCount(studyId);
+
         if (type == 'longitudinal') {
-          // For longitudinal flow, we should stay in the subject selection screen
-          // but refresh the data to show updated completion status
           final newState = state.copyWith(
             isSubmitting: false,
             submissionResult: response,
@@ -1051,17 +1056,15 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             navigationHistory: const [],
             logicJumps: const {},
             jumpTarget: null,
-            isManagingSubjects: true, // Stay in subject management
-            selectedSubject: null, // Deselect the current subject
+            isManagingSubjects: true,
+            selectedSubject: null,
           );
 
           emit(newState);
 
-          // Reload subjects to get updated completion status
           await loadStudySubjects(studyId);
           await loadStudyWaves(studyId);
 
-          // Update selectedWave to reflect changes (e.g. new subject added to completed list)
           if (state.selectedWave != null && state.waves.isNotEmpty) {
             final updatedWave = state.waves.firstWhere(
               (w) => w['_id'] == state.selectedWave!['_id'],
@@ -1111,11 +1114,37 @@ class DataCollectCubit extends Cubit<DataCollectState> {
                   : 'Interview submitted successfully',
         );
       } catch (e) {
-        emit(state.copyWith(
-          isSubmitting: false,
-          error: 'Failed to submit $type: $e',
-        ));
-        ToastService.showErrorToast(message: 'Failed to submit $type: $e');
+        // Check if the error is about respondent already responded
+        final errorMessage = e.toString().toLowerCase();
+        final isRespondentAlreadyResponded = errorMessage.contains('already') &&
+            errorMessage.contains('respond');
+
+        // For interview flow, if respondent already responded, go back to respondent management
+        if (type == 'interview' && isRespondentAlreadyResponded) {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              error: 'This respondent has already responded to this study',
+              storedGroupResponses: const {},
+              answers: {},
+              currentQuestionIndex: 0,
+              navigationHistory: const [],
+              logicJumps: const {},
+              jumpTarget: null,
+              isManagingRespondents: true,
+              selectedRespondent: null,
+            ),
+          );
+          ToastService.showErrorToast(
+            message: 'This respondent has already responded to this study',
+          );
+        } else {
+          emit(state.copyWith(
+            isSubmitting: false,
+            error: 'Failed to submit $type: $e',
+          ));
+          ToastService.showErrorToast(message: 'Failed to submit $type: $e');
+        }
       }
     } else {
       // Offline submission - similar fixes needed here
@@ -1123,6 +1152,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         for (final response in bodyArray) {
           await OfflineModeDataRepo().saveOfflineAnswer(studyId, response);
         }
+
+        // Increment local response count
+        await OfflineModeDataRepo().incrementStudyResponseCount(studyId);
 
         if (type == 'longitudinal') {
           emit(
@@ -1155,6 +1187,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
               navigationHistory: const [],
               logicJumps: const {},
               jumpTarget: null,
+              isManagingRespondents: true,
+              selectedRespondent: null,
             ),
           );
         } else {
@@ -1497,6 +1531,9 @@ class DataCollectCubit extends Cubit<DataCollectState> {
           newRespondentData: {},
         ),
       );
+
+      // Update offline cache
+      await OfflineModeDataRepo().saveStudyRespondents(studyId, respondents);
 
       ToastService.showSuccessToast(message: 'Respondent created successfully');
 
