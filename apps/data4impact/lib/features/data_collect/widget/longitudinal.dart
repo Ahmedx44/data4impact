@@ -310,43 +310,61 @@ class _LongitudinalDataCollectionState
             Expanded(
               child: state.cohorts.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.group_off_rounded,
-                            size: 80,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.2),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'No Cohorts Available',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.5),
+                      child: state.isLoading
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Loading cohorts...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.group_off_rounded,
+                                  size: 80,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.2),
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'No Cohorts Available',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.5),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Contact the study administrator\\nto create cohorts',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.4),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Contact the study administrator\nto create cohorts',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.4),
-                            ),
-                          ),
-                        ],
-                      ),
                     )
                   : GridView.builder(
                       gridDelegate:
@@ -395,214 +413,229 @@ class _LongitudinalDataCollectionState
         environmentLabel = 'Control';
     }
 
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isActive
-                ? [
-                    primaryColor.withOpacity(0.05),
-                    primaryColor.withOpacity(0.1),
-                  ]
-                : [
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                  ],
-          ),
+        border: Border.all(
+          color: isActive
+              ? primaryColor.withOpacity(0.3)
+              : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1.5,
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: isActive
-                ? () {
-                    context
-                        .read<DataCollectCubit>()
-                        .selectCohortAndShowWaves(cohort);
-                    context.read<DataCollectCubit>().loadStudySubjects(studyId);
-                    context
-                        .read<DataCollectCubit>()
-                        .loadStudyWaves(widget.studyId);
-                  }
-                : null,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Cohort Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: isActive
+              ? () {
+                  context
+                      .read<DataCollectCubit>()
+                      .selectCohortAndShowWaves(cohort);
+                  context.read<DataCollectCubit>().loadStudySubjects(studyId);
+                  context
+                      .read<DataCollectCubit>()
+                      .loadStudyWaves(widget.studyId);
+                }
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Cohort Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? primaryColor.withOpacity(0.12)
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.group_rounded,
+                          size: 20,
                           color: isActive
-                              ? primaryColor.withOpacity(0.15)
+                              ? primaryColor
                               : Theme.of(context)
                                   .colorScheme
                                   .onSurface
-                                  .withOpacity(0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.group_rounded,
-                            size: 18,
-                            color: isActive
-                                ? primaryColor
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.5),
-                          ),
+                                  .withOpacity(0.4),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? primaryColor.withOpacity(0.12)
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
                           color: isActive
-                              ? primaryColor.withOpacity(0.1)
+                              ? primaryColor.withOpacity(0.3)
                               : Theme.of(context)
                                   .colorScheme
                                   .onSurface
                                   .withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          width: 1,
                         ),
-                        child: Text(
-                          environmentLabel,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: isActive
-                                ? primaryColor
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.5),
+                      ),
+                      child: Text(
+                        environmentLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isActive
+                              ? primaryColor
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Cohort Name
+                Text(
+                  cohort['name']?.toString() ?? 'Cohort ${index + 1}',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: isActive
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+
+                // Cohort Description
+                if (cohort['description'] != null &&
+                    cohort['description'].toString().isNotEmpty)
+                  Text(
+                    cohort['description'].toString(),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isActive
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7)
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.4),
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                const SizedBox(height: 16),
+
+                // Cohort Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (cohort['sampleSize'] != null)
+                        _buildCohortDetail(
+                          Icons.people_rounded,
+                          '${cohort['sampleSize']} Participants',
+                          isActive,
+                        ),
+                      if (cohort['recruitmentStartDate'] != null)
+                        _buildCohortDetail(
+                          Icons.calendar_today_rounded,
+                          'Started ${_formatDate(cohort['recruitmentStartDate'] as String)}',
+                          isActive,
+                        ),
+                      const SizedBox(height: 16),
+
+                      // Select Button
+                      Container(
+                        width: double.infinity,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? primaryColor
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: isActive
+                              ? null
+                              : Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.1),
+                                  width: 1,
+                                ),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Select Cohort',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isActive
+                                      ? Colors.white
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.5),
+                                ),
+                              ),
+                              if (isActive) ...[
+                                const SizedBox(width: 6),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-
-                  // Cohort Name
-                  Text(
-                    cohort['name']?.toString() ?? 'Cohort ${index + 1}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isActive
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.5),
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Cohort Description
-                  if (cohort['description'] != null &&
-                      cohort['description'].toString().isNotEmpty)
-                    Text(
-                      cohort['description'].toString(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isActive
-                            ? Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.7)
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.4),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  const SizedBox(height: 12),
-
-                  // Cohort Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (cohort['sampleSize'] != null)
-                          _buildCohortDetail(
-                            Icons.people_rounded,
-                            '${cohort['sampleSize']} Participants',
-                            isActive,
-                          ),
-                        if (cohort['recruitmentStartDate'] != null)
-                          _buildCohortDetail(
-                            Icons.calendar_today_rounded,
-                            'Started ${_formatDate(cohort['recruitmentStartDate'] as String)}',
-                            isActive,
-                          ),
-                        const SizedBox(height: 12),
-
-                        // Select Button
-                        Container(
-                          width: double.infinity,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? primaryColor
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Select Cohort',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: isActive
-                                        ? Colors.white
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.4),
-                                  ),
-                                ),
-                                if (isActive) ...[
-                                  const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 12,
-                                    color: Colors.white,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -665,96 +698,114 @@ class _LongitudinalDataCollectionState
         child: Column(
           children: [
             // Header Card
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
+            Container(
+              decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                      Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                  width: 1.2,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.waves_rounded,
-                          size: 30,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                color: Theme.of(context).colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    // Icon Container
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.08),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              state.selectedCohort?['name']?.toString() ??
-                                  'Selected Cohort',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
+                      child: Icon(
+                        Icons.assessment_rounded,
+                        size: 28,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Cohort Name
+                          Text(
+                            state.selectedCohort?['name']?.toString() ??
+                                'Selected Cohort',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              letterSpacing: -0.2,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Choose a wave to continue',
-                              style: TextStyle(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Instruction Text
+                          Text(
+                            'Choose a wave to continue data collection',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Environment Badge
+                          if (state.selectedCohort?['environment'] != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
                                 color: Theme.of(context)
                                     .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.7),
-                                fontSize: 14,
+                                    .primary
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Environment: ${state.selectedCohort!['environment']}',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                            if (state.selectedCohort?['environment'] !=
-                                null) ...[
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'Environment: ${state.selectedCohort?['environment']}',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // Chevron icon
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.4),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -764,43 +815,61 @@ class _LongitudinalDataCollectionState
             Expanded(
               child: state.waves.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.waves_outlined,
-                            size: 80,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.2),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'No Waves Available',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.5),
+                      child: state.isLoading
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Loading waves...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.waves_rounded,
+                                  size: 80,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.2),
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'No Waves Available',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.5),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Contact the study administrator\nto create waves for this cohort',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.4),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Contact the study administrator to create waves',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.4),
-                            ),
-                          ),
-                        ],
-                      ),
                     )
                   : GridView.builder(
                       gridDelegate:
@@ -808,7 +877,7 @@ class _LongitudinalDataCollectionState
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.6,
+                        childAspectRatio: 0.75,
                       ),
                       itemCount: state.waves.length,
                       itemBuilder: (context, index) {
@@ -846,275 +915,248 @@ class _LongitudinalDataCollectionState
               : isActive
                   ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
                   : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-          width: allSubjectsResponded ? 2 : 1,
+          width: 1,
         ),
       ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: allSubjectsResponded
-                ? [
-                    Colors.green.withOpacity(0.05),
-                    Colors.green.withOpacity(0.1),
-                  ]
-                : isActive
-                    ? [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      ]
-                    : [
-                        Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.05),
-                        Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.1),
-                      ],
-          ),
         ),
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Wave Number and Status
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: allSubjectsResponded
-                              ? Colors.green.withOpacity(0.15)
-                              : isActive
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withOpacity(0.15)
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: allSubjectsResponded
-                              ? Icon(
-                                  Icons.check_circle_rounded,
-                                  size: 18,
-                                  color: Colors.green,
-                                )
-                              : Text(
-                                  '${index + 1}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: isActive
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.5),
-                                  ),
-                                ),
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: allSubjectsResponded
-                                  ? Colors.green.withOpacity(0.1)
-                                  : isActive
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withOpacity(0.1)
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              allSubjectsResponded
-                                  ? 'Completed'
-                                  : isActive
-                                      ? 'Active'
-                                      : 'Inactive',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: allSubjectsResponded
-                                    ? Colors.green
-                                    : isActive
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.5),
-                              ),
-                            ),
-                          ),
-                          if (totalSubjectsCount > 0) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              allSubjectsResponded
-                                  ? 'All $totalSubjectsCount responded'
-                                  : '$responsesCount/$totalSubjectsCount responded',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: allSubjectsResponded
-                                    ? Colors.green
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.6),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Wave Name
-                  Text(
-                    wave['name']?.toString() ?? 'Wave ${index + 1}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: allSubjectsResponded
-                          ? Colors.green
-                          : isActive
-                              ? Theme.of(context).colorScheme.onSurface
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.5),
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Wave Description
-                  if (wave['description'] != null &&
-                      wave['description'].toString().isNotEmpty)
-                    Text(
-                      wave['description'].toString(),
-                      style: TextStyle(
-                        fontSize: 12,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Wave Number and Status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
                         color: allSubjectsResponded
-                            ? Colors.green.withOpacity(0.7)
+                            ? Colors.green.withOpacity(0.15)
                             : isActive
                                 ? Theme.of(context)
                                     .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.7)
+                                    .primary
+                                    .withOpacity(0.15)
                                 : Theme.of(context)
                                     .colorScheme
                                     .onSurface
-                                    .withOpacity(0.4),
+                                    .withOpacity(0.15),
+                        shape: BoxShape.circle,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  const SizedBox(height: 12),
-
-                  // Wave Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (wave['scheduledDate'] != null)
-                          _buildWaveDetail(
-                            Icons.calendar_today_rounded,
-                            'Scheduled: ${_formatDate(wave['scheduledDate'] as String)}',
-                            isSelectable,
-                            isCompleted: allSubjectsResponded,
-                          ),
-                        if (totalSubjectsCount > 0)
-                          _buildWaveDetail(
-                            Icons.people_rounded,
-                            '$totalSubjectsCount Total Subject(s)',
-                            isSelectable,
-                            isCompleted: allSubjectsResponded,
-                          ),
-                        const SizedBox(height: 12),
-
-                        // Select Button
-                        InkWell(
-                          onTap: isSelectable
-                              ? () {
-                                  context
-                                      .read<DataCollectCubit>()
-                                      .selectWave(wave);
-                                  context
-                                      .read<DataCollectCubit>()
-                                      .loadStudySubjects(widget.studyId);
-                                }
-                              : allSubjectsResponded
-                                  ? () {
-                                      ToastService.showInfoToast(
-                                        message:
-                                            'All respondents have already responded to this wave',
-                                      );
-                                    }
-                                  : null,
-                          child: Container(
-                            width: double.infinity,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: allSubjectsResponded
-                                  ? Colors.green
-                                  : isSelectable
+                      child: Center(
+                        child: allSubjectsResponded
+                            ? Icon(
+                                Icons.check_circle_rounded,
+                                size: 18,
+                                color: Colors.green,
+                              )
+                            : Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: isActive
                                       ? Theme.of(context).colorScheme.primary
                                       : Theme.of(context)
                                           .colorScheme
                                           .onSurface
-                                          .withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Center(
-                              child: Text(
-                                allSubjectsResponded
-                                    ? 'Completed'
-                                    : 'Select Wave',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: allSubjectsResponded || isSelectable
-                                      ? Colors.white
+                                          .withOpacity(0.5),
+                                ),
+                              ),
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: allSubjectsResponded
+                                ? Colors.green.withOpacity(0.1)
+                                : isActive
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(0.1)
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            allSubjectsResponded
+                                ? 'Completed'
+                                : isActive
+                                    ? 'Active'
+                                    : 'Inactive',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: allSubjectsResponded
+                                  ? Colors.green
+                                  : isActive
+                                      ? Theme.of(context).colorScheme.primary
                                       : Theme.of(context)
                                           .colorScheme
                                           .onSurface
-                                          .withOpacity(0.4),
-                                ),
+                                          .withOpacity(0.5),
+                            ),
+                          ),
+                        ),
+                        if (totalSubjectsCount > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            allSubjectsResponded
+                                ? 'All $totalSubjectsCount responded'
+                                : '$responsesCount/$totalSubjectsCount responded',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: allSubjectsResponded
+                                  ? Colors.green
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Wave Name
+                Text(
+                  wave['name']?.toString() ?? 'Wave ${index + 1}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: allSubjectsResponded
+                        ? Colors.green
+                        : isActive
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.5),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+
+                // Wave Description
+                if (wave['description'] != null &&
+                    wave['description'].toString().isNotEmpty)
+                  Text(
+                    wave['description'].toString(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: allSubjectsResponded
+                          ? Colors.green.withOpacity(0.7)
+                          : isActive
+                              ? Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7)
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.4),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                const SizedBox(height: 12),
+
+                // Wave Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (wave['scheduledDate'] != null)
+                        _buildWaveDetail(
+                          Icons.calendar_today_rounded,
+                          'Scheduled: ${_formatDate(wave['scheduledDate'] as String)}',
+                          isSelectable,
+                          isCompleted: allSubjectsResponded,
+                        ),
+                      if (totalSubjectsCount > 0)
+                        _buildWaveDetail(
+                          Icons.people_rounded,
+                          '$totalSubjectsCount Total Subject(s)',
+                          isSelectable,
+                          isCompleted: allSubjectsResponded,
+                        ),
+                      const SizedBox(height: 12),
+
+                      // Select Button
+                      InkWell(
+                        onTap: isSelectable
+                            ? () {
+                                context
+                                    .read<DataCollectCubit>()
+                                    .selectWave(wave);
+                                context
+                                    .read<DataCollectCubit>()
+                                    .loadStudySubjects(widget.studyId);
+                              }
+                            : allSubjectsResponded
+                                ? () {
+                                    ToastService.showInfoToast(
+                                      message:
+                                          'All respondents have already responded to this wave',
+                                    );
+                                  }
+                                : null,
+                        child: Container(
+                          width: double.infinity,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: allSubjectsResponded
+                                ? Colors.green
+                                : isSelectable
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: Text(
+                              allSubjectsResponded
+                                  ? 'Completed'
+                                  : 'Select Wave',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: allSubjectsResponded || isSelectable
+                                    ? Colors.white
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.4),
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

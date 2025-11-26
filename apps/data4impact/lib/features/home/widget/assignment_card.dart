@@ -235,33 +235,33 @@ class AssignmentCard extends StatelessWidget {
                           color: colorScheme.surfaceVariant.withOpacity(0.4),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Stack(
-                          children: [
-                            // Progress fill with gradient
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 800),
-                              curve: Curves.easeOutQuart,
-                              width: MediaQuery.of(context).size.width *
-                                  0.7 *
-                                  progress,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    cardColor,
-                                    cardColor.withOpacity(0.8),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return Align(
+                              alignment: Alignment.centerLeft,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 800),
+                                curve: Curves.easeOutQuart,
+                                width: constraints.maxWidth * progress,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      cardColor,
+                                      cardColor.withOpacity(0.8),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: cardColor.withOpacity(0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(4),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: cardColor.withOpacity(0.3),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
                               ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -285,13 +285,13 @@ class AssignmentCard extends StatelessWidget {
                         shadowColor: Colors.transparent,
                       ),
                       onPressed: () {
-                        // if (isLimitReached) {
-                        //   ToastService.showErrorToast(
-                        //     message:
-                        //         'Maximum response limit reached for this study.',
-                        //   );
-                        //   return;
-                        // }
+                        if (isLimitReached) {
+                          ToastService.showErrorToast(
+                            message:
+                                'Maximum response limit reached for this study.',
+                          );
+                          return;
+                        }
 
                         final studyCubit = context.read<StudyCubit>();
                         final studyData =

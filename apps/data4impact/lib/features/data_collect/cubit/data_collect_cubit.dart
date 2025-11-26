@@ -1517,15 +1517,23 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
       // Update the selectedGroup with the new respondents list ONLY if we have a selected group
       Map<String, dynamic>? updatedSelectedGroup;
+      List<Map<String, dynamic>>? updatedGroupRespondents;
+
       if (state.selectedGroup != null) {
         updatedSelectedGroup = Map<String, dynamic>.from(state.selectedGroup!);
         updatedSelectedGroup['respondents'] = respondents;
+
+        // Also update groupRespondents list which is used in the UI
+        updatedGroupRespondents = respondents.where((respondent) {
+          return respondent['group'] == state.selectedGroup?['_id'];
+        }).toList();
       }
 
       emit(
         state.copyWith(
           isLoading: false,
           respondents: respondents,
+          groupRespondents: updatedGroupRespondents ?? state.groupRespondents,
           selectedGroup: updatedSelectedGroup, // Will only update if not null
           isCreatingRespondent: false,
           newRespondentData: {},
@@ -2066,18 +2074,17 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      final result = await studyService.createStudyGroup(
+      await studyService.createStudyGroup(
         studyId: studyId,
         groupData: groupData,
       );
 
-      // Reload groups to include the new one
-      final groups = await studyService.getStudyGroups(studyId);
+      // Refresh all data
+      await getStudyQuestions(studyId);
+      await loadStudyGroups(studyId);
 
       emit(
         state.copyWith(
-          isLoading: false,
-          groups: groups,
           isCreatingGroup: false,
           newGroupData: {},
         ),

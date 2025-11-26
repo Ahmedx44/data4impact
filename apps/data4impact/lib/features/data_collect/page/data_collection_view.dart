@@ -25,13 +25,6 @@ class DataCollectionView extends StatefulWidget {
 
 class _DataCollectionViewState extends State<DataCollectionView> {
   @override
-  void initState() {
-    super.initState();
-    // Initialize the study questions
-    context.read<DataCollectCubit>().getStudyQuestions(widget.studyId);
-  }
-
-  @override
   Widget build(BuildContext context) {
     return BlocBuilder<DataCollectCubit, DataCollectState>(
       builder: (context, state) {

@@ -1221,9 +1221,9 @@ class _GroupDiscussionDataCollectionState
   Widget _buildQuestionsScreen(DataCollectState state, Study study) {
     final currentQuestionIndex = state.currentQuestionIndex;
     final currentRespondent =
-    state.currentRespondentIndex < state.selectedGroupRespondents.length
-        ? state.selectedGroupRespondents[state.currentRespondentIndex]
-        : null;
+        state.currentRespondentIndex < state.selectedGroupRespondents.length
+            ? state.selectedGroupRespondents[state.currentRespondentIndex]
+            : null;
 
     // Check if all respondents are completed - show completion screen
     if (state.currentRespondentIndex >= state.selectedGroupRespondents.length) {
@@ -1408,7 +1408,7 @@ class _GroupDiscussionDataCollectionState
                                                 .error
                                                 .withOpacity(0.1),
                                             borderRadius:
-                                            BorderRadius.circular(6),
+                                                BorderRadius.circular(6),
                                           ),
                                           child: Text(
                                             'Required',
@@ -1424,7 +1424,7 @@ class _GroupDiscussionDataCollectionState
                                     ],
                                   ),
                                   if (question.getSubtitle(
-                                      state.selectedLanguage) !=
+                                          state.selectedLanguage) !=
                                       null) ...[
                                     const SizedBox(height: 8),
                                     Text(
@@ -1504,14 +1504,14 @@ class _GroupDiscussionDataCollectionState
           child: ElevatedButton(
             onPressed: cubit.canProceed(question)
                 ? () {
-              // For group discussions on last question, move to next respondent
-              if (state.selectedGroupRespondents.isNotEmpty &&
-                  currentQuestionIndex == study.questions.length - 1) {
-                cubit.nextRespondentInGroup(studyId: widget.studyId);
-              } else {
-                cubit.nextQuestion(studyId: widget.studyId);
-              }
-            }
+                    // For group discussions on last question, move to next respondent
+                    if (state.selectedGroupRespondents.isNotEmpty &&
+                        currentQuestionIndex == study.questions.length - 1) {
+                      cubit.nextRespondentInGroup(studyId: widget.studyId);
+                    } else {
+                      cubit.nextQuestion(studyId: widget.studyId);
+                    }
+                  }
                 : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: cubit.canProceed(question)
@@ -1526,7 +1526,7 @@ class _GroupDiscussionDataCollectionState
               ),
               elevation: 2,
               shadowColor:
-              Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1550,10 +1550,12 @@ class _GroupDiscussionDataCollectionState
     );
   }
 
-  String _getButtonText(DataCollectState state, Study study, int currentQuestionIndex) {
+  String _getButtonText(
+      DataCollectState state, Study study, int currentQuestionIndex) {
     if (state.selectedGroupRespondents.isNotEmpty) {
       if (currentQuestionIndex == study.questions.length - 1) {
-        if (state.currentRespondentIndex < state.selectedGroupRespondents.length - 1) {
+        if (state.currentRespondentIndex <
+            state.selectedGroupRespondents.length - 1) {
           return 'Next Participant';
         } else {
           return 'Finish';
@@ -1563,10 +1565,12 @@ class _GroupDiscussionDataCollectionState
     return 'Next Question';
   }
 
-  IconData _getButtonIcon(DataCollectState state, Study study, int currentQuestionIndex) {
+  IconData _getButtonIcon(
+      DataCollectState state, Study study, int currentQuestionIndex) {
     if (state.selectedGroupRespondents.isNotEmpty) {
       if (currentQuestionIndex == study.questions.length - 1) {
-        if (state.currentRespondentIndex < state.selectedGroupRespondents.length - 1) {
+        if (state.currentRespondentIndex <
+            state.selectedGroupRespondents.length - 1) {
           return Icons.person_rounded;
         } else {
           return Icons.done_all_rounded;
@@ -1653,7 +1657,7 @@ class _GroupDiscussionDataCollectionState
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
                 child: const Text('Continue'),
               ),
@@ -1703,7 +1707,8 @@ class _GroupDiscussionDataCollectionState
                 'You have successfully completed the group discussion with all ${state.selectedGroupRespondents.length} participants.',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -1721,7 +1726,10 @@ class _GroupDiscussionDataCollectionState
                       end: Alignment.bottomRight,
                       colors: [
                         Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+                        Theme.of(context)
+                            .colorScheme
+                            .secondary
+                            .withOpacity(0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
@@ -1760,12 +1768,15 @@ class _GroupDiscussionDataCollectionState
                   ElevatedButton(
                     onPressed: () {
                       // Submit all responses
-                      context.read<DataCollectCubit>().submitSurvey(studyId: widget.studyId);
+                      context
+                          .read<DataCollectCubit>()
+                          .submitSurvey(studyId: widget.studyId);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 40, vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -2721,7 +2732,6 @@ class _GroupDiscussionDataCollectionState
     );
   }
 
-
   void _showResponseSummary(DataCollectState state, Study study) {
     showDialog(
       context: context,
@@ -2742,8 +2752,9 @@ class _GroupDiscussionDataCollectionState
                 leading: CircleAvatar(
                   child: Text('${index + 1}'),
                 ),
-                title: Text(respondent['name']  as String ?? 'Unknown'),
-                subtitle: Text('$completedQuestions/${study.questions.length} questions answered'),
+                title: Text(respondent['name'] as String ?? 'Unknown'),
+                subtitle: Text(
+                    '$completedQuestions/${study.questions.length} questions answered'),
                 trailing: completedQuestions == study.questions.length
                     ? Icon(Icons.check_circle, color: Colors.green)
                     : Icon(Icons.warning, color: Colors.orange),
@@ -2761,7 +2772,6 @@ class _GroupDiscussionDataCollectionState
     );
   }
 
-
   void _showCreateGroupDialog() {
     final currentState = context.read<DataCollectCubit>().state;
     final study = currentState.study;
@@ -2773,7 +2783,7 @@ class _GroupDiscussionDataCollectionState
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return BlocBuilder<DataCollectCubit, DataCollectState>(
           builder: (context, state) {
             final homogeneityGroups = study.homogeneityGroups;
@@ -3126,16 +3136,21 @@ class _GroupDiscussionDataCollectionState
                             const SizedBox(width: 12),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
+                                onPressed: () async {
                                   if (state.newGroupData['name'] != null &&
                                       state.newGroupData['name']
                                           .toString()
                                           .isNotEmpty) {
-                                    context
+                                    // Create group and wait for it to complete
+                                    // createStudyGroup now handles refreshing questions and groups
+                                    await context
                                         .read<DataCollectCubit>()
                                         .createStudyGroup(
                                             widget.studyId, state.newGroupData);
-                                    Navigator.pop(context);
+
+                                    if (context.mounted) {
+                                      Navigator.pop(context);
+                                    }
                                   } else {
                                     ToastService.showErrorToast(
                                         message: 'Group name is required');
@@ -4248,8 +4263,7 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
 
       print('debug: _createRespondent - refreshing data and navigating back');
 
-      // Refresh the data before navigating back
-      await cubit.refreshGroupData(widget.studyId);
+      // Data is already refreshed in createRespondent
 
       // Then navigate back
       if (mounted) {

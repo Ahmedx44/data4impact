@@ -224,14 +224,14 @@ class _StudyDetailViewState extends State<StudyDetailView>
                     ],
                   ),
                   onTap: () {
-                    // if (totalResponses > 0 &&
-                    //     (currentResponses as int) >= (totalResponses as int)) {
-                    //   ToastService.showErrorToast(
-                    //     message:
-                    //         'Maximum response limit reached for this study.',
-                    //   );
-                    //   return;
-                    // }
+                    if (totalResponses > 0 &&
+                        (currentResponses as int) >= (totalResponses as int)) {
+                      ToastService.showErrorToast(
+                        message:
+                            'Maximum response limit reached for this study.',
+                      );
+                      return;
+                    }
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute<Widget>(
