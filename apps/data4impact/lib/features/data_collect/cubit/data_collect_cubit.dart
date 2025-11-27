@@ -368,6 +368,12 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         study.responseValidation?.requiredLocation ?? false;
     final voiceDuration = study.responseValidation?.voiceDuration ?? 180;
 
+    // Preserve existing groups when processing study data
+    final currentGroups = state.groups;
+
+    print(
+        'debug: _processStudyData - preserving ${currentGroups.length} groups');
+
     emit(
       state.copyWith(
         study: study,
@@ -388,6 +394,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         isManagingRespondents: study.methodology == 'interview',
         isCreatingRespondent: false,
         newRespondentData: {},
+        groups: currentGroups, // Preserve groups
       ),
     );
 
@@ -1445,6 +1452,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   Future<void> loadStudyRespondents(String studyId) async {
+    print('debug: loadStudyRespondents - starting');
     emit(state.copyWith(isLoading: true, error: null));
 
     final connected = InternetConnectionMonitor(
@@ -1456,25 +1464,33 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     if (isConnected) {
       try {
+        print('debug: loadStudyRespondents - calling studyService.getStudyRespondents');
         final respondents = await studyService.getStudyRespondents(studyId);
+        print('debug: loadStudyRespondents - received ${respondents.length} respondents');
 
         await OfflineModeDataRepo().saveStudyRespondents(studyId, respondents);
 
+        print('debug: loadStudyRespondents - emitting state with ${respondents.length} respondents');
         emit(state.copyWith(
           isLoading: false,
           respondents: respondents,
+          error: null,
         ));
       } catch (e) {
+        print('debug: loadStudyRespondents - error: $e');
         final offlineRespondents =
-            await OfflineModeDataRepo().getStudyRespondents(studyId);
+        await OfflineModeDataRepo().getStudyRespondents(studyId);
         if (offlineRespondents.isNotEmpty) {
+          print('debug: loadStudyRespondents - using offline data with ${offlineRespondents.length} respondents');
           emit(
             state.copyWith(
               isLoading: false,
               respondents: offlineRespondents,
+              error: null,
             ),
           );
         } else {
+          print('debug: loadStudyRespondents - no offline data available');
           emit(
             state.copyWith(
               isLoading: false,
@@ -1485,14 +1501,18 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     } else {
       // Offline mode
+      print('debug: loadStudyRespondents - offline mode');
       final offlineRespondents =
-          await OfflineModeDataRepo().getStudyRespondents(studyId);
+      await OfflineModeDataRepo().getStudyRespondents(studyId);
       if (offlineRespondents.isNotEmpty) {
+        print('debug: loadStudyRespondents - offline mode with ${offlineRespondents.length} respondents');
         emit(state.copyWith(
           isLoading: false,
           respondents: offlineRespondents,
+          error: null,
         ));
       } else {
+        print('debug: loadStudyRespondents - no offline respondents data available');
         emit(
           state.copyWith(
             isLoading: false,
@@ -1505,51 +1525,45 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
   Future<void> createRespondent(
       String studyId, Map<String, dynamic> respondentData) async {
+    print('debug: createRespondent - starting');
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
+      print('debug: createRespondent - calling studyService.createStudyRespondent');
       await studyService.createStudyRespondent(
         studyId: studyId,
         respondentData: respondentData,
       );
 
-      final respondents = await studyService.getStudyRespondents(studyId);
+      // Refresh respondents list immediately
+      print('debug: createRespondent - calling loadStudyRespondents');
+      await loadStudyRespondents(studyId);
 
-      // Update the selectedGroup with the new respondents list ONLY if we have a selected group
-      Map<String, dynamic>? updatedSelectedGroup;
-      List<Map<String, dynamic>>? updatedGroupRespondents;
-
+      // Also refresh group respondents if we have a selected group
       if (state.selectedGroup != null) {
-        updatedSelectedGroup = Map<String, dynamic>.from(state.selectedGroup!);
-        updatedSelectedGroup['respondents'] = respondents;
-
-        // Also update groupRespondents list which is used in the UI
-        updatedGroupRespondents = respondents.where((respondent) {
-          return respondent['group'] == state.selectedGroup?['_id'];
-        }).toList();
+        print('debug: createRespondent - calling loadGroupRespondents');
+        await loadGroupRespondents(studyId);
       }
 
+      print('debug: createRespondent - emitting success state');
       emit(
         state.copyWith(
           isLoading: false,
-          respondents: respondents,
-          groupRespondents: updatedGroupRespondents ?? state.groupRespondents,
-          selectedGroup: updatedSelectedGroup, // Will only update if not null
           isCreatingRespondent: false,
           newRespondentData: {},
         ),
       );
 
-      // Update offline cache
-      await OfflineModeDataRepo().saveStudyRespondents(studyId, respondents);
-
+      print('debug: createRespondent - showing success toast');
       ToastService.showSuccessToast(message: 'Respondent created successfully');
 
       return;
     } catch (e) {
+      print('debug: createRespondent - error: $e');
       emit(
         state.copyWith(
           isLoading: false,
+          error: 'Failed to create respondent: ${e.toString()}',
         ),
       );
 
@@ -2013,8 +2027,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     ));
   }
 
-// Load study groups
   Future<void> loadStudyGroups(String studyId) async {
+    print('debug: loadStudyGroups - starting');
     emit(state.copyWith(isLoading: true, error: null));
 
     final connected = InternetConnectionMonitor(
@@ -2026,25 +2040,39 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     if (isConnected) {
       try {
+        print('debug: loadStudyGroups - calling studyService.getStudyGroups');
         final groups = await studyService.getStudyGroups(studyId);
+        print('debug: loadStudyGroups - received ${groups.length} groups');
 
         // Save to offline storage
         await OfflineModeDataRepo().saveStudyGroups(studyId, groups);
 
-        emit(state.copyWith(
+        print(
+            'debug: loadStudyGroups - emitting state with ${groups.length} groups');
+        // Use copyWith to preserve other state properties
+        final newState = state.copyWith(
           isLoading: false,
           groups: groups,
-        ));
+          error: null, // Clear any previous errors
+        );
+        print(
+            'debug: loadStudyGroups - new state groups length: ${newState.groups.length}');
+        emit(newState);
       } catch (e) {
+        print('debug: loadStudyGroups - error: $e');
         // Fallback to offline data
         final offlineGroups =
             await OfflineModeDataRepo().getStudyGroups(studyId);
         if (offlineGroups.isNotEmpty) {
+          print(
+              'debug: loadStudyGroups - using offline data with ${offlineGroups.length} groups');
           emit(state.copyWith(
             isLoading: false,
             groups: offlineGroups,
+            error: null,
           ));
         } else {
+          print('debug: loadStudyGroups - no offline data available');
           emit(state.copyWith(
             isLoading: false,
             error: 'Failed to load groups: ${e.toString()}',
@@ -2053,13 +2081,18 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       }
     } else {
       // Offline mode
+      print('debug: loadStudyGroups - offline mode');
       final offlineGroups = await OfflineModeDataRepo().getStudyGroups(studyId);
       if (offlineGroups.isNotEmpty) {
+        print(
+            'debug: loadStudyGroups - offline mode with ${offlineGroups.length} groups');
         emit(state.copyWith(
           isLoading: false,
           groups: offlineGroups,
+          error: null,
         ));
       } else {
+        print('debug: loadStudyGroups - no offline groups data available');
         emit(state.copyWith(
           isLoading: false,
           error: 'No offline groups data available',
@@ -2068,30 +2101,33 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     }
   }
 
-// Create study group
   Future<void> createStudyGroup(
       String studyId, Map<String, dynamic> groupData) async {
+    print('debug: createStudyGroup - starting');
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
+      print('debug: createStudyGroup - calling studyService.createStudyGroup');
       await studyService.createStudyGroup(
         studyId: studyId,
         groupData: groupData,
       );
 
-      // Refresh all data
-      await getStudyQuestions(studyId);
+      // Refresh groups list immediately
+      print('debug: createStudyGroup - calling loadStudyGroups');
       await loadStudyGroups(studyId);
 
-      emit(
-        state.copyWith(
-          isCreatingGroup: false,
-          newGroupData: {},
-        ),
-      );
+      print('debug: createStudyGroup - emitting success state');
+      emit(state.copyWith(
+        isLoading: false,
+        isCreatingGroup: false,
+        newGroupData: {},
+      ));
 
+      print('debug: createStudyGroup - showing success toast');
       ToastService.showSuccessToast(message: 'Group created successfully');
     } catch (e) {
+      print('debug: createStudyGroup - error: $e');
       emit(state.copyWith(
         isLoading: false,
         error: 'Failed to create group: ${e.toString()}',
@@ -2111,19 +2147,28 @@ class DataCollectCubit extends Cubit<DataCollectState> {
   }
 
   Future<void> loadGroupRespondents(String studyId) async {
+    print('debug: loadGroupRespondents - starting');
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
+      print('debug: loadGroupRespondents - calling studyService.getStudyRespondents');
       final respondents = await studyService.getStudyRespondents(studyId);
+      print('debug: loadGroupRespondents - received ${respondents.length} total respondents');
+
       final groupRespondents = respondents.where((respondent) {
         return respondent['group'] == state.selectedGroup?['_id'];
       }).toList();
 
+      print('debug: loadGroupRespondents - filtered to ${groupRespondents.length} group respondents');
+      print('debug: loadGroupRespondents - selected group ID: ${state.selectedGroup?['_id']}');
+
       emit(state.copyWith(
         isLoading: false,
         groupRespondents: groupRespondents,
+        error: null,
       ));
     } catch (e) {
+      print('debug: loadGroupRespondents - error: $e');
       emit(state.copyWith(
         isLoading: false,
         error: 'Failed to load respondents: ${e.toString()}',

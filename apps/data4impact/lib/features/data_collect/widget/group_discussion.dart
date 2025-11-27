@@ -40,28 +40,49 @@ class _GroupDiscussionDataCollectionState
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<DataCollectCubit>();
+    print(
+        'debug: Building GroupDiscussionDataCollection, cubit hash: ${cubit.hashCode}');
     return BlocConsumer<DataCollectCubit, DataCollectState>(
       listener: (context, state) {
+        print('debug: BlocConsumer listener - state updated');
         if (state.error != null && state.error != _previousError) {
+          print('debug: BlocConsumer listener - error: ${state.error}');
           ToastService.showErrorToast(message: state.error!);
           _previousError = state.error;
           context.read<DataCollectCubit>().clearError();
         }
 
         if (state.submissionResult != null) {
+          print('debug: BlocConsumer listener - submission result received');
           Navigator.pop(context);
         }
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (state.isSubmitting) {
+            print('debug: BlocConsumer listener - showing loading dialog');
             DialogLoading.show(context);
           } else {
+            print('debug: BlocConsumer listener - hiding loading dialog');
             DialogLoading.hide(context);
           }
         });
       },
       builder: (context, state) {
+        print('debug: BlocConsumer builder - rebuilding with state:');
+        print('debug: - isLoading: ${state.isLoading}');
+        print('debug: - groups length: ${state.groups.length}');
+        print(
+            'debug: - groups: ${state.groups.map((g) => g['name']).toList()}');
+        print('debug: - study: ${state.study != null ? "loaded" : "null"}');
+        print(
+            'debug: - selectedGroup: ${state.selectedGroup != null ? "selected" : "null"}');
+        print(
+            'debug: - groupRespondents length: ${state.groupRespondents.length}');
+        print('debug: - state hash: ${state.hashCode}');
+
         if (state.isLoading || (state.study == null && state.groups.isEmpty)) {
+          print('debug: builder - showing loading screen');
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -70,28 +91,36 @@ class _GroupDiscussionDataCollectionState
         if (state.error != null &&
             state.study == null &&
             state.groups.isEmpty) {
+          print('debug: builder - showing error screen: ${state.error}');
           return _buildErrorScreen(state.error!);
         }
 
         if (state.study == null && state.groups.isNotEmpty) {
+          print(
+              'debug: builder - showing group selection screen with ${state.groups.length} groups');
           return _buildGroupSelectionScreen(state);
         }
 
         if (state.study == null) {
+          print('debug: builder - showing error screen (no study data)');
           return _buildErrorScreen('No study data available');
         }
 
         final study = state.study!;
 
         if (state.isManagingGroups || state.selectedGroup == null) {
+          print('debug: builder - showing group selection screen');
           return _buildGroupSelectionScreen(state);
         }
 
         if (state.isSelectingRespondents ||
             state.selectedGroupRespondents.isEmpty) {
+          print(
+              'debug: builder - showing respondent selection screen with ${state.groupRespondents.length} respondents');
           return _buildRespondentSelectionScreen(state);
         }
 
+        print('debug: builder - showing questions screen');
         return _buildQuestionsScreen(state, study);
       },
     );
@@ -320,123 +349,78 @@ class _GroupDiscussionDataCollectionState
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-      ),
-      body: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: MediaQuery.of(context).size.height,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () {
+              print('debug: Manual refresh pressed');
+              context.read<DataCollectCubit>().loadStudyGroups(widget.studyId);
+            },
           ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Header section
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                    ],
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.08),
-                          Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.15),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.group_work_rounded,
-                                  size: 30,
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      state.study?.name ?? 'Study Groups',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Group Discussion Setup',
-                                      style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.7),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surface
-                                  .withOpacity(0.8),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.2),
-                              ),
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
                             ),
-                            child: Row(
+                            child: Icon(
+                              Icons.group_work_rounded,
+                              size: 30,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  Icons.info_outline_rounded,
-                                  size: 20,
-                                  color: Theme.of(context).colorScheme.primary,
+                                Text(
+                                  state.study?.name ?? 'Study Groups',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Select an existing group or create a new one to start your discussion session',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.8),
-                                      height: 1.4,
-                                    ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Group Discussion Setup',
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.7),
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
@@ -444,85 +428,117 @@ class _GroupDiscussionDataCollectionState
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height * 0.6,
-                ),
-                child: state.groups.isEmpty
-                    ? _buildEmptyGroupsState()
-                    : Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surface
+                              .withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.2),
+                          ),
+                        ),
+                        child: Row(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Available Groups (${state.groups.length})',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '${state.groups.length} Groups',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                            Icon(
+                              Icons.info_outline_rounded,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Select an existing group or create a new one to start your discussion session',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.8),
+                                  height: 1.4,
+                                ),
                               ),
                             ),
-                            Container(
-                              constraints: BoxConstraints(
-                                maxHeight:
-                                    MediaQuery.of(context).size.height * 0.5,
-                              ),
-                              child: ListView.separated(
-                                physics: const ClampingScrollPhysics(),
-                                itemCount: state.groups.length,
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final group = state.groups[index];
-                                  return _buildGroupCard(group);
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 20),
                           ],
                         ),
                       ),
+                    ],
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+
+          // Groups list section - FIXED LAYOUT
+          Expanded(
+            child: state.groups.isEmpty
+                ? _buildEmptyGroupsState()
+                : Column(
+                    children: [
+                      // Groups header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Available Groups (${state.groups.length})',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${state.groups.length} Groups',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Groups list - FIX: Use Expanded only once at the top level
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: state.groups.length,
+                          itemBuilder: (context, index) {
+                            final group = state.groups[index];
+                            print(
+                                'debug: ListView.builder - building index $index: ${group['name']}');
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildGroupCard(group),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
       ),
       floatingActionButton: state.groups.isEmpty
           ? null
@@ -612,88 +628,91 @@ class _GroupDiscussionDataCollectionState
   }
 
   Widget _buildGroupCard(Map<String, dynamic> group) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
+    print(
+        'debug: _buildGroupCard - building card for: ${group['name']} (ID: ${group['_id']})');
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            context.read<DataCollectCubit>().selectGroup(group);
-            context
-                .read<DataCollectCubit>()
-                .loadGroupRespondents(widget.studyId);
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                width: 0.5,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          print('debug: _buildGroupCard - tapped: ${group['name']}');
+          context.read<DataCollectCubit>().selectGroup(group);
+          context.read<DataCollectCubit>().loadGroupRespondents(widget.studyId);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.group_rounded,
+                size: 28,
+                color: Theme.of(context).colorScheme.primary,
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.group_rounded,
-                  size: 28,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        group['name']?.toString() ?? 'Unnamed Group',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          height: 1.2,
-                        ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      group['name']?.toString() ?? 'Unnamed Group',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
                       ),
-                      if (group['description'] != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          group['description'].toString(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.7),
-                            fontWeight: FontWeight.w400,
-                            height: 1.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'GO',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                      letterSpacing: 1.2,
                     ),
+                    if (group['description'] != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        group['description'].toString(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                          fontWeight: FontWeight.w400,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    // DEBUG: Show group ID and creation info
+                    Text(
+                      'ID: ${group['_id']?.toString().substring(0, 8)}...',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'GO',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    letterSpacing: 1.2,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -720,6 +739,7 @@ class _GroupDiscussionDataCollectionState
       ),
       body: Column(
         children: [
+          // Header section
           Padding(
             padding: const EdgeInsets.all(20),
             child: Card(
@@ -800,6 +820,8 @@ class _GroupDiscussionDataCollectionState
               ),
             ),
           ),
+
+          // Selected respondents count
           if (state.selectedGroupRespondents.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -862,127 +884,132 @@ class _GroupDiscussionDataCollectionState
                 ),
               ),
             ),
+
           const SizedBox(height: 16),
+
+          // Respondents list section - FIXED LAYOUT
           Expanded(
             child: state.groupRespondents.isEmpty
                 ? _buildEmptyRespondentsState()
-                : Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Available Respondents (${state.groupRespondents.length})',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
+                : Column(
+                    children: [
+                      // Respondents header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Available Respondents (${state.groupRespondents.length})',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            // Show only one button at a time
+                            if (state.selectedGroupRespondents.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  // Deselect all currently selected respondents
+                                  for (final respondent
+                                      in state.selectedGroupRespondents) {
+                                    context
+                                        .read<DataCollectCubit>()
+                                        .toggleRespondentSelection(respondent);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceVariant,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .outline
+                                          .withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    state.selectedGroupRespondents.length ==
+                                            state.groupRespondents.length
+                                        ? 'Deselect All'
+                                        : 'Deselect ${state.selectedGroupRespondents.length}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              GestureDetector(
+                                onTap: () {
+                                  // Select all respondents
+                                  for (final respondent
+                                      in state.groupRespondents) {
+                                    context
+                                        .read<DataCollectCubit>()
+                                        .toggleRespondentSelection(respondent);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceVariant,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'Select All',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              // Show only one button at a time
-                              if (state.selectedGroupRespondents.isNotEmpty)
-                                GestureDetector(
-                                  onTap: () {
-                                    // Deselect all currently selected respondents
-                                    for (final respondent
-                                        in state.selectedGroupRespondents) {
-                                      context
-                                          .read<DataCollectCubit>()
-                                          .toggleRespondentSelection(
-                                              respondent);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceVariant,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .outline
-                                            .withOpacity(0.3),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      state.selectedGroupRespondents.length ==
-                                              state.groupRespondents.length
-                                          ? 'Deselect All'
-                                          : 'Deselect ${state.selectedGroupRespondents.length}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.7),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              else
-                                GestureDetector(
-                                  onTap: () {
-                                    // Select all respondents
-                                    for (final respondent
-                                        in state.groupRespondents) {
-                                      context
-                                          .read<DataCollectCubit>()
-                                          .toggleRespondentSelection(
-                                              respondent);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceVariant,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      'Select All',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
-                        Expanded(
-                          child: ListView.separated(
-                            itemCount: state.groupRespondents.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final respondent = state.groupRespondents[index];
-                              final isSelected = state.selectedGroupRespondents
-                                  .any((r) => r['_id'] == respondent['_id']);
-                              return _buildRespondentCard(
-                                  respondent, isSelected, index);
-                            },
-                          ),
+                      ),
+
+                      // Respondents list - FIX: Use Expanded properly
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: state.groupRespondents.length,
+                          itemBuilder: (context, index) {
+                            final respondent = state.groupRespondents[index];
+                            final isSelected = state.selectedGroupRespondents
+                                .any((r) => r['_id'] == respondent['_id']);
+                            print(
+                                'debug: ListView.builder - building respondent index $index: ${respondent['name']}');
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _buildRespondentCard(
+                                  respondent, isSelected, index),
+                            );
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
           ),
+
+          // Start button
           if (state.selectedGroupRespondents.isNotEmpty)
             Container(
               width: double.infinity,
@@ -1018,16 +1045,13 @@ class _GroupDiscussionDataCollectionState
             ),
         ],
       ),
-      floatingActionButton: (state.selectedGroupRespondents == null ||
-              state.selectedGroupRespondents!.isEmpty)
-          ? FloatingActionButton.extended(
-              onPressed: _showCreateRespondentDialog,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              icon: const Icon(Icons.person_add_rounded),
-              label: const Text('Add Respondent'),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showCreateRespondentDialog,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        icon: const Icon(Icons.person_add_rounded),
+        label: const Text('Add Respondent'),
+      ),
     );
   }
 
@@ -1123,12 +1147,12 @@ class _GroupDiscussionDataCollectionState
             children: [
               const SizedBox(height: 4),
               if (respondent['code'] != null)
-                _buildRespondentDetail('ID', respondent['code'] as String),
+                _buildRespondentDetail('ID', respondent['code'].toString()),
               if (respondent['age'] != null)
-                _buildRespondentDetail('Age', respondent['age'] as String),
+                _buildRespondentDetail('Age', respondent['age'].toString()),
               if (respondent['gender'] != null)
                 _buildRespondentDetail(
-                    'Gender', respondent['gender'] as String),
+                    'Gender', respondent['gender'].toString()),
             ],
           ),
           value: isSelected,
@@ -3141,15 +3165,21 @@ class _GroupDiscussionDataCollectionState
                                       state.newGroupData['name']
                                           .toString()
                                           .isNotEmpty) {
+                                    // Close the input dialog first
+                                    Navigator.pop(context);
+
+                                    // Show loading dialog
+                                    DialogLoading.show(context);
+
                                     // Create group and wait for it to complete
-                                    // createStudyGroup now handles refreshing questions and groups
                                     await context
                                         .read<DataCollectCubit>()
                                         .createStudyGroup(
                                             widget.studyId, state.newGroupData);
 
+                                    // Hide loading dialog
                                     if (context.mounted) {
-                                      Navigator.pop(context);
+                                      DialogLoading.hide(context);
                                     }
                                   } else {
                                     ToastService.showErrorToast(
@@ -3206,7 +3236,7 @@ class _GroupDiscussionDataCollectionState
 
     Navigator.push(
       context,
-      MaterialPageRoute<Widget>(
+      MaterialPageRoute<bool>(
         builder: (context) => CreateRespondentScreen(
           studyId: widget.studyId,
           study: state.study!,
@@ -3308,242 +3338,300 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
               onPressed: () => Navigator.pop(context),
             ),
           ),
-          body: state.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Card(
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withOpacity(0.08),
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .secondary
-                                      .withOpacity(0.08),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                children: [
-                                  Row(
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.08),
+                            Theme.of(context)
+                                .colorScheme
+                                .secondary
+                                .withOpacity(0.08),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Theme.of(context).colorScheme.primary,
+                                        Theme.of(context).colorScheme.secondary,
+                                      ],
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.person_add_rounded,
+                                    size: 30,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                              Theme.of(context)
-                                                  .colorScheme
-                                                  .secondary,
-                                            ],
-                                          ),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.person_add_rounded,
-                                          size: 30,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                      Text(
+                                        'Add New Participant',
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Add New Participant',
-                                              style: const TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Create a new respondent for ${selectedGroup['name']}',
-                                              style: TextStyle(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurface
-                                                    .withOpacity(0.7),
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Create a new respondent for ${selectedGroup['name']}',
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.7),
+                                          fontSize: 14,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Basic Information',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Respondent Name *',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outline
-                                      .withOpacity(0.3),
                                 ),
-                              ),
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Enter respondent name...',
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
-                                  ),
-                                  hintStyle: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.4),
-                                  ),
-                                ),
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 16,
-                                ),
-                                onChanged: (value) {
-                                  context
-                                      .read<DataCollectCubit>()
-                                      .updateNewRespondentData('name', value);
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Respondent Code *',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outline
-                                      .withOpacity(0.3),
-                                ),
-                              ),
-                              child: TextField(
-                                enabled: false,
-                                controller: _getCodeController(state),
-                                decoration: InputDecoration(
-                                  hintText: 'Enter respondent code...',
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
-                                  ),
-                                  hintStyle: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.4),
-                                  ),
-                                ),
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 16,
-                                ),
-                                onChanged: (value) {
-                                  context
-                                      .read<DataCollectCubit>()
-                                      .updateNewRespondentData('code', value);
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.autorenew_rounded,
-                                  size: 14,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
                               ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Card(
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Basic Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Respondent Name *',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withOpacity(0.3),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Enter respondent name...',
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            hintStyle: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.4),
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 16,
+                          ),
+                          onChanged: (value) {
+                            context
+                                .read<DataCollectCubit>()
+                                .updateNewRespondentData('name', value);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Respondent Code *',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withOpacity(0.3),
+                          ),
+                        ),
+                        child: TextField(
+                          enabled: false,
+                          controller: _getCodeController(state),
+                          decoration: InputDecoration(
+                            hintText: 'Enter respondent code...',
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            hintStyle: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.4),
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 16,
+                          ),
+                          onChanged: (value) {
+                            context
+                                .read<DataCollectCubit>()
+                                .updateNewRespondentData('code', value);
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.autorenew_rounded,
+                            size: 14,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Group Information',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Group: ${selectedGroup['name']}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.8),
+                            ),
+                          ),
+                          if (selectedHomogeneityGroup != null &&
+                              selectedHomogeneityGroup.id.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Homogeneity: ${selectedHomogeneityGroup.name}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  if (selectedHomogeneityGroup != null &&
+                      selectedHomogeneityGroup.id.isNotEmpty) ...[
+                    Text(
+                      'Group Criteria Validation',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
+                                Icon(
+                                  Icons.warning_rounded,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Group Information',
+                                  'Must meet group criteria:',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -3551,189 +3639,115 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
                                         Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Group: ${selectedGroup['name']}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.8),
-                                  ),
-                                ),
-                                if (selectedHomogeneityGroup != null &&
-                                    selectedHomogeneityGroup.id.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Homogeneity: ${selectedHomogeneityGroup.name}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.6),
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            ..._buildCriteriaList(selectedHomogeneityGroup),
+                          ],
                         ),
-                        const SizedBox(height: 24),
-                        if (selectedHomogeneityGroup != null &&
-                            selectedHomogeneityGroup.id.isNotEmpty) ...[
-                          Text(
-                            'Group Criteria Validation',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Card(
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.warning_rounded,
-                                        size: 16,
-                                        color:
-                                            Theme.of(context).colorScheme.error,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Must meet group criteria:',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                      ),
-                                    ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (homogeneityFields.isNotEmpty) ...[
+                    Text(
+                      'Custom Fields',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ..._buildDynamicFields(
+                        state, homogeneityFields, selectedHomogeneityGroup),
+                    const SizedBox(height: 16),
+                  ],
+                  const SizedBox(height: 32),
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _validateRespondentFormSilent(
+                              state, selectedHomogeneityGroup)
+                          ? () {
+                              if (_validateRespondentForm(
+                                  state, selectedHomogeneityGroup)) {
+                                _createRespondent(state, selectedGroup);
+                              }
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _validateRespondentFormSilent(
+                                state, selectedHomogeneityGroup)
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.surfaceVariant,
+                        foregroundColor: _validateRespondentFormSilent(
+                                state, selectedHomogeneityGroup)
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.4),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: state.isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ))
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.person_add_rounded, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Create Respondent',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  const SizedBox(height: 8),
-                                  ..._buildCriteriaList(
-                                      selectedHomogeneityGroup),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (homogeneityFields.isNotEmpty) ...[
-                          Text(
-                            'Custom Fields',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ..._buildDynamicFields(state, homogeneityFields,
-                              selectedHomogeneityGroup),
-                          const SizedBox(height: 16),
-                        ],
-                        const SizedBox(height: 32),
-                        Container(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _validateRespondentFormSilent(
-                                    state, selectedHomogeneityGroup)
-                                ? () {
-                                    if (_validateRespondentForm(
-                                        state, selectedHomogeneityGroup)) {
-                                      _createRespondent(state, selectedGroup);
-                                    }
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _validateRespondentFormSilent(
-                                      state, selectedHomogeneityGroup)
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .surfaceVariant,
-                              foregroundColor: _validateRespondentFormSilent(
-                                      state, selectedHomogeneityGroup)
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.4),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
-                            ),
-                            child: state.isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ))
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.person_add_rounded, size: 20),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Create Respondent',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: state.isLoading
-                                ? null
-                                : () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.onSurface,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              side: BorderSide(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .outline
-                                    .withOpacity(0.4),
-                              ),
-                            ),
-                            child: const Text(
-                              'Cancel',
-                              style: TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed:
+                          state.isLoading ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onSurface,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withOpacity(0.4),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
@@ -4234,9 +4248,13 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
     final cubit = context.read<DataCollectCubit>();
     final respondentData = Map<String, dynamic>.from(state.newRespondentData);
 
+    print('debug: _createRespondent - starting');
+    print('debug: _createRespondent - respondentData: $respondentData');
+
     // Validate required fields
     if (respondentData['name'] == null ||
         respondentData['name'].toString().isEmpty) {
+      print('debug: _createRespondent - name validation failed');
       ToastService.showErrorToast(message: 'Respondent name is required');
       return;
     }
@@ -4245,35 +4263,49 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
     if (respondentData['code'] == null ||
         respondentData['code'].toString().isEmpty) {
       respondentData['code'] = _generateRespondentCode(state);
+      print(
+          'debug: _createRespondent - generated code: ${respondentData['code']}');
     }
 
     respondentData['group'] = selectedGroup['_id'];
+    print('debug: _createRespondent - final respondentData: $respondentData');
+
+    // Show loading dialog
+    DialogLoading.show(context);
 
     try {
       print('debug: _createRespondent - calling cubit.createRespondent');
       await cubit.createRespondent(widget.studyId, respondentData);
 
       print('debug: _createRespondent - success, clearing controllers');
-
       // Clear all text controllers
       _respondentFieldControllers.forEach((key, controller) {
         controller.clear();
       });
       _respondentFieldControllers.clear();
 
-      print('debug: _createRespondent - refreshing data and navigating back');
+      print('debug: _createRespondent - navigating back');
 
-      // Data is already refreshed in createRespondent
-
-      // Then navigate back
+      // Hide loading dialog
       if (mounted) {
-        Navigator.pop(context);
+        DialogLoading.hide(context);
+        // Navigate back - the cubit already refreshed the data
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.pop(context, true);
+          }
+        });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('debug: _createRespondent - error: $e');
-      // Error handling
+      print('debug: _createRespondent - stackTrace: $stackTrace');
+
+      // Hide loading dialog on error
+      if (mounted) {
+        DialogLoading.hide(context);
+      }
+
       ToastService.showErrorToast(message: 'Failed to create respondent: $e');
-      // Don't pop on error
     }
   }
 }
