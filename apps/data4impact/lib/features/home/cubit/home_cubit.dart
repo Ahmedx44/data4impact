@@ -83,7 +83,7 @@ class HomeCubit extends Cubit<HomeState> {
     });
   }
 
-  Future<void> _checkAndSyncOfflineData() async {
+  Future<void> _checkAndSyncOfflineData({bool isManual = false}) async {
     final isConnected = await _isConnected;
 
     if (state.isOffline != !isConnected) {
@@ -91,6 +91,18 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     if (!isConnected) return;
+
+    // Check auto sync preference
+    if (!isManual) {
+      final isAutoSyncEnabled =
+          await OfflineModeDataRepo().getAutoSyncPreference();
+      if (!isAutoSyncEnabled) {
+        // If auto sync is disabled and this is not a manual sync, just update the pending count
+        final pendingCount = await _getPendingSyncCount();
+        emit(state.copyWith(pendingSyncCount: pendingCount));
+        return;
+      }
+    }
 
     try {
       final pendingCount = await _getPendingSyncCount();
@@ -257,7 +269,8 @@ class HomeCubit extends Cubit<HomeState> {
           final errorMessage = e.toString().toLowerCase();
           final isRespondentAlreadyResponded =
               errorMessage.contains('already') &&
-                  errorMessage.contains('respond');
+                  (errorMessage.contains('respond') ||
+                      errorMessage.contains('submit'));
 
           // If respondent already responded, mark this answer for removal
           if (isRespondentAlreadyResponded) {
@@ -266,7 +279,7 @@ class HomeCubit extends Cubit<HomeState> {
             successfulIndices.add(i); // Add to removal list
             ToastService.showWarningToast(
               message:
-                  'Skipped duplicate response - respondent already responded',
+                  'Skipped duplicate response - Response already submitted',
             );
           } else {
             AppLogger.logError('Failed to sync offline answer $i: $e');
@@ -351,7 +364,7 @@ class HomeCubit extends Cubit<HomeState> {
       return;
     }
 
-    await _checkAndSyncOfflineData();
+    await _checkAndSyncOfflineData(isManual: true);
   }
 
   Future<bool> hasPendingOfflineAnswers() async {

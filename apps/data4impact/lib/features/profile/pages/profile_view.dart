@@ -126,10 +126,11 @@ class _ProfilePageState extends State<ProfileView> {
             ],
           ),
           body: RefreshIndicator(
-              onRefresh: () async {
-                context.read<ProfileCubit>().fetchCurrentUser();
-              },
-              child: _buildProfileContent(context, state)),
+            onRefresh: () async {
+              context.read<ProfileCubit>().fetchCurrentUser();
+            },
+            child: _buildProfileContent(context, state),
+          ),
         );
       },
     );
@@ -138,35 +139,36 @@ class _ProfilePageState extends State<ProfileView> {
   Widget _buildProfileContent(BuildContext context, ProfileState state) {
     return Skeletonizer(
       enabled: state.isLoading,
-      child: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              // Profile Header Section
-              SliverToBoxAdapter(
-                child: _buildProfileHeader(context, state),
-              ),
+      child: CustomScrollView(
+        slivers: [
+          // Profile Header Section
+          SliverToBoxAdapter(
+            child: _buildProfileHeader(context, state),
+          ),
 
-              // Personal Information Section
-              SliverToBoxAdapter(
-                child: _buildPersonalInfoSection(context, state),
-              ),
+          // Personal Information Section
+          SliverToBoxAdapter(
+            child: _buildPersonalInfoSection(context, state),
+          ),
 
-              // Organization Section
-              SliverToBoxAdapter(
-                child: _buildOrganizationSection(context, state),
-              ),
+          // Organization Section
+          SliverToBoxAdapter(
+            child: _buildOrganizationSection(context, state),
+          ),
 
-              // Security Overview Section
-              SliverToBoxAdapter(
-                child: _buildSecurityOverviewSection(context),
-              ),
+          // Settings Section
+          SliverToBoxAdapter(
+            child: _buildSettingsSection(context, state),
+          ),
 
-              // Logout Button Section
-              SliverToBoxAdapter(
-                child: _buildLogoutButton(context),
-              ),
-            ],
+          // Action Buttons Section
+          SliverToBoxAdapter(
+            child: _buildActionButtons(context),
+          ),
+
+          // Bottom Spacing
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 24),
           ),
         ],
       ),
@@ -179,23 +181,24 @@ class _ProfilePageState extends State<ProfileView> {
     final user = state.user;
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            colorScheme.primary.withOpacity(0.8),
-            colorScheme.primary.withOpacity(0.4),
+            colorScheme.primary.withOpacity(0.9),
+            colorScheme.primary.withOpacity(0.7),
+            colorScheme.primary.withOpacity(0.5),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: colorScheme.primary.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -205,14 +208,21 @@ class _ProfilePageState extends State<ProfileView> {
           Stack(
             children: [
               Container(
-                width: 100,
-                height: 100,
+                width: 120,
+                height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: colorScheme.surface,
-                    width: 3,
+                    color: colorScheme.surface.withOpacity(0.8),
+                    width: 4,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: ClipOval(
                   child: state.tempProfileImage != null
@@ -237,20 +247,21 @@ class _ProfilePageState extends State<ProfileView> {
                 child: GestureDetector(
                   onTap: () => _pickProfileImage(context),
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: colorScheme.surface,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 6,
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: Icon(
-                      Icons.camera_alt,
-                      size: 16,
+                      Icons.camera_alt_rounded,
+                      size: 18,
                       color: colorScheme.primary,
                     ),
                   ),
@@ -259,47 +270,59 @@ class _ProfilePageState extends State<ProfileView> {
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // User Name and Role
-          Text(
-            user?.fullName ?? 'Loading...',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
+          Column(
+            children: [
+              Text(
+                user?.fullName ?? 'Loading...',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorScheme.onPrimary.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  user?.roles.isNotEmpty == true
+                      ? (user!.roles.first['name'] as String?)?.toUpperCase() ??
+                          'USER'
+                      : 'USER',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onPrimary,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
 
-          const SizedBox(height: 4),
-
-          Text(
-            user?.roles.isNotEmpty == true
-                ? (user!.roles.first['name'] as String?)?.toUpperCase() ??
-                    'USER'
-                : 'USER',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onPrimary.withOpacity(0.9),
-              letterSpacing: 1.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Edit Profile Button
-          ElevatedButton.icon(
+          FilledButton.icon(
             onPressed: state.isLoading
                 ? null
                 : () => _showEditProfileDialog(context, state),
-            icon: const Icon(Icons.edit, size: 16),
+            icon: const Icon(Icons.edit_rounded, size: 18),
             label: const Text('Edit Profile'),
-            style: ElevatedButton.styleFrom(
+            style: FilledButton.styleFrom(
               backgroundColor: colorScheme.surface,
               foregroundColor: colorScheme.primary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
           ),
         ],
@@ -311,8 +334,8 @@ class _ProfilePageState extends State<ProfileView> {
     return Container(
       color: colorScheme.primaryContainer,
       child: Icon(
-        Icons.person,
-        size: 40,
+        Icons.person_rounded,
+        size: 48,
         color: colorScheme.onPrimaryContainer,
       ),
     );
@@ -322,23 +345,50 @@ class _ProfilePageState extends State<ProfileView> {
     final theme = Theme.of(context);
     final user = state.user;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            child: Text(
-              'Personal Information',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          _buildSectionHeader(
+            context,
+            title: 'Personal Information',
+            icon: Icons.person_outline_rounded,
           ),
+          const SizedBox(height: 16),
           _buildInfoCard(context, user),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context,
+      {required String title, required IconData icon}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: colorScheme.primary,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 
@@ -351,36 +401,43 @@ class _ProfilePageState extends State<ProfileView> {
       return '${date.day}/${date.month}/${date.year}';
     }
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colorScheme.outline.withOpacity(0.2),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             _buildInfoRow(
               context,
-              icon: Icons.email_outlined,
-              label: 'Email',
+              icon: Icons.email_rounded,
+              label: 'Email Address',
               value: user?.email ?? 'loading@example.com',
               isVerified: user?.emailVerified ?? false,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildInfoRow(
               context,
-              icon: Icons.phone_outlined,
-              label: 'Phone',
+              icon: Icons.phone_rounded,
+              label: 'Phone Number',
               value: user?.phone ?? 'Not provided',
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildInfoRow(
               context,
-              icon: Icons.calendar_today_outlined,
+              icon: Icons.calendar_month_rounded,
               label: 'Member Since',
               value: user != null
                   ? formatMemberSince(DateTime.parse(user.createdAt))
@@ -393,39 +450,20 @@ class _ProfilePageState extends State<ProfileView> {
   }
 
   Widget _buildOrganizationSection(BuildContext context, ProfileState state) {
-    final theme = Theme.of(context);
     final organizations = state.organizations;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'My Organizations',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (state.loadingOrganizations)
-                  SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+          const SizedBox(height: 24),
+          _buildSectionHeader(
+            context,
+            title: 'My Organizations',
+            icon: Icons.business_rounded,
           ),
+          const SizedBox(height: 16),
           _buildOrganizationCard(context, organizations, state),
         ],
       ),
@@ -438,16 +476,20 @@ class _ProfilePageState extends State<ProfileView> {
     final colorScheme = theme.colorScheme;
 
     if (state.loadingOrganizations) {
-      return Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
-          ),
+      return Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: const Padding(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.all(40),
           child: Center(
             child: CircularProgressIndicator(),
           ),
@@ -458,55 +500,61 @@ class _ProfilePageState extends State<ProfileView> {
     if (organizations.isEmpty) {
       return Container(
         width: double.infinity,
-        child: Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: colorScheme.outline.withOpacity(0.2),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.business_outlined,
-                  size: 48,
-                  color: colorScheme.onSurface.withOpacity(0.3),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              Icon(
+                Icons.business_outlined,
+                size: 56,
+                color: colorScheme.onSurface.withOpacity(0.3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No Organizations',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'No Organizations',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'You are not a member of any organizations yet.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'You are not a member of any organizations yet.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
     }
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colorScheme.outline.withOpacity(0.2),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: organizations
               .map((userOrg) => _buildOrganizationItem(context, userOrg))
@@ -527,28 +575,31 @@ class _ProfilePageState extends State<ProfileView> {
     final imageUrl = profileService.getOrganizationImageUrl(org.logoUrl);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Material(
         color: Colors.transparent,
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorScheme.surfaceVariant.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.1),
+            ),
           ),
           child: Row(
             children: [
               // Organization Logo
               Container(
-                width: 50,
-                height: 50,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: imageUrl.isNotEmpty
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                         child: Image.network(
                           imageUrl,
                           fit: BoxFit.cover,
@@ -565,7 +616,7 @@ class _ProfilePageState extends State<ProfileView> {
                       )
                     : _buildOrganizationPlaceholder(colorScheme, org.name),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -576,21 +627,21 @@ class _ProfilePageState extends State<ProfileView> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       'Slug: ${org.slug}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       'Member since ${_formatDate(userOrg.joinedAt)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     if (userOrg.roles.isNotEmpty)
                       Wrap(
                         spacing: 6,
@@ -601,7 +652,7 @@ class _ProfilePageState extends State<ProfileView> {
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: _getRoleColor(role.name, colorScheme),
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   role.name.toUpperCase(),
@@ -630,12 +681,12 @@ class _ProfilePageState extends State<ProfileView> {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Center(
         child: Icon(
-          Icons.business,
-          size: 24,
+          Icons.business_rounded,
+          size: 28,
           color: colorScheme.primary,
         ),
       ),
@@ -679,48 +730,61 @@ class _ProfilePageState extends State<ProfileView> {
     }
   }
 
-  Widget _buildSecurityOverviewSection(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  Widget _buildSettingsSection(BuildContext context, ProfileState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            child: Text(
-              'Security Overview',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          const SizedBox(height: 24),
+          _buildSectionHeader(
+            context,
+            title: 'Settings',
+            icon: Icons.settings_rounded,
           ),
-          _buildSecurityCard(context),
+          const SizedBox(height: 16),
+          _buildSettingsCard(context, state),
         ],
       ),
     );
   }
 
-  Widget _buildSecurityCard(BuildContext context) {
+  Widget _buildSettingsCard(BuildContext context, ProfileState state) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colorScheme.outline.withOpacity(0.2),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(4),
         child: Column(
           children: [
-            _buildSecurityItem(
-              context,
-              icon: Icons.lock_outlined,
+            _buildSettingsItem(
+              context: context,
+              icon: Icons.sync_rounded,
+              title: 'Automatic Synchronization',
+              subtitle: 'Automatically sync offline responses when online',
+              trailing: Switch(
+                value: state.isAutoSyncEnabled,
+                onChanged: (value) {
+                  context.read<ProfileCubit>().toggleAutoSync(value);
+                },
+                activeColor: colorScheme.primary,
+              ),
+            ),
+            _buildSettingsItem(
+              context: context,
+              icon: Icons.lock_rounded,
               title: 'Change Password',
               subtitle: 'Update your account password',
               onTap: () {
@@ -733,63 +797,196 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      child: ElevatedButton(
-        onPressed: () {
-          _showLogoutConfirmationDialog();
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red.withOpacity(0.1),
-          foregroundColor: Colors.red,
-          elevation: 0,
-          minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Colors.red.withOpacity(0.8),
-              width: 1,
-            ),
+  Widget _buildSettingsItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: colorScheme.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing,
+              if (trailing == null && onTap != null)
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: colorScheme.onSurface.withOpacity(0.4),
+                  size: 24,
+                ),
+            ],
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.logout,
-              size: 20,
-              color: Colors.red,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Logout',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
         ),
       ),
     );
   }
 
-  void _showLogoutConfirmationDialog() {
-    final theme = Theme.of(context).colorScheme;
+  Widget _buildActionButtons(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        children: [
+          // Clear Responses Button
+          _buildActionButton(
+            context: context,
+            icon: Icons.delete_forever_rounded,
+            title: 'Clear Stored Responses',
+            subtitle: 'Remove all offline response data',
+            backgroundColor: Colors.red.withOpacity(0.1),
+            foregroundColor: Colors.red,
+            onTap: () {
+              _showClearResponsesConfirmationDialog();
+            },
+          ),
+          const SizedBox(height: 12),
+          // Logout Button
+          _buildActionButton(
+            context: context,
+            icon: Icons.logout_rounded,
+            title: 'Logout',
+            subtitle: 'Sign out of your account',
+            backgroundColor: Colors.orange.withOpacity(0.1),
+            foregroundColor: Colors.orange.shade700,
+            onTap: () {
+              _showLogoutConfirmationDialog();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color backgroundColor,
+    required Color foregroundColor,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: foregroundColor.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: foregroundColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: foregroundColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: foregroundColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: foregroundColor.withOpacity(0.7),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: foregroundColor.withOpacity(0.5),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showClearResponsesConfirmationDialog() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     showDialog<Widget>(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: theme.surface,
-              borderRadius: BorderRadius.circular(20),
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -802,113 +999,77 @@ class _ProfilePageState extends State<ProfileView> {
                     color: Colors.red.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    HugeIcons.strokeRoundedLogout01,
-                    size: 40,
+                  child: Icon(
+                    Icons.warning_amber_rounded,
                     color: Colors.red,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Title
-                Text(
-                  'Logout?',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: theme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Message
-                Text(
-                  'Are you sure you want to logout from your account? All local data will be cleared.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: theme.onSurface.withOpacity(0.7),
-                    height: 1.4,
+                    size: 40,
                   ),
                 ),
                 const SizedBox(height: 24),
 
+                // Title
+                Text(
+                  'Clear Stored Responses?',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+
+                // Message
+                Text(
+                  'Are you sure you want to delete all stored offline responses? This action cannot be undone.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+
                 // Buttons
                 Row(
                   children: [
-                    // Cancel Button
                     Expanded(
-                      child: Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: theme.outline),
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.onSurface,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          side: BorderSide(color: colorScheme.outline),
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).pop();
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Center(
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.onSurface,
-                                ),
-                              ),
-                            ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-
-                    // Logout Button
+                    const SizedBox(width: 16),
                     Expanded(
-                      child: Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.red.shade500,
-                              Colors.red.shade700,
-                            ],
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          context
+                              .read<ProfileCubit>()
+                              .clearStoredResponses(context);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              _performLogout();
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  HugeIcons.strokeRoundedLogout01,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Logout',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        child: const Text(
+                          'Clear All',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -923,45 +1084,127 @@ class _ProfilePageState extends State<ProfileView> {
     );
   }
 
-  Widget _buildSecurityItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
+  void _showLogoutConfirmationDialog() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: colorScheme.primary.withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 20, color: colorScheme.primary),
-      ),
-      title: Text(
-        title,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: colorScheme.onSurface.withOpacity(0.6),
-        ),
-      ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: colorScheme.onSurface.withOpacity(0.5),
-      ),
-      onTap: onTap,
-      contentPadding: EdgeInsets.zero,
+    showDialog<Widget>(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    size: 40,
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                Text(
+                  'Logout?',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Message
+                Text(
+                  'Are you sure you want to logout from your account? All local data will be cleared.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Buttons
+                Row(
+                  children: [
+                    // Cancel Button
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.onSurface,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          side: BorderSide(color: colorScheme.outline),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Logout Button
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _performLogout();
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.logout_rounded,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Logout',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -979,15 +1222,15 @@ class _ProfilePageState extends State<ProfileView> {
     return Row(
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
             color: colorScheme.primary.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 20, color: colorScheme.primary),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -996,30 +1239,31 @@ class _ProfilePageState extends State<ProfileView> {
                 label,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Row(
                 children: [
                   Expanded(
                     child: Text(
                       value,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   if (isVerified)
                     Icon(
-                      Icons.verified,
-                      size: 16,
+                      Icons.verified_rounded,
+                      size: 18,
                       color: Colors.green,
                     ),
                   if (showCopyButton)
                     IconButton(
                       icon: Icon(
-                        Icons.content_copy,
-                        size: 16,
+                        Icons.content_copy_rounded,
+                        size: 18,
                         color: colorScheme.primary,
                       ),
                       onPressed: () {
@@ -1145,7 +1389,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
     return Dialog(
       backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 8,
       shadowColor: Colors.black26,
       child: SingleChildScrollView(
@@ -1174,11 +1418,11 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                             context.read<ProfileCubit>().cancelEditing();
                             Navigator.of(context).pop();
                           },
-                    icon: Icon(Icons.close,
+                    icon: Icon(Icons.close_rounded,
                         color: colorScheme.onSurface.withOpacity(0.6)),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    iconSize: 20,
+                    iconSize: 24,
                   ),
                 ],
               ),
@@ -1208,15 +1452,15 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                 decoration: InputDecoration(
                   hintText: 'Enter your first name',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide:
                         BorderSide(color: colorScheme.primary, width: 2),
                   ),
@@ -1240,15 +1484,15 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                 decoration: InputDecoration(
                   hintText: 'Enter your middle name (optional)',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide:
                         BorderSide(color: colorScheme.primary, width: 2),
                   ),
@@ -1273,15 +1517,15 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                 decoration: InputDecoration(
                   hintText: 'Enter your last name',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide:
                         BorderSide(color: colorScheme.primary, width: 2),
                   ),
@@ -1306,18 +1550,18 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                 onChanged: (value) => _onFieldChanged('phone', value),
                 decoration: InputDecoration(
                   hintText: 'Enter your phone number (optional)',
-                  prefixIcon: Icon(Icons.phone,
+                  prefixIcon: Icon(Icons.phone_rounded,
                       color: colorScheme.onSurface.withOpacity(0.5)),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide:
                         BorderSide(color: colorScheme.primary, width: 2),
                   ),
@@ -1341,21 +1585,21 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                         side: BorderSide(color: colorScheme.outline),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                       child: const Text('Cancel'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
+                    child: FilledButton(
                       onPressed: state.isLoading ? null : _saveProfile,
-                      style: ElevatedButton.styleFrom(
+                      style: FilledButton.styleFrom(
                         backgroundColor: colorScheme.primary,
                         foregroundColor: colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
                       ),
                       child: state.isLoading
@@ -1466,7 +1710,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
 
     return Dialog(
       backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 8,
       shadowColor: Colors.black26,
       child: SingleChildScrollView(
@@ -1490,11 +1734,11 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.close,
+                    icon: Icon(Icons.close_rounded,
                         color: colorScheme.onSurface.withOpacity(0.6)),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    iconSize: 20,
+                    iconSize: 24,
                   ),
                 ],
               ),
@@ -1527,21 +1771,21 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                         _obscureCurrentPassword = !_obscureCurrentPassword),
                     icon: Icon(
                       _obscureCurrentPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
                       color: colorScheme.onSurface.withOpacity(0.5),
                     ),
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide:
                         BorderSide(color: colorScheme.primary, width: 2),
                   ),
@@ -1569,21 +1813,21 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                         () => _obscureNewPassword = !_obscureNewPassword),
                     icon: Icon(
                       _obscureNewPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
                       color: colorScheme.onSurface.withOpacity(0.5),
                     ),
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide:
                         BorderSide(color: colorScheme.primary, width: 2),
                   ),
@@ -1618,21 +1862,21 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                         _obscureConfirmPassword = !_obscureConfirmPassword),
                     icon: Icon(
                       _obscureConfirmPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
                       color: colorScheme.onSurface.withOpacity(0.5),
                     ),
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: colorScheme.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     borderSide:
                         BorderSide(color: colorScheme.primary, width: 2),
                   ),
@@ -1652,21 +1896,21 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                         side: BorderSide(color: colorScheme.outline),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                       child: const Text('Cancel'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
+                    child: FilledButton(
                       onPressed: _isLoading ? null : _changePassword,
-                      style: ElevatedButton.styleFrom(
+                      style: FilledButton.styleFrom(
                         backgroundColor: colorScheme.primary,
                         foregroundColor: colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
                       ),
                       child: _isLoading
@@ -1681,7 +1925,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                             )
                           : const Text(
                               'Update Password',
-                              style: TextStyle(fontSize: 12),
+                              style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                     ),
                   ),

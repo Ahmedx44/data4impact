@@ -1123,15 +1123,17 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       } catch (e) {
         // Check if the error is about respondent already responded
         final errorMessage = e.toString().toLowerCase();
+
         final isRespondentAlreadyResponded = errorMessage.contains('already') &&
-            errorMessage.contains('respond');
+            (errorMessage.contains('respond') ||
+                errorMessage.contains('submit'));
 
         // For interview flow, if respondent already responded, go back to respondent management
         if (type == 'interview' && isRespondentAlreadyResponded) {
           emit(
             state.copyWith(
               isSubmitting: false,
-              error: 'This respondent has already responded to this study',
+              error: 'Response already submitted',
               storedGroupResponses: const {},
               answers: {},
               currentQuestionIndex: 0,
@@ -1143,7 +1145,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             ),
           );
           ToastService.showErrorToast(
-            message: 'This respondent has already responded to this study',
+            message: 'Response already submitted',
           );
         } else {
           emit(state.copyWith(
@@ -1464,13 +1466,16 @@ class DataCollectCubit extends Cubit<DataCollectState> {
 
     if (isConnected) {
       try {
-        print('debug: loadStudyRespondents - calling studyService.getStudyRespondents');
+        print(
+            'debug: loadStudyRespondents - calling studyService.getStudyRespondents');
         final respondents = await studyService.getStudyRespondents(studyId);
-        print('debug: loadStudyRespondents - received ${respondents.length} respondents');
+        print(
+            'debug: loadStudyRespondents - received ${respondents.length} respondents');
 
         await OfflineModeDataRepo().saveStudyRespondents(studyId, respondents);
 
-        print('debug: loadStudyRespondents - emitting state with ${respondents.length} respondents');
+        print(
+            'debug: loadStudyRespondents - emitting state with ${respondents.length} respondents');
         emit(state.copyWith(
           isLoading: false,
           respondents: respondents,
@@ -1479,9 +1484,10 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       } catch (e) {
         print('debug: loadStudyRespondents - error: $e');
         final offlineRespondents =
-        await OfflineModeDataRepo().getStudyRespondents(studyId);
+            await OfflineModeDataRepo().getStudyRespondents(studyId);
         if (offlineRespondents.isNotEmpty) {
-          print('debug: loadStudyRespondents - using offline data with ${offlineRespondents.length} respondents');
+          print(
+              'debug: loadStudyRespondents - using offline data with ${offlineRespondents.length} respondents');
           emit(
             state.copyWith(
               isLoading: false,
@@ -1503,16 +1509,18 @@ class DataCollectCubit extends Cubit<DataCollectState> {
       // Offline mode
       print('debug: loadStudyRespondents - offline mode');
       final offlineRespondents =
-      await OfflineModeDataRepo().getStudyRespondents(studyId);
+          await OfflineModeDataRepo().getStudyRespondents(studyId);
       if (offlineRespondents.isNotEmpty) {
-        print('debug: loadStudyRespondents - offline mode with ${offlineRespondents.length} respondents');
+        print(
+            'debug: loadStudyRespondents - offline mode with ${offlineRespondents.length} respondents');
         emit(state.copyWith(
           isLoading: false,
           respondents: offlineRespondents,
           error: null,
         ));
       } else {
-        print('debug: loadStudyRespondents - no offline respondents data available');
+        print(
+            'debug: loadStudyRespondents - no offline respondents data available');
         emit(
           state.copyWith(
             isLoading: false,
@@ -1529,7 +1537,8 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      print('debug: createRespondent - calling studyService.createStudyRespondent');
+      print(
+          'debug: createRespondent - calling studyService.createStudyRespondent');
       await studyService.createStudyRespondent(
         studyId: studyId,
         respondentData: respondentData,
@@ -2151,16 +2160,20 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      print('debug: loadGroupRespondents - calling studyService.getStudyRespondents');
+      print(
+          'debug: loadGroupRespondents - calling studyService.getStudyRespondents');
       final respondents = await studyService.getStudyRespondents(studyId);
-      print('debug: loadGroupRespondents - received ${respondents.length} total respondents');
+      print(
+          'debug: loadGroupRespondents - received ${respondents.length} total respondents');
 
       final groupRespondents = respondents.where((respondent) {
         return respondent['group'] == state.selectedGroup?['_id'];
       }).toList();
 
-      print('debug: loadGroupRespondents - filtered to ${groupRespondents.length} group respondents');
-      print('debug: loadGroupRespondents - selected group ID: ${state.selectedGroup?['_id']}');
+      print(
+          'debug: loadGroupRespondents - filtered to ${groupRespondents.length} group respondents');
+      print(
+          'debug: loadGroupRespondents - selected group ID: ${state.selectedGroup?['_id']}');
 
       emit(state.copyWith(
         isLoading: false,

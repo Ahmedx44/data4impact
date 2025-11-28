@@ -156,6 +156,11 @@ class StudyService {
 
       if (response.data is Map<String, dynamic>) {
         final responseMap = response.data as Map<String, dynamic>;
+
+        if (responseMap['error'] == true) {
+          throw Exception(responseMap['message'] ?? 'Unknown error');
+        }
+
         if (responseMap.containsKey('data') && responseMap['data'] is List) {
           return responseMap['data'] as List;
         }

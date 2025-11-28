@@ -11,8 +11,8 @@ class ProfileState {
   final File? tempProfileImage;
   final Map<String, String> editedFields;
   final List<UserOrganization> organizations; // Add this
-  final bool loadingOrganizations; // Add this
-
+  final bool isAutoSyncEnabled;
+  final bool loadingOrganizations;
 
   const ProfileState({
     required this.isDarkMode,
@@ -21,8 +21,9 @@ class ProfileState {
     this.isEditing = false,
     this.tempProfileImage,
     this.editedFields = const {},
-    this.organizations = const [], // Initialize as empty
-    this.loadingOrganizations = false, // Initialize as false
+    this.organizations = const [],
+    this.loadingOrganizations = false,
+    this.isAutoSyncEnabled = true,
   });
 
   ProfileState copyWith({
@@ -32,8 +33,9 @@ class ProfileState {
     bool? isEditing,
     File? tempProfileImage,
     Map<String, String>? editedFields,
-    List<UserOrganization>? organizations, // Add this
-    bool? loadingOrganizations, // Add this
+    List<UserOrganization>? organizations,
+    bool? loadingOrganizations,
+    bool? isAutoSyncEnabled,
   }) {
     return ProfileState(
       isDarkMode: isDarkMode ?? this.isDarkMode,
@@ -42,8 +44,9 @@ class ProfileState {
       isEditing: isEditing ?? this.isEditing,
       tempProfileImage: tempProfileImage ?? this.tempProfileImage,
       editedFields: editedFields ?? this.editedFields,
-      organizations: organizations ?? this.organizations, // Add this
-      loadingOrganizations: loadingOrganizations ?? this.loadingOrganizations, // Add this
+      organizations: organizations ?? this.organizations,
+      loadingOrganizations: loadingOrganizations ?? this.loadingOrganizations,
+      isAutoSyncEnabled: isAutoSyncEnabled ?? this.isAutoSyncEnabled,
     );
   }
 }

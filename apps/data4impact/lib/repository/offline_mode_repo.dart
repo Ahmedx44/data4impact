@@ -562,4 +562,37 @@ class OfflineModeDataRepo {
       AppLogger.logError('Error incrementing response count: $e');
     }
   }
+
+  Future<void> clearAllOfflineAnswers() async {
+    try {
+      final hiveBox = await Hive.openBox(offlineAnswersBox);
+      await hiveBox.clear();
+      AppLogger.logInfo('Cleared all offline answers');
+    } catch (e) {
+      AppLogger.logError('Error clearing all offline answers: $e');
+    }
+  }
+
+  // Auto Sync Preference
+  static const String _prefsBox = 'app_preferences_box';
+  static const String _autoSyncKey = 'auto_sync_enabled';
+
+  Future<void> saveAutoSyncPreference(bool isEnabled) async {
+    try {
+      final hiveBox = await Hive.openBox(_prefsBox);
+      await hiveBox.put(_autoSyncKey, isEnabled);
+    } catch (e) {
+      AppLogger.logError('Error saving auto sync preference: $e');
+    }
+  }
+
+  Future<bool> getAutoSyncPreference() async {
+    try {
+      final hiveBox = await Hive.openBox(_prefsBox);
+      return hiveBox.get(_autoSyncKey, defaultValue: true) as bool;
+    } catch (e) {
+      AppLogger.logError('Error loading auto sync preference: $e');
+      return true; // Default to true on error
+    }
+  }
 }

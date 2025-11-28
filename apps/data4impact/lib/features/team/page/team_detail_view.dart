@@ -1,6 +1,7 @@
 import 'package:csv/csv.dart';
 import 'package:data4impact/core/service/api_service/Model/team_model.dart';
 import 'package:data4impact/core/service/api_service/Model/member_model.dart';
+import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/team/cubit/team_cubit.dart';
 import 'package:data4impact/features/team/cubit/team_state.dart';
 import 'package:data4impact/features/team/widget/teams_stat_card.dart';
@@ -13,7 +14,6 @@ import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-
 
 class TeamDetailView extends StatefulWidget {
   final TeamModel team;
@@ -89,9 +89,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       }
 
       if (selectedStudyData.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Select studies to export')),
-        );
+        ToastService.showWarningToast(message: 'Select studies to export');
         return;
       }
 
@@ -105,11 +103,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           if (!await Permission.manageExternalStorage.isGranted) {
             final status = await Permission.manageExternalStorage.request();
             if (!status.isGranted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content:
-                        Text('Storage permission is required to download CSV')),
-              );
+              ToastService.showErrorToast(
+                  message: 'Storage permission is required to download CSV');
+
               return;
             }
           }
@@ -118,11 +114,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
           if (!await Permission.storage.isGranted) {
             final status = await Permission.storage.request();
             if (!status.isGranted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content:
-                        Text('Storage permission is required to download CSV')),
-              );
+              ToastService.showErrorToast(
+                  message: 'Storage permission is required to download CSV');
               return;
             }
           }
@@ -173,9 +166,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       );
     } catch (e) {
       print('Export error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      ToastService.showErrorToast(message: 'Export failed: $e');
     }
   }
 
@@ -224,11 +215,9 @@ class _TeamDetailViewState extends State<TeamDetailView> {
       }
 
       if (filePath == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Failed to save file. Please check storage permissions.')),
-        );
+        ToastService.showErrorToast(
+            message: 'Failed to save file. Please check storage permissions.');
+
         return;
       }
 
@@ -242,6 +231,7 @@ class _TeamDetailViewState extends State<TeamDetailView> {
             content: Text('CSV saved successfully: $filename'),
             action: SnackBarAction(
               label: 'Open File',
+              textColor: Theme.of(context).colorScheme.surface,
               onPressed: () => _openCsvFile(file, context),
             ),
           ),
