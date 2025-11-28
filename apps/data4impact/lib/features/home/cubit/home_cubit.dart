@@ -685,8 +685,11 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<bool> get _isConnected async {
     try {
-      final result = await connectivity.checkConnectivity();
-      return result != ConnectivityResult.none;
+      final connected = InternetConnectionMonitor(
+        checkOnInterval: false,
+        checkInterval: const Duration(seconds: 5),
+      );
+      return await connected.hasInternetConnection();
     } catch (e) {
       return false;
     }

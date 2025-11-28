@@ -254,8 +254,9 @@ class _NavigationViewState extends State<NavigationView>
                   color: theme.primary,
                   borderRadius: BorderRadius.circular(14),
                   child: InkWell(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      // Navigate to inbox page
+                      await Navigator.push(
                         context,
                         MaterialPageRoute<Widget>(
                           builder: (context) => const InboxPage(
@@ -263,6 +264,14 @@ class _NavigationViewState extends State<NavigationView>
                           ),
                         ),
                       );
+
+                      // After returning from inbox, reload the data
+                      if (mounted) {
+                        await _fetchInitialData();
+                        setState(() {
+                          _showStaticScreen = false;
+                        });
+                      }
                     },
                     borderRadius: BorderRadius.circular(14),
                     child: Center(

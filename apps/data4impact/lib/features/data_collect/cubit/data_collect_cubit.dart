@@ -1166,6 +1166,26 @@ class DataCollectCubit extends Cubit<DataCollectState> {
         await OfflineModeDataRepo().incrementStudyResponseCount(studyId);
 
         if (type == 'longitudinal') {
+          // Update completion status locally
+          if (state.selectedSubject != null && state.selectedWave != null) {
+            final subjectId = state.selectedSubject!['_id'] as String;
+            final waveId = state.selectedWave!['_id'] as String;
+
+            // Mark subject as completed for this wave
+            await OfflineModeDataRepo().updateSubjectCompletionStatus(
+              studyId: studyId,
+              subjectId: subjectId,
+              waveId: waveId,
+              isCompleted: true,
+            );
+
+            // Update wave progress
+            await OfflineModeDataRepo().updateWaveProgress(
+              studyId: studyId,
+              waveId: waveId,
+            );
+          }
+
           emit(
             state.copyWith(
               isSubmitting: false,
@@ -1182,8 +1202,18 @@ class DataCollectCubit extends Cubit<DataCollectState> {
             ),
           );
 
-          // Reload subjects for offline mode too
+          // Reload subjects and waves for offline mode too
           await loadStudySubjects(studyId);
+          await loadStudyWaves(studyId);
+
+          // Update selected wave if one is selected
+          if (state.selectedWave != null && state.waves.isNotEmpty) {
+            final updatedWave = state.waves.firstWhere(
+              (w) => w['_id'] == state.selectedWave!['_id'],
+              orElse: () => state.selectedWave!,
+            );
+            emit(state.copyWith(selectedWave: updatedWave));
+          }
         } else if (type == 'interview') {
           emit(
             state.copyWith(

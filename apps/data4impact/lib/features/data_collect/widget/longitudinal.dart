@@ -372,7 +372,7 @@ class _LongitudinalDataCollectionState
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.7,
+                        childAspectRatio: 0.6,
                       ),
                       itemCount: state.cohorts.length,
                       itemBuilder: (context, index) {
@@ -877,7 +877,7 @@ class _LongitudinalDataCollectionState
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.75,
+                        childAspectRatio: 0.6,
                       ),
                       itemCount: state.waves.length,
                       itemBuilder: (context, index) {

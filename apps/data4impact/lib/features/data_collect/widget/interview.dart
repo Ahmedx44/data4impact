@@ -1,6 +1,7 @@
 import 'package:data4impact/core/service/api_service/Model/study.dart';
 import 'package:data4impact/core/service/dialog_loading.dart';
 import 'package:data4impact/core/service/toast_service.dart';
+import 'package:data4impact/core/service/internt_connection_monitor.dart';
 import 'package:data4impact/features/data_collect/cubit/data_collet_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,10 +22,12 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
   final Map<String, TextEditingController> _interviewAnswerControllers = {};
   String? _previousError;
   final ScrollController _scrollController = ScrollController();
+  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
+    _checkConnectivity();
     context.read<DataCollectCubit>().getStudyQuestions(widget.studyId);
   }
 
@@ -35,6 +38,19 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
         .forEach((controller) => controller.dispose());
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
+    final hasInternet = await connected.hasInternetConnection();
+    if (mounted) {
+      setState(() {
+        _isOffline = !hasInternet;
+      });
+    }
   }
 
   String _formatDuration(int seconds) {
@@ -188,7 +204,7 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
       body: state.isCreatingRespondent
           ? _buildCreateRespondentForm(state)
           : _buildScrollableRespondentsScreen(state),
-      floatingActionButton: !state.isCreatingRespondent
+      floatingActionButton: !state.isCreatingRespondent && !_isOffline
           ? FloatingActionButton(
               onPressed: () {
                 context.read<DataCollectCubit>().showCreateRespondentForm();

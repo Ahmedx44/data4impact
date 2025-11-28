@@ -193,7 +193,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
 
           SliverToBoxAdapter(
               child:
-                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.05)),
+                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.02)),
           if (widget.studyData['status'] != 'completed')
             SliverToBoxAdapter(
               child: Padding(

@@ -3,6 +3,7 @@ import 'package:data4impact/core/service/api_service/Model/homogeneity_models.da
 import 'package:data4impact/core/service/api_service/Model/study.dart';
 import 'package:data4impact/core/service/dialog_loading.dart';
 import 'package:data4impact/core/service/toast_service.dart';
+import 'package:data4impact/core/service/internt_connection_monitor.dart';
 import 'package:data4impact/features/data_collect/cubit/data_collet_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,10 +23,12 @@ class _GroupDiscussionDataCollectionState
     extends State<GroupDiscussionDataCollection> {
   final Map<String, TextEditingController> _textControllers = {};
   String? _previousError;
+  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
+    _checkConnectivity();
     final cubit = context.read<DataCollectCubit>();
     cubit.startGroupDiscussionFlow();
     cubit.getStudyQuestions(widget.studyId);
@@ -36,6 +39,19 @@ class _GroupDiscussionDataCollectionState
   void dispose() {
     _textControllers.values.forEach((controller) => controller.dispose());
     super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
+    final hasInternet = await connected.hasInternetConnection();
+    if (mounted) {
+      setState(() {
+        _isOffline = !hasInternet;
+      });
+    }
   }
 
   @override
@@ -540,7 +556,7 @@ class _GroupDiscussionDataCollectionState
           ),
         ],
       ),
-      floatingActionButton: state.groups.isEmpty
+      floatingActionButton: state.groups.isEmpty || _isOffline
           ? null
           : FloatingActionButton.extended(
               onPressed: () {
@@ -597,31 +613,33 @@ class _GroupDiscussionDataCollectionState
             ),
           ),
           const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () {
-              context.read<DataCollectCubit>().showCreateGroupForm();
-              _showCreateGroupDialog();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          if (!_isOffline)
+            ElevatedButton(
+              onPressed: () {
+                context.read<DataCollectCubit>().showCreateGroupForm();
+                _showCreateGroupDialog();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_rounded, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Create First Group',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
             ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add_rounded, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Create First Group',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -1045,13 +1063,15 @@ class _GroupDiscussionDataCollectionState
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateRespondentDialog,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        icon: const Icon(Icons.person_add_rounded),
-        label: const Text('Add Respondent'),
-      ),
+      floatingActionButton: _isOffline
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _showCreateRespondentDialog,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              icon: const Icon(Icons.person_add_rounded),
+              label: const Text('Add Respondent'),
+            ),
     );
   }
 

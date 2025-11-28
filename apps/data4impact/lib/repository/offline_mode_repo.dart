@@ -595,4 +595,138 @@ class OfflineModeDataRepo {
       return true; // Default to true on error
     }
   }
+
+  // Longitudinal Completion Tracking
+  Future<void> updateSubjectCompletionStatus({
+    required String studyId,
+    required String subjectId,
+    required String waveId,
+    bool isCompleted = true,
+  }) async {
+    try {
+      final hiveBox = await Hive.openBox<dynamic>(studySubjectsBox);
+      final subjectsJson = hiveBox.get('${studySubjectsKey}_$studyId');
+
+      if (subjectsJson == null) {
+        AppLogger.logWarning('No subjects found for study $studyId');
+        return;
+      }
+
+      final List<dynamic> decoded =
+          jsonDecode(subjectsJson.toString()) as List<dynamic>;
+      final subjects =
+          decoded.map((item) => item as Map<String, dynamic>).toList();
+
+      // Find and update the subject
+      bool updated = false;
+      for (var subject in subjects) {
+        if (subject['_id'] == subjectId) {
+          // Initialize completedWaves if it doesn't exist
+          if (subject['completedWaves'] == null) {
+            subject['completedWaves'] = <String>[];
+          }
+
+          final completedWaves =
+              List<String>.from(subject['completedWaves'] as List);
+
+          if (isCompleted && !completedWaves.contains(waveId)) {
+            completedWaves.add(waveId);
+            subject['completedWaves'] = completedWaves;
+            updated = true;
+          } else if (!isCompleted && completedWaves.contains(waveId)) {
+            completedWaves.remove(waveId);
+            subject['completedWaves'] = completedWaves;
+            updated = true;
+          }
+          break;
+        }
+      }
+
+      if (updated) {
+        await hiveBox.put('${studySubjectsKey}_$studyId', jsonEncode(subjects));
+        AppLogger.logInfo(
+            'Updated completion status for subject $subjectId, wave $waveId');
+      }
+    } catch (e) {
+      AppLogger.logError('Error updating subject completion status: $e');
+    }
+  }
+
+  Future<void> updateWaveProgress({
+    required String studyId,
+    required String waveId,
+  }) async {
+    try {
+      // Get subjects to count completions
+      final subjectsBox = await Hive.openBox<dynamic>(studySubjectsBox);
+      final subjectsJson = subjectsBox.get('${studySubjectsKey}_$studyId');
+
+      if (subjectsJson == null) {
+        return;
+      }
+
+      final List<dynamic> decodedSubjects =
+          jsonDecode(subjectsJson.toString()) as List<dynamic>;
+      final subjects =
+          decodedSubjects.map((item) => item as Map<String, dynamic>).toList();
+
+      // Count completed subjects for this wave
+      int completedCount = 0;
+      for (var subject in subjects) {
+        final completedWaves = subject['completedWaves'] as List?;
+        if (completedWaves != null && completedWaves.contains(waveId)) {
+          completedCount++;
+        }
+      }
+
+      // Update wave data
+      final wavesBox = await Hive.openBox<dynamic>(studyWavesBox);
+      final wavesJson = wavesBox.get('${studyWavesKey}_$studyId');
+
+      if (wavesJson == null) {
+        return;
+      }
+
+      final List<dynamic> decodedWaves =
+          jsonDecode(wavesJson.toString()) as List<dynamic>;
+      final waves =
+          decodedWaves.map((item) => item as Map<String, dynamic>).toList();
+
+      // Find and update the wave
+      bool updated = false;
+      for (var wave in waves) {
+        if (wave['_id'] == waveId) {
+          final totalSubjects = subjects.length;
+          final completionPercentage =
+              totalSubjects > 0 ? (completedCount / totalSubjects) * 100 : 0.0;
+
+          wave['completedSubjects'] = completedCount;
+          wave['totalSubjects'] = totalSubjects;
+          wave['completionPercentage'] = completionPercentage.toInt();
+          wave['responsesCount'] = completedCount;
+          
+          // Update subjects list in wave (list of completed subject IDs)
+          final completedSubjectIds = subjects
+              .where((s) {
+                final cw = s['completedWaves'] as List?;
+                return cw != null && cw.contains(waveId);
+              })
+              .map((s) => s['_id'])
+              .toList();
+          wave['subjects'] = completedSubjectIds;
+
+          updated = true;
+          break;
+        }
+      }
+
+      if (updated) {
+        await wavesBox.put('${studyWavesKey}_$studyId', jsonEncode(waves));
+        AppLogger.logInfo(
+            'Updated wave $waveId progress: $completedCount/${subjects.length}');
+      }
+    } catch (e) {
+      AppLogger.logError('Error updating wave progress: $e');
+    }
+  }
 }
