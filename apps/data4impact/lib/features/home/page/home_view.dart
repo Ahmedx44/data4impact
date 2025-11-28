@@ -123,13 +123,28 @@ class _HomeViewState extends State<HomeView> {
                       if (state.isSyncing) {
                         return Container(
                           margin: const EdgeInsets.only(right: 16),
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.primary,
-                            ),
+                          width: 40,
+                          height: 40,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                strokeWidth: 3,
+                                value: state.syncProgress,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  theme.primary,
+                                ),
+                                backgroundColor: theme.primary.withOpacity(0.2),
+                              ),
+                              Text(
+                                '${(state.syncProgress * 100).toInt()}%',
+                                style: GoogleFonts.lexendDeca(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.primary,
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }

@@ -259,10 +259,11 @@ class HomeCubit extends Cubit<HomeState> {
           AppLogger.logInfo('Successfully synced offline answer $i');
 
           // Update progress
+          final newSyncedSoFar = state.syncedSoFar + 1;
           emit(state.copyWith(
-            syncedSoFar: state.syncedSoFar + 1,
+            syncedSoFar: newSyncedSoFar,
             syncProgress: state.totalToSync > 0
-                ? state.syncedSoFar / state.totalToSync
+                ? newSyncedSoFar / state.totalToSync
                 : 0.0,
           ));
         } catch (e) {

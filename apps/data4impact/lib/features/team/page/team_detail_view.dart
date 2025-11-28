@@ -25,19 +25,21 @@ class TeamDetailView extends StatefulWidget {
 }
 
 class _TeamDetailViewState extends State<TeamDetailView> {
+  late final TeamCubit _teamCubit;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final teamCubit = context.read<TeamCubit>();
-      teamCubit.clearTeamDetail();
-      teamCubit.getTeamMembers(widget.team.id);
+      _teamCubit = context.read<TeamCubit>();
+      _teamCubit.clearTeamDetail();
+      _teamCubit.getTeamMembers(widget.team.id);
     });
   }
 
   @override
   void dispose() {
-    context.read<TeamCubit>().clearTeamDetail();
+    _teamCubit.clearTeamDetail();
     super.dispose();
   }
 
