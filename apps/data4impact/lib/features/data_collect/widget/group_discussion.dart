@@ -359,6 +359,7 @@ class _GroupDiscussionDataCollectionState
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.transparent,
+        forceMaterialTransparency: true,
         elevation: 0,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         leading: IconButton(
@@ -369,7 +370,6 @@ class _GroupDiscussionDataCollectionState
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () {
-              print('debug: Manual refresh pressed');
               context.read<DataCollectCubit>().loadStudyGroups(widget.studyId);
             },
           ),
@@ -747,6 +747,7 @@ class _GroupDiscussionDataCollectionState
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        forceMaterialTransparency: true,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
@@ -1063,15 +1064,16 @@ class _GroupDiscussionDataCollectionState
             ),
         ],
       ),
-      floatingActionButton: _isOffline
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _showCreateRespondentDialog,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              icon: const Icon(Icons.person_add_rounded),
-              label: const Text('Add Respondent'),
-            ),
+      floatingActionButton:
+          _isOffline || state.selectedGroupRespondents.isNotEmpty
+              ? null
+              : FloatingActionButton.extended(
+                  onPressed: _showCreateRespondentDialog,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  icon: const Icon(Icons.person_add_rounded),
+                  label: const Text('Add Respondent'),
+                ),
     );
   }
 

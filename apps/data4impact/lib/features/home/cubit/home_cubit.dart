@@ -201,6 +201,16 @@ class HomeCubit extends Cubit<HomeState> {
     int syncedCount = 0;
 
     try {
+      // Check if study limit is reached
+      final isLimitReached =
+          await OfflineModeDataRepo().isStudyLimitReached(studyId);
+
+      if (isLimitReached) {
+        AppLogger.logInfo(
+            'Skipping sync for study $studyId: Response limit reached');
+        return 0;
+      }
+
       final offlineAnswers =
           await OfflineModeDataRepo().getOfflineAnswers(studyId);
 

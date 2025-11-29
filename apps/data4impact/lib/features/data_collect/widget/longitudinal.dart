@@ -1206,7 +1206,165 @@ class _LongitudinalDataCollectionState
     );
   }
 
+  Widget _buildWaveCompletedScreen(DataCollectState state) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        title: const Text(
+          'Wave Completed',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        forceMaterialTransparency: true,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            context.read<DataCollectCubit>().backToWaveSelection();
+          },
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Success Icon
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  size: 80,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Title
+              Text(
+                'Wave Completed!',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Wave Name
+              if (state.selectedWave?['name'] != null)
+                Text(
+                  state.selectedWave!['name'].toString(),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              const SizedBox(height: 24),
+
+              // Description
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.green.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 24,
+                      color: Colors.green,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'All subjects have responded to this wave.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Please select a different wave to continue data collection.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Back Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.read<DataCollectCubit>().backToWaveSelection();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'Back to Wave Selection',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSubjectSelectionScreen(DataCollectState state) {
+    // Check if all subjects have responded to this wave
+    final selectedWave = state.selectedWave;
+    final allStudySubjects = state.subjects;
+    final totalSubjectsCount = allStudySubjects.length;
+    final responsesCount = selectedWave?['responsesCount'] as int? ?? 0;
+
+    final bool allSubjectsResponded =
+        totalSubjectsCount > 0 && responsesCount >= totalSubjectsCount;
+
+    // If all subjects have responded, show completion screen
+    if (allSubjectsResponded) {
+      return _buildWaveCompletedScreen(state);
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(

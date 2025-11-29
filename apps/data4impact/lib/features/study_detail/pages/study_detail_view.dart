@@ -504,13 +504,14 @@ class _StudyDetailViewState extends State<StudyDetailView>
   Widget _buildStatCard(StatCardData data) {
     return ActivityCard(
       title: data.title,
-      value: 0, // We'll use customValue instead
+      value: int.parse(
+        data.value.toString().replaceAll('%', '').split('.')[0],
+      ),
       subtitle: data.subtitle,
       icon: data.icon,
       color: data.color,
       isPercentage: data.isPercentage,
       customValue: data.value,
-      onTap: () {}, // Add functionality if needed
     );
   }
 

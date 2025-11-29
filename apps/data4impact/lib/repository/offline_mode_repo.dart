@@ -47,13 +47,13 @@ class OfflineModeDataRepo {
 
   // Study
   Future<void> saveAllStudys(String value) async {
-    final hiveBox = await Hive.openBox(studysBox);
+    final hiveBox = await Hive.openBox<dynamic>(studysBox);
     await hiveBox.put(studysKey, value);
   }
 
   Future<List<Map<String, dynamic>>> getSavedAllStudys() async {
     try {
-      final hiveBox = await Hive.openBox(studysBox);
+      final hiveBox = await Hive.openBox<dynamic>(studysBox);
       final studys = hiveBox.get(studysKey);
 
       if (studys == null) {
@@ -303,6 +303,40 @@ class OfflineModeDataRepo {
       return decoded.map((item) => item as Map<String, dynamic>).toList();
     } catch (e) {
       AppLogger.logError('Error loading study respondents: $e');
+      return [];
+    }
+  }
+
+// Group-specific Respondents
+  Future<void> saveGroupRespondents(String studyId, String groupId,
+      List<Map<String, dynamic>> respondents) async {
+    try {
+      final hiveBox = await Hive.openBox(studyRespondentsBox);
+      await hiveBox.put('${studyRespondentsKey}_${studyId}_$groupId',
+          jsonEncode(respondents));
+      AppLogger.logInfo(
+          'Saved ${respondents.length} respondents for group $groupId in study $studyId');
+    } catch (e) {
+      AppLogger.logError('Error saving group respondents: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getGroupRespondents(
+      String studyId, String groupId) async {
+    try {
+      final hiveBox = await Hive.openBox(studyRespondentsBox);
+      final respondentsJson =
+          hiveBox.get('${studyRespondentsKey}_${studyId}_$groupId');
+
+      if (respondentsJson == null) {
+        return [];
+      }
+
+      final List<dynamic> decoded =
+          jsonDecode(respondentsJson.toString()) as List<dynamic>;
+      return decoded.map((item) => item as Map<String, dynamic>).toList();
+    } catch (e) {
+      AppLogger.logError('Error loading group respondents: $e');
       return [];
     }
   }
@@ -704,7 +738,7 @@ class OfflineModeDataRepo {
           wave['totalSubjects'] = totalSubjects;
           wave['completionPercentage'] = completionPercentage.toInt();
           wave['responsesCount'] = completedCount;
-          
+
           // Update subjects list in wave (list of completed subject IDs)
           final completedSubjectIds = subjects
               .where((s) {
@@ -723,10 +757,80 @@ class OfflineModeDataRepo {
       if (updated) {
         await wavesBox.put('${studyWavesKey}_$studyId', jsonEncode(waves));
         AppLogger.logInfo(
-            'Updated wave $waveId progress: $completedCount/${subjects.length}');
+            'Updated wave $waveId progress: $completedCount/${subjects.length} (responsesCount updated)');
       }
     } catch (e) {
       AppLogger.logError('Error updating wave progress: $e');
+    }
+  }
+
+  Future<bool> isStudyLimitReached(String studyId) async {
+    try {
+      int currentResponses = 0;
+      int totalResponses = 0;
+      bool foundCollector = false;
+
+      // 1. Try to find collector specific limit first
+      final cBox = await Hive.openBox(collectorsBox);
+      for (final key in cBox.keys) {
+        if (key.toString().startsWith(collectorsKey)) {
+          final collectorsJson = cBox.get(key);
+          if (collectorsJson != null) {
+            final List<dynamic> collectors =
+                jsonDecode(collectorsJson.toString()) as List<dynamic>;
+
+            for (final c in collectors) {
+              String? cStudyId;
+              final collectorStudy = c['study'];
+              if (collectorStudy is Map) {
+                cStudyId = collectorStudy['_id'] as String?;
+              } else if (collectorStudy is String) {
+                cStudyId = collectorStudy;
+              }
+
+              if (cStudyId == studyId) {
+                currentResponses = (c['responseCount'] as num?)?.toInt() ?? 0;
+                totalResponses = (c['maxLimit'] as num?)?.toInt() ?? 0;
+                foundCollector = true;
+                break;
+              }
+            }
+          }
+        }
+        if (foundCollector) break;
+      }
+
+      // 2. If no collector found, fall back to study limit
+      if (!foundCollector) {
+        final qBox = await Hive.openBox(studyQuestionsBox);
+        final questionsJson = qBox.get('${studyQuestionsKey}_$studyId');
+        if (questionsJson != null) {
+          final Map<String, dynamic> study =
+              jsonDecode(questionsJson.toString()) as Map<String, dynamic>;
+          currentResponses = (study['responseCount'] as num?)?.toInt() ?? 0;
+          totalResponses = (study['sampleSize'] as num?)?.toInt() ?? 0;
+        } else {
+          // Try getting from all studys list
+          final sBox = await Hive.openBox(studysBox);
+          final studysJson = sBox.get(studysKey);
+          if (studysJson != null) {
+            final List<dynamic> studys =
+                jsonDecode(studysJson.toString()) as List<dynamic>;
+            for (final s in studys) {
+              if (s['_id'] == studyId) {
+                currentResponses = (s['responseCount'] as num?)?.toInt() ?? 0;
+                totalResponses = (s['sampleSize'] as num?)?.toInt() ?? 0;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      return totalResponses > 0 && currentResponses >= totalResponses;
+    } catch (e) {
+      AppLogger.logError('Error checking study limit: $e');
+      return false; // Default to allowing sync if check fails
     }
   }
 }

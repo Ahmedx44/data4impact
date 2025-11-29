@@ -1212,6 +1212,7 @@ class DataCollectCubit extends Cubit<DataCollectState> {
               (w) => w['_id'] == state.selectedWave!['_id'],
               orElse: () => state.selectedWave!,
             );
+
             emit(state.copyWith(selectedWave: updatedWave));
           }
         } else if (type == 'interview') {
@@ -2189,33 +2190,97 @@ class DataCollectCubit extends Cubit<DataCollectState> {
     print('debug: loadGroupRespondents - starting');
     emit(state.copyWith(isLoading: true, error: null));
 
-    try {
-      print(
-          'debug: loadGroupRespondents - calling studyService.getStudyRespondents');
-      final respondents = await studyService.getStudyRespondents(studyId);
-      print(
-          'debug: loadGroupRespondents - received ${respondents.length} total respondents');
+    final connected = InternetConnectionMonitor(
+      checkOnInterval: false,
+      checkInterval: const Duration(seconds: 5),
+    );
 
-      final groupRespondents = respondents.where((respondent) {
-        return respondent['group'] == state.selectedGroup?['_id'];
-      }).toList();
+    final isConnected = await connected.hasInternetConnection();
 
-      print(
-          'debug: loadGroupRespondents - filtered to ${groupRespondents.length} group respondents');
-      print(
-          'debug: loadGroupRespondents - selected group ID: ${state.selectedGroup?['_id']}');
+    if (isConnected) {
+      try {
+        final respondents = await studyService.getStudyRespondents(studyId);
 
-      emit(state.copyWith(
-        isLoading: false,
-        groupRespondents: groupRespondents,
-        error: null,
-      ));
-    } catch (e) {
-      print('debug: loadGroupRespondents - error: $e');
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Failed to load respondents: ${e.toString()}',
-      ));
+        // Save all respondents to offline storage
+        await OfflineModeDataRepo().saveStudyRespondents(studyId, respondents);
+
+        // Filter respondents for the selected group
+        final groupRespondents = respondents.where((respondent) {
+          return respondent['group'] == state.selectedGroup?['_id'];
+        }).toList();
+
+        // Save group-specific respondents to offline storage
+        if (state.selectedGroup != null) {
+          await OfflineModeDataRepo().saveGroupRespondents(
+            studyId,
+            state.selectedGroup!['_id'] as String,
+            groupRespondents,
+          );
+        }
+
+        emit(state.copyWith(
+          isLoading: false,
+          groupRespondents: groupRespondents,
+          error: null,
+        ));
+      } catch (e) {
+        // Fallback to offline data
+        if (state.selectedGroup != null) {
+          final offlineRespondents = await OfflineModeDataRepo()
+              .getGroupRespondents(
+                  studyId, state.selectedGroup!['_id'] as String);
+          if (offlineRespondents.isNotEmpty) {
+            print(
+                'debug: loadGroupRespondents - using offline data with ${offlineRespondents.length} respondents');
+            emit(state.copyWith(
+              isLoading: false,
+              groupRespondents: offlineRespondents,
+              error: null,
+            ));
+          } else {
+            emit(state.copyWith(
+              isLoading: false,
+              error: 'Failed to load respondents: ${e.toString()}',
+            ));
+          }
+        } else {
+          emit(state.copyWith(
+            isLoading: false,
+            error: 'Failed to load respondents: ${e.toString()}',
+          ));
+        }
+      }
+    } else {
+      // Offline mode
+      print('debug: loadGroupRespondents - offline mode');
+      if (state.selectedGroup != null) {
+        final offlineRespondents = await OfflineModeDataRepo()
+            .getGroupRespondents(
+                studyId, state.selectedGroup!['_id'] as String);
+        if (offlineRespondents.isNotEmpty) {
+          print(
+              'debug: loadGroupRespondents - offline mode with ${offlineRespondents.length} respondents');
+          emit(state.copyWith(
+            isLoading: false,
+            groupRespondents: offlineRespondents,
+            error: null,
+          ));
+        } else {
+          print(
+              'debug: loadGroupRespondents - no offline respondents data available');
+          emit(state.copyWith(
+            isLoading: false,
+            groupRespondents: [],
+            error: null, // Don't show error, just empty list
+          ));
+        }
+      } else {
+        print('debug: loadGroupRespondents - no group selected');
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'No group selected',
+        ));
+      }
     }
   }
 

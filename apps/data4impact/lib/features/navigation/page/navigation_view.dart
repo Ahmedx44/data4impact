@@ -53,7 +53,9 @@ class _NavigationViewState extends State<NavigationView>
       await _fetchInitialData();
 
       if (mounted) {
+        final hasProjects = context.read<HomeCubit>().state.projects.isNotEmpty;
         setState(() {
+          _showStaticScreen = !hasProjects;
           _initialDataLoaded = true;
           _isInitialLoad = false;
         });
@@ -268,8 +270,10 @@ class _NavigationViewState extends State<NavigationView>
                       // After returning from inbox, reload the data
                       if (mounted) {
                         await _fetchInitialData();
+                        final hasProjects =
+                            context.read<HomeCubit>().state.projects.isNotEmpty;
                         setState(() {
-                          _showStaticScreen = false;
+                          _showStaticScreen = !hasProjects;
                         });
                       }
                     },
@@ -628,7 +632,7 @@ class _NavigationViewState extends State<NavigationView>
             return _buildLoadingScreen();
           }
 
-          if (_showStaticScreen && !homeState.fetchingProjects) {
+          if (_showStaticScreen) {
             return _buildStaticScreen();
           }
 
