@@ -535,96 +535,96 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     final goalProgress = _calculateGoalProgress(members);
     final pendingMembers = _calculatePendingMembers(members);
 
-    return Column(
-      children: [
-        // Stats Cards
-        Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.1,
-            children: [
-              TeamStatsCard(
-                title: 'Total Members',
-                value: members.length,
-                subtitle: 'Team members',
-                icon: Icons.people_rounded,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              TeamStatsCard(
-                title: 'Performance',
-                value: performance.toInt(),
-                subtitle: '${performance.toStringAsFixed(1)}% efficiency',
-                icon: Icons.trending_up_rounded,
-                color: Colors.green,
-                isPercentage: true,
-              ),
-              TeamStatsCard(
-                title: 'Goal',
-                value: 0,
-                subtitle: goalProgress,
-                icon: Icons.flag_rounded,
-                color: Colors.orange,
-                customValue: goalProgress,
-              ),
-              TeamStatsCard(
-                title: 'Pending Members',
-                value: pendingMembers,
-                subtitle: 'Need attention',
-                icon: Icons.pending_actions_rounded,
-                color: Colors.red,
-              ),
-            ],
-          ),
-        ),
-
-        // Members List Header
-        if (members.isNotEmpty)
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Stats Cards
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
+            padding: const EdgeInsets.all(20.0),
+            child: GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 1.1,
               children: [
-                Text(
-                  'Team Members',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onBackground,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                TeamStatsCard(
+                  title: 'Total Members',
+                  value: members.length,
+                  subtitle: 'Team members',
+                  icon: Icons.people_rounded,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    members.length.toString(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                TeamStatsCard(
+                  title: 'Performance',
+                  value: performance.toInt(),
+                  subtitle: '${performance.toStringAsFixed(1)}% efficiency',
+                  icon: Icons.trending_up_rounded,
+                  color: Colors.green,
+                  isPercentage: true,
+                ),
+                TeamStatsCard(
+                  title: 'Goal',
+                  value: 0,
+                  subtitle: goalProgress,
+                  icon: Icons.flag_rounded,
+                  color: Colors.orange,
+                  customValue: goalProgress,
+                ),
+                TeamStatsCard(
+                  title: 'Pending Members',
+                  value: pendingMembers,
+                  subtitle: 'Need attention',
+                  icon: Icons.pending_actions_rounded,
+                  color: Colors.red,
                 ),
               ],
             ),
           ),
 
-        // Members List
-        Expanded(
-          child: members.isEmpty
-              ? _buildEmptyState()
-              : _buildMembersList(teamState),
-        ),
-      ],
+          // Members List Header
+          if (members.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                children: [
+                  Text(
+                    'Team Members',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onBackground,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      members.length.toString(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Members List
+          members.isEmpty ? _buildEmptyState() : _buildMembersList(teamState),
+        ],
+      ),
     );
   }
 
@@ -634,6 +634,8 @@ class _TeamDetailViewState extends State<TeamDetailView> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: members.length,
         itemBuilder: (context, index) {
           final member = members[index];

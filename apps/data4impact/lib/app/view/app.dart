@@ -25,6 +25,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:toastification/toastification.dart';
 
+import 'package:data4impact/core/service/api_service/notification_service.dart';
+
 class App extends StatelessWidget {
   const App({super.key});
 
@@ -56,6 +58,8 @@ class App extends StatelessWidget {
         HomeService(apiClient: apiClient, secureStorage: secureStorage);
     final invitationService =
         InvitationService(apiClient: apiClient, secureStorage: secureStorage);
+    final notificationService =
+        NotificationService(apiClient: apiClient, secureStorage: secureStorage);
     final connectivity = Connectivity(); // Add this
 
     AppGlobalContext.setContext(context);
@@ -72,6 +76,7 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: connectivity),
         RepositoryProvider.value(value: profileService),
         RepositoryProvider.value(value: invitationService),
+        RepositoryProvider.value(value: notificationService),
         RepositoryProvider.value(value: teamService),
         RepositoryProvider.value(value: contributorService),
         RepositoryProvider.value(value: homeService)

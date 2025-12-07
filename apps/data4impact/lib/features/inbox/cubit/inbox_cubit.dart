@@ -1,5 +1,8 @@
 import 'package:bloc/bloc.dart';
+import 'package:data4impact/core/model/notification_model.dart';
+import 'package:data4impact/core/service/api_service/Model/invitation_model.dart';
 import 'package:data4impact/core/service/api_service/invitation_service.dart';
+import 'package:data4impact/core/service/api_service/notification_service.dart';
 import 'package:data4impact/core/service/toast_service.dart';
 import 'package:data4impact/features/inbox/cubit/inbox_state.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,41 +10,119 @@ import 'package:flutter/material.dart';
 
 class InboxCubit extends Cubit<InboxState> {
   final InvitationService invitationService;
+  final NotificationService notificationService;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   BuildContext? _context;
 
-  InboxCubit({required this.invitationService}) : super(const InboxState());
+  InboxCubit({
+    required this.invitationService,
+    required this.notificationService,
+  }) : super(const InboxState());
 
   // Set context for navigation
   void setContext(BuildContext context) {
     _context = context;
   }
 
-  Future<void> getInvitation() async {
+  Future<void> loadInbox() async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      final invitations = await invitationService.getMyInvitation();
+      final invitationsFuture = invitationService.getMyInvitation();
+      final notificationsFuture = notificationService.getNotifications();
+
+      final results = await Future.wait([
+        invitationsFuture,
+        notificationsFuture,
+      ]);
+
       emit(state.copyWith(
         isLoading: false,
-        invitations: invitations,
+        invitations: results[0] as List<InvitationModel>,
+        notifications: results[1] as List<NotificationModel>,
         error: null,
       ));
     } catch (e) {
       emit(state.copyWith(isLoading: false));
+      _handleError(e);
+    }
+  }
 
-      // Handle specific authentication error
-      if (e.toString().contains('401') ||
-          e.toString().contains('noAccessSession') ||
-          e.toString().contains('Unauthorized')) {
-        await _handleAuthenticationError();
-      } else {
-        // Emit error state for other errors
-        emit(state.copyWith(
-          isLoading: false,
-          error: e.toString(),
-        ));
-        rethrow;
-      }
+  Future<void> getInvitation() async {
+    // Keep this for backward compatibility or specific refresh
+    // But ideally we should use loadInbox
+    try {
+      final invitations = await invitationService.getMyInvitation();
+      emit(state.copyWith(
+        invitations: invitations,
+        error: null,
+      ));
+    } catch (e) {
+      _handleError(e);
+    }
+  }
+
+  Future<void> getNotifications() async {
+    try {
+      final notifications = await notificationService.getNotifications();
+      emit(state.copyWith(
+        notifications: notifications,
+        error: null,
+      ));
+    } catch (e) {
+      _handleError(e);
+    }
+  }
+
+  Future<void> markNotificationAsRead(String notificationId) async {
+    try {
+      await notificationService.markAsRead(notificationId);
+
+      // Update local state
+      final currentNotifications = state.notifications ?? [];
+      final updatedNotifications = currentNotifications.map((n) {
+        if (n.id == notificationId) {
+          // Create a new NotificationModel with updated status
+          return NotificationModel(
+            id: n.id,
+            userId: n.userId,
+            type: n.type,
+            status: 'read', // Update status to 'read'
+            title: n.title,
+            message: n.message,
+            createdAt: n.createdAt,
+          );
+        }
+        return n;
+      }).toList();
+
+      emit(state.copyWith(notifications: updatedNotifications));
+    } catch (e) {
+      _handleError(e);
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead() async {
+    try {
+      await notificationService.markAllAsRead();
+      // Refresh notifications to update status
+      await getNotifications();
+    } catch (e) {
+      _handleError(e);
+    }
+  }
+
+  void _handleError(Object e) async {
+    // Handle specific authentication error
+    if (e.toString().contains('401') ||
+        e.toString().contains('noAccessSession') ||
+        e.toString().contains('Unauthorized')) {
+      await _handleAuthenticationError();
+    } else {
+      // Emit error state for other errors
+      emit(state.copyWith(
+        error: e.toString(),
+      ));
+      // Don't rethrow here to avoid crashing UI, just show error
     }
   }
 
@@ -107,7 +188,7 @@ class InboxCubit extends Cubit<InboxState> {
           errorMessage.contains('Unauthorized')) {
         await _handleAuthenticationError();
       } else {
-        rethrow;
+        // rethrow; // Don't rethrow
       }
     }
   }
@@ -139,7 +220,7 @@ class InboxCubit extends Cubit<InboxState> {
           errorMessage.contains('Unauthorized')) {
         await _handleAuthenticationError();
       } else {
-        rethrow;
+        // rethrow;
       }
     }
   }

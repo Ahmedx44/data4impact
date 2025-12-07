@@ -303,6 +303,9 @@ class _HomeViewState extends State<HomeView> {
                                       : cardValues[index];
                                   final subtitle = cardSubtitles[index];
 
+                                  print(
+                                      'card valuee ${title}:${cardValues[index]}');
+
                                   return AnimationConfiguration.staggeredGrid(
                                     position: index,
                                     duration: const Duration(milliseconds: 300),

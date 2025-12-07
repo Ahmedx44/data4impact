@@ -440,7 +440,8 @@ class _ProfilePageState extends State<ProfileView> {
               icon: Icons.calendar_month_rounded,
               label: 'Member Since',
               value: user != null
-                  ? formatMemberSince(DateTime.parse(user.createdAt))
+                  ? formatMemberSince(
+                      DateTime.tryParse(user.createdAt) ?? DateTime.now())
                   : '01/01/2024',
             ),
           ],
