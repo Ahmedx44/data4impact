@@ -153,7 +153,7 @@ class _StudyViewState extends State<StudyView>
                       children: [
                         _buildActiveStudiesTab(
                             projectSlug, homeState.collectors),
-                        _buildOldStudiesTab(projectSlug),
+                        _buildOldStudiesTab(projectSlug, homeState.collectors),
                       ],
                     ),
                   ),
@@ -195,7 +195,21 @@ class _StudyViewState extends State<StudyView>
           final activeStudies = studyState.studies.where((study) {
             final status = study['status'] as String?;
             final isActive = status == 'inProgress' || status == 'draft';
-            return isActive;
+
+            if (!isActive) return false;
+
+            final studyId = study['_id'] as String;
+            final hasCollector = collectors.any((c) {
+              final cStudy = c['study'];
+              if (cStudy is Map) {
+                return cStudy['_id'] == studyId;
+              } else if (cStudy is String) {
+                return cStudy == studyId;
+              }
+              return false;
+            });
+
+            return hasCollector;
           }).toList();
 
           print('✅ Active studies filtered: ${activeStudies.length}');
@@ -313,7 +327,8 @@ class _StudyViewState extends State<StudyView>
     );
   }
 
-  Widget _buildOldStudiesTab(String projectSlug) {
+  Widget _buildOldStudiesTab(
+      String projectSlug, List<Map<String, dynamic>> collectors) {
     return BlocConsumer<StudyCubit, StudyState>(
       listener: (context, studyState) {},
       builder: (context, studyState) {
@@ -334,7 +349,21 @@ class _StudyViewState extends State<StudyView>
           final oldStudies = studyState.studies.where((study) {
             final status = study['status'] as String?;
             final isOld = status != 'inProgress' && status != 'draft';
-            return isOld;
+
+            if (!isOld) return false;
+
+            final studyId = study['_id'] as String;
+            final hasCollector = collectors.any((c) {
+              final cStudy = c['study'];
+              if (cStudy is Map) {
+                return cStudy['_id'] == studyId;
+              } else if (cStudy is String) {
+                return cStudy == studyId;
+              }
+              return false;
+            });
+
+            return hasCollector;
           }).toList();
 
           if (oldStudies.isEmpty) {

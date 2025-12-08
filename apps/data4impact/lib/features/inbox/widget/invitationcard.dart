@@ -23,336 +23,358 @@ class InvitationCard extends StatelessWidget {
 
     // Determine status colors and icons
     final (statusColor, statusIcon, displayStatus) = _getStatusDetails(
-        invitation.status,
-        isExpired,
-        colorScheme
+      invitation.status,
+      isExpired,
+      colorScheme,
     );
 
     return Card(
-      elevation: 3,
-      shadowColor: colorScheme.primary.withOpacity(0.15),
+      elevation: 2,
+      shadowColor: colorScheme.primary.withOpacity(0.1),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: colorScheme.outline.withOpacity(0.08),
+          color: colorScheme.outline.withOpacity(0.06),
           width: 1,
         ),
       ),
       color: colorScheme.surface,
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.3),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// Header with status and invitation type
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Status indicator with icon
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      statusIcon,
-                      size: 20,
-                      color: statusColor,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Invitation type and status badge
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _getInvitationTypeTitle(invitation.type),
-                          style: GoogleFonts.lexendDeca(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                            height: 1.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: statusColor.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            displayStatus,
-                            style: GoogleFonts.lexendDeca(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: statusColor,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              /// Invitation message
-              Text(
-                invitation.message,
-                style: GoogleFonts.lexendDeca(
-                  fontSize: 15,
-                  color: colorScheme.onSurface.withOpacity(0.75),
-                  height: 1.5,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 24),
-
-              /// Roles section with visual indicators
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Header with title and status
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title and type
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Assigned Roles',
-                        style: GoogleFonts.lexendDeca(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                      Text(
-                        '${invitation.roles.length} ${invitation.roles.length == 1 ? 'Role' : 'Roles'}',
+                        _getInvitationTypeTitle(invitation.type),
                         style: GoogleFonts.lexendDeca(
                           fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        invitation.message,
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 13,
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Status badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: statusColor.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        statusIcon,
+                        size: 14,
+                        color: statusColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        displayStatus,
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: statusColor,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                ),
+              ],
+            ),
 
-                  // Roles chips container
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.1),
-                      ),
-                    ),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: invitation.roles.map((role) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              colorScheme.primary.withOpacity(0.1),
-                              colorScheme.primary.withOpacity(0.05),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: colorScheme.primary.withOpacity(0.2),
-                            width: 1,
-                          ),
+            const SizedBox(height: 12),
+
+            /// Roles and expiry info
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Roles
+                Flexible(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: invitation.roles.take(3).map((role) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: colorScheme.primary.withOpacity(0.15),
+                          width: 0.5,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _getRoleIcon(role as String),
-                              size: 14,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getRoleIcon(role as String),
+                            size: 12,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatRoleName(role),
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                               color: colorScheme.primary,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              _formatRoleName(role),
-                              style: GoogleFonts.lexendDeca(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.primary,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )).toList(),
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+                  ),
+                ),
+
+                // Expiry info
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isExpired
+                        ? colorScheme.error.withOpacity(0.05)
+                        : colorScheme.surfaceVariant.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isExpired
+                          ? colorScheme.error.withOpacity(0.2)
+                          : colorScheme.outline.withOpacity(0.1),
                     ),
                   ),
-
-                  // Expiry timeline dots
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _ExpiryDot(
-                        date: invitation.createdAt,
-                        label: 'Sent',
-                        isActive: true,
-                        colorScheme: colorScheme,
+                      Icon(
+                        isExpired ? Icons.timer_off_rounded : Icons.timer_rounded,
+                        size: 12,
+                        color: isExpired ? colorScheme.error : colorScheme.onSurface.withOpacity(0.6),
                       ),
-                      _ExpiryDot(
-                        date: invitation.expiredAt,
-                        label: isExpired ? 'Expired' : 'Expires',
-                        isActive: isExpired,
-                        isWarning: true,
-                        colorScheme: colorScheme,
+                      const SizedBox(width: 4),
+                      Text(
+                        isExpired ? 'Expired' : 'Expires',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isExpired ? colorScheme.error : colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatDateCompact(invitation.expiredAt),
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isExpired ? colorScheme.error : colorScheme.primary,
+                        ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
-              /// Action buttons - Conditional based on status
-              if (canRespond)
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Reject button
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            side: BorderSide(
-                              color: colorScheme.error.withOpacity(0.6),
-                              width: 1,
-                            ),
-                            foregroundColor: colorScheme.error,
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
+            /// Action buttons - Conditional based on status
+            if (canRespond)
+              Row(
+                children: [
+                  // Reject button
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(
+                          color: colorScheme.error.withOpacity(0.5),
+                          width: 1,
+                        ),
+                        foregroundColor: colorScheme.error,
+                        backgroundColor: Colors.transparent,
+                        minimumSize: const Size(0, 36),
+                      ),
+                      onPressed: onReject,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: colorScheme.error,
                           ),
-                          onPressed: onReject,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.close_rounded,
-                                size: 18,
-                                color: colorScheme.error,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Decline',
-                                style: GoogleFonts.lexendDeca(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                          const SizedBox(width: 6),
+                          Text(
+                            'Decline',
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Accept button
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(colorScheme.primary),
+                        padding: WidgetStateProperty.all(
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        shape: MaterialStateProperty.all(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
+                        minimumSize: const WidgetStatePropertyAll(Size(0, 36)),
                       ),
-                      const SizedBox(width: 12),
-
-                      // Accept button
-                      // Accept button
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.all(colorScheme.primary),
-                            padding: WidgetStateProperty.all(
-                              const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                            ),
-                            shape: MaterialStateProperty.all(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+                      onPressed: onAccept,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Accept',
+                            style: GoogleFonts.lexendDeca(
+                              fontSize: 13,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-
-                          onPressed: onAccept,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Accept',
-                                style: GoogleFonts.lexendDeca(
-                                  fontSize: 14,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.check_rounded,
-                                size: 18,
-                                color: colorScheme.onPrimary,
-                              ),
-                            ],
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.check_rounded,
+                            size: 16,
+                            color: colorScheme.onPrimary,
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else if (isExpired)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colorScheme.error.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.error.withOpacity(0.15),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 16,
+                      color: colorScheme.error,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Invitation Expired',
+                      style: GoogleFonts.lexendDeca(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (invitation.status == 'accepted')
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withOpacity(0.15),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 16,
+                        color: const Color(0xFF10B981),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Accepted',
+                        style: GoogleFonts.lexendDeca(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF10B981),
                         ),
                       ),
                     ],
                   ),
                 )
-              else if (isExpired)
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              else if (invitation.status == 'rejected')
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: colorScheme.error.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: colorScheme.error.withOpacity(0.2),
+                        color: colorScheme.error.withOpacity(0.15),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.error_outline_rounded,
-                          size: 18,
+                          Icons.cancel_rounded,
+                          size: 16,
                           color: colorScheme.error,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Text(
-                          'Invitation Expired',
+                          'Declined',
                           style: GoogleFonts.lexendDeca(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: colorScheme.error,
                           ),
@@ -360,73 +382,7 @@ class InvitationCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                )
-              else if (invitation.status == 'accepted')
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF10B981).withOpacity(0.2),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            size: 18,
-                            color: const Color(0xFF10B981),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Invitation Accepted',
-                            style: GoogleFonts.lexendDeca(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF10B981),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else if (invitation.status == 'rejected')
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: colorScheme.error.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: colorScheme.error.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.cancel_rounded,
-                              size: 18,
-                              color: colorScheme.error,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Invitation Declined',
-                              style: GoogleFonts.lexendDeca(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.error,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -440,7 +396,7 @@ class InvitationCard extends StatelessWidget {
 
     switch (status.toLowerCase()) {
       case 'pending':
-        return (colorScheme.primary, Icons.pending_actions_rounded, 'Pending Response');
+        return (colorScheme.primary, Icons.pending_actions_rounded, 'Pending');
       case 'accepted':
         return (const Color(0xFF10B981), Icons.check_circle_rounded, 'Accepted');
       case 'rejected':
@@ -486,74 +442,9 @@ class InvitationCard extends StatelessWidget {
   String _formatRoleName(String role) {
     return role[0].toUpperCase() + role.substring(1);
   }
-}
 
-// Expiry timeline dot widget
-class _ExpiryDot extends StatelessWidget {
-  final DateTime date;
-  final String label;
-  final bool isActive;
-  final bool isWarning;
-  final ColorScheme colorScheme;
-
-  const _ExpiryDot({
-    required this.date,
-    required this.label,
-    required this.isActive,
-    this.isWarning = false,
-    required this.colorScheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isWarning
-        ? (isActive ? colorScheme.error : colorScheme.outline.withOpacity(0.3))
-        : (isActive ? colorScheme.primary : colorScheme.outline.withOpacity(0.3));
-
-    return Column(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color,
-            border: Border.all(
-              color: color.withOpacity(0.8),
-              width: 2,
-            ),
-            boxShadow: isActive ? [
-              BoxShadow(
-                color: color.withOpacity(0.4),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ] : null,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          _formatDate(date),
-          style: GoogleFonts.lexendDeca(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-            color: isActive ? color : colorScheme.onSurface.withOpacity(0.5),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: GoogleFonts.lexendDeca(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-            color: isActive ? color : colorScheme.onSurface.withOpacity(0.5),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  // Helper method to format date compact
+  String _formatDateCompact(DateTime date) {
+    return '${date.day}/${date.month}';
   }
 }

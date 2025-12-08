@@ -31,70 +31,49 @@ class NotificationItem extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          splashColor: typeColor.withOpacity(0.1),
-          highlightColor: typeColor.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              color: isRead ? colorScheme.surface : typeColor.withOpacity(0.08),
-              boxShadow: [
-                if (!isRead)
-                  BoxShadow(
-                    color: typeColor.withOpacity(0.1),
-                    blurRadius: 12,
-                    offset: const Offset(0, 3),
-                  ),
-                BoxShadow(
-                  color: colorScheme.shadow.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(16),
+              color: isRead ? colorScheme.surface : typeColor.withOpacity(0.06),
               border: Border.all(
                 color: isRead
-                    ? colorScheme.outline.withOpacity(0.08)
-                    : typeColor.withOpacity(0.15),
+                    ? colorScheme.outline.withOpacity(0.06)
+                    : typeColor.withOpacity(0.12),
                 width: 1,
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Notification icon with glow effect
+                  // Notification icon
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: typeColor.withOpacity(0.15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: typeColor.withOpacity(0.2),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ],
+                      color: typeColor.withOpacity(0.12),
                     ),
                     child: Icon(
                       typeIcon,
-                      size: 22,
+                      size: 18,
                       color: typeColor,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
 
                   // Notification content
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Header with title, type, and time
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -105,280 +84,137 @@ class NotificationItem extends StatelessWidget {
                                   Text(
                                     notification.title,
                                     style: GoogleFonts.lexendDeca(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: isRead
-                                          ? colorScheme.onSurface
-                                              .withOpacity(0.8)
-                                          : colorScheme.onSurface,
-                                      height: 1.3,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                      height: 1.2,
                                     ),
-                                    maxLines: 2,
+                                    maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 6),
-
-                                  // Type badge with gradient
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          typeColor.withOpacity(0.1),
-                                          typeColor.withOpacity(0.05),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: typeColor.withOpacity(0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          _getMiniIcon(notification.type),
-                                          size: 12,
-                                          color: typeColor,
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
                                         ),
-                                        const SizedBox(width: 6),
-                                        Text(
+                                        decoration: BoxDecoration(
+                                          color: typeColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
                                           displayType,
                                           style: GoogleFonts.lexendDeca(
-                                            fontSize: 11,
+                                            fontSize: 10,
                                             fontWeight: FontWeight.w600,
                                             color: typeColor,
-                                            letterSpacing: 0.5,
                                           ),
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      if (!isRead)
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: typeColor,
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
-
-                            // Time and unread indicator
+                            const SizedBox(width: 8),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.surfaceVariant
-                                        .withOpacity(0.3),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    _formatTime(notification.createdAt),
-                                    style: GoogleFonts.lexendDeca(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
+                                Text(
+                                  _formatTime(notification.createdAt),
+                                  style: GoogleFonts.lexendDeca(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                if (!isRead)
-                                  Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          typeColor,
-                                          typeColor.withOpacity(0.8),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: typeColor.withOpacity(0.3),
-                                          blurRadius: 6,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        'N',
-                                        style: GoogleFonts.lexendDeca(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  DateFormat('MM/dd').format(notification.createdAt),
+                                  style: GoogleFonts.lexendDeca(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface.withOpacity(0.5),
                                   ),
+                                ),
                               ],
                             ),
                           ],
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
-                        // Notification message with subtle background
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceVariant.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.outline.withOpacity(0.1),
-                            ),
+                        // Notification message
+                        Text(
+                          notification.message,
+                          style: GoogleFonts.lexendDeca(
+                            fontSize: 12,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                            height: 1.4,
                           ),
-                          child: Text(
-                            notification.message,
-                            style: GoogleFonts.lexendDeca(
-                              fontSize: 14,
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                              height: 1.6,
-                            ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
-                        // Footer with status and actions
+                        // Footer with delete button
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Status indicator
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
+                            // Status text
+                            Text(
+                              isRead ? 'Read' : 'Unread',
+                              style: GoogleFonts.lexendDeca(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
                                 color: isRead
-                                    ? const Color(0xFF10B981).withOpacity(0.1)
-                                    : typeColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isRead
-                                      ? const Color(0xFF10B981).withOpacity(0.3)
-                                      : typeColor.withOpacity(0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isRead
-                                        ? Icons.check_circle_rounded
-                                        : Icons.circle_rounded,
-                                    size: 12,
-                                    color: isRead
-                                        ? const Color(0xFF10B981)
-                                        : typeColor,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    isRead ? 'Read' : 'Unread',
-                                    style: GoogleFonts.lexendDeca(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: isRead
-                                          ? const Color(0xFF10B981)
-                                          : typeColor,
-                                    ),
-                                  ),
-                                ],
+                                    ? const Color(0xFF10B981)
+                                    : typeColor,
                               ),
                             ),
 
-                            const Spacer(),
-
-                            // Timestamp with calendar icon
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    colorScheme.surfaceVariant.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today_rounded,
-                                    size: 12,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    DateFormat('MMM dd, yyyy').format(
-                                      notification.createdAt,
-                                    ),
-                                    style: GoogleFonts.lexendDeca(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            // Delete button with modern styling
+                            // Delete button
                             if (showDeleteButton && onDelete != null)
                               Material(
                                 color: Colors.transparent,
                                 child: InkWell(
                                   onTap: onDelete,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 10,
+                                      horizontal: 10,
+                                      vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          colorScheme.error.withOpacity(0.1),
-                                          colorScheme.error.withOpacity(0.05),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color:
-                                            colorScheme.error.withOpacity(0.3),
-                                        width: 1,
-                                      ),
+                                      color: colorScheme.error.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
                                           Icons.delete_outline_rounded,
-                                          size: 16,
+                                          size: 14,
                                           color: colorScheme.error,
                                         ),
-                                        const SizedBox(width: 6),
+                                        const SizedBox(width: 4),
                                         Text(
                                           'Delete',
                                           style: GoogleFonts.lexendDeca(
-                                            fontSize: 12,
+                                            fontSize: 11,
                                             fontWeight: FontWeight.w600,
                                             color: colorScheme.error,
                                           ),
@@ -412,65 +248,44 @@ class NotificationItem extends StatelessWidget {
       case 'success':
       case 'completed':
         return (
-          const Color(0xFF10B981),
-          HugeIcons.strokeRoundedCheckmarkCircle01,
-          'Success'
+        const Color(0xFF10B981),
+        HugeIcons.strokeRoundedCheckmarkCircle01,
+        'Success'
         );
       case 'error':
         return (
-          const Color(0xFFEF4444),
-          HugeIcons.strokeRoundedSettingsError01,
-          'Error'
+        const Color(0xFFEF4444),
+        HugeIcons.strokeRoundedSettingsError01,
+        'Error'
         );
       case 'info':
       case 'information':
         return (
-          const Color(0xFF3B82F6),
-          HugeIcons.strokeRoundedInformationCircle,
-          'Info'
+        const Color(0xFF3B82F6),
+        HugeIcons.strokeRoundedInformationCircle,
+        'Info'
         );
       case 'invitation':
         return (
-          const Color(0xFF8B5CF6),
-          HugeIcons.strokeRoundedMail01,
-          'Invitation'
+        const Color(0xFF8B5CF6),
+        HugeIcons.strokeRoundedMail01,
+        'Invitation'
         );
       case 'order':
       case 'payment':
         return (
-          const Color(0xFFF59E0B),
-          HugeIcons.strokeRoundedShoppingBag01,
-          'Order'
+        const Color(0xFFF59E0B),
+        HugeIcons.strokeRoundedShoppingBag01,
+        'Order'
         );
       case 'system':
         return (colorScheme.primary, HugeIcons.strokeRoundedRssError, 'System');
       default:
         return (
-          colorScheme.primary,
-          HugeIcons.strokeRoundedEarRings01,
-          'Notification'
+        colorScheme.primary,
+        HugeIcons.strokeRoundedEarRings01,
+        'Notification'
         );
-    }
-  }
-
-  // Helper method to get mini icon for badges
-  IconData _getMiniIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'alert':
-      case 'warning':
-        return HugeIcons.strokeRoundedEarRings01;
-      case 'success':
-        return HugeIcons.strokeRoundedCheckmarkCircle01;
-      case 'error':
-        return HugeIcons.strokeRoundedSettingsError01;
-      case 'info':
-        return HugeIcons.strokeRoundedInformationCircle;
-      case 'invitation':
-        return HugeIcons.strokeRoundedMail01;
-      case 'order':
-        return HugeIcons.strokeRoundedShoppingBag01;
-      default:
-        return HugeIcons.strokeRoundedEarRings01;
     }
   }
 
@@ -479,17 +294,15 @@ class NotificationItem extends StatelessWidget {
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return 'Now';
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return '${difference.inMinutes}m';
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
+      return '${difference.inHours}h';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inDays < 30) {
-      return '${(difference.inDays / 7).floor()}w ago';
+      return '${difference.inDays}d';
     } else {
-      return DateFormat('MMM d').format(dateTime);
+      return '${(difference.inDays / 7).floor()}w';
     }
   }
 }

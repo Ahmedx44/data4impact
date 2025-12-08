@@ -163,21 +163,24 @@ class _InboxViewState extends State<InboxView>
           onRefresh: () async {
             await context.read<InboxCubit>().getNotifications();
           },
-          child: ListView.builder(
-            itemCount: notifications.length,
-            itemBuilder: (context, index) {
-              final notification = notifications[index];
-              return NotificationItem(
-                notification: notification,
-                onTap: () {
-                  if (notification.status == 'unread') {
-                    context
-                        .read<InboxCubit>()
-                        .markNotificationAsRead(notification.id);
-                  }
-                },
-              );
-            },
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: ListView.builder(
+              itemCount: notifications.length,
+              itemBuilder: (context, index) {
+                final notification = notifications[index];
+                return NotificationItem(
+                  notification: notification,
+                  onTap: () {
+                    if (notification.status == 'unread') {
+                      context
+                          .read<InboxCubit>()
+                          .markNotificationAsRead(notification.id);
+                    }
+                  },
+                );
+              },
+            ),
           ),
         );
       },
