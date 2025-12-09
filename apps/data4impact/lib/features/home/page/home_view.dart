@@ -31,9 +31,7 @@ class _HomeViewState extends State<HomeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await context.read<HomeCubit>().fetchAllProjects();
       final state = context.read<HomeCubit>().state;
-      /* if (state.selectedProject != null) {
-        await context.read<HomeCubit>().fetchMyCollectors();
-      }*/
+  
     });
   }
 
@@ -302,10 +300,6 @@ class _HomeViewState extends State<HomeView> {
                                       ? 0
                                       : cardValues[index];
                                   final subtitle = cardSubtitles[index];
-
-                                  print(
-                                      'card valuee ${title}:${cardValues[index]}');
-
                                   return AnimationConfiguration.staggeredGrid(
                                     position: index,
                                     duration: const Duration(milliseconds: 300),

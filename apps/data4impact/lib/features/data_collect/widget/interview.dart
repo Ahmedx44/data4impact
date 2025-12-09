@@ -85,8 +85,8 @@ class _InterviewDataCollectionState extends State<InterviewDataCollection> {
         // Handle submission result
         // Handle submission result
         if (state.submissionResult != null) {
-          if (!state.isManagingRespondents) {
-            Navigator.pop(context);
+          if (mounted) {
+            Navigator.pop(context, true);
           }
         }
 

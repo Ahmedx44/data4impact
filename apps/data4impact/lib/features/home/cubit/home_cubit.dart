@@ -396,6 +396,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> fetchAllProjects() async {
+    print('caleddddddddddddd');
     emit(state.copyWith(
         fetchingCollectors: true, isLoading: true, fetchingProjects: true));
 
@@ -577,6 +578,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> fetchMyCollectors() async {
+    print('called');
     if (state.selectedProject == null) {
       return;
     }
@@ -691,6 +693,31 @@ class HomeCubit extends Cubit<HomeState> {
 
   void selectProject(Project project) {
     emit(state.copyWith(selectedProject: project));
+  }
+
+  void incrementCollectorCount(String studyId) {
+    if (state.collectors.isEmpty) return;
+
+    final updatedCollectors = state.collectors.map((collector) {
+      final study = collector['study'];
+      String? cStudyId;
+      if (study is Map) {
+        cStudyId = study['_id'] as String?;
+      } else if (study is String) {
+        cStudyId = study;
+      }
+
+      if (cStudyId == studyId) {
+        final newCount = (collector['responseCount'] as int? ?? 0) + 1;
+        // Create a new map to ensure immutability
+        final newCollector = Map<String, dynamic>.from(collector);
+        newCollector['responseCount'] = newCount;
+        return newCollector;
+      }
+      return collector;
+    }).toList();
+
+    emit(state.copyWith(collectors: updatedCollectors));
   }
 
   Future<bool> get _isConnected async {

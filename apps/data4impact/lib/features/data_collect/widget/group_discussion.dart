@@ -71,7 +71,7 @@ class _GroupDiscussionDataCollectionState
 
         if (state.submissionResult != null) {
           print('debug: BlocConsumer listener - submission result received');
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -375,125 +375,125 @@ class _GroupDiscussionDataCollectionState
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Header section
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.08),
-                      Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                    ],
-                  ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header section
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.group_work_rounded,
-                              size: 30,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  state.study?.name ?? 'Study Groups',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Group Discussion Setup',
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.7),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.2),
-                          ),
-                        ),
-                        child: Row(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                        Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        Row(
                           children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.primary,
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.group_work_rounded,
+                                size: 30,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 16),
                             Expanded(
-                              child: Text(
-                                'Select an existing group or create a new one to start your discussion session',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.8),
-                                  height: 1.4,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    state.study?.name ?? 'Study Groups',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Group Discussion Setup',
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surface
+                                .withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Select an existing group or create a new one to start your discussion session',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.8),
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // Groups list section - FIXED LAYOUT
-          Expanded(
-            child: state.groups.isEmpty
+            // Groups list section
+            state.groups.isEmpty
                 ? _buildEmptyGroupsState()
                 : Column(
                     children: [
@@ -535,26 +535,30 @@ class _GroupDiscussionDataCollectionState
                         ),
                       ),
 
-                      // Groups list - FIX: Use Expanded only once at the top level
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: state.groups.length,
-                          itemBuilder: (context, index) {
-                            final group = state.groups[index];
-                            print(
-                                'debug: ListView.builder - building index $index: ${group['name']}');
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _buildGroupCard(group),
-                            );
-                          },
-                        ),
+                      // Groups list
+                      ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: state.groups.length,
+                        itemBuilder: (context, index) {
+                          final group = state.groups[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildGroupCard(group),
+                          );
+                        },
                       ),
+
+                      // Add some bottom padding for better scrolling
+                      const SizedBox(height: 20),
                     ],
                   ),
-          ),
-        ],
+
+            // Add bottom padding for FAB
+            const SizedBox(height: 80),
+          ],
+        ),
       ),
       floatingActionButton: state.groups.isEmpty || _isOffline
           ? null
@@ -1068,7 +1072,9 @@ class _GroupDiscussionDataCollectionState
           _isOffline || state.selectedGroupRespondents.isNotEmpty
               ? null
               : FloatingActionButton.extended(
-                  onPressed: _showCreateRespondentDialog,
+                  onPressed: () {
+                    _showCreateRespondentDialog(context);
+                  },
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   icon: const Icon(Icons.person_add_rounded),
@@ -2819,7 +2825,8 @@ class _GroupDiscussionDataCollectionState
   }
 
   void _showCreateGroupDialog() {
-    final currentState = context.read<DataCollectCubit>().state;
+    final cubit = context.read<DataCollectCubit>();
+    final currentState = cubit.state;
     final study = currentState.study;
 
     if (study == null) {
@@ -2827,21 +2834,26 @@ class _GroupDiscussionDataCollectionState
       return;
     }
 
+    final homogeneityGroups = study.homogeneityGroups;
+
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return BlocBuilder<DataCollectCubit, DataCollectState>(
-          builder: (context, state) {
-            final homogeneityGroups = study.homogeneityGroups;
+        // Local state for the dialog
+        final nameController = TextEditingController();
+        final descriptionController = TextEditingController();
+        String? selectedHomogeneityGroup;
 
-            return Dialog(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              elevation: 8,
-              insetPadding: const EdgeInsets.all(20),
-              child: ConstrainedBox(
+        return Dialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 8,
+          insetPadding: const EdgeInsets.all(20),
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.8,
                 ),
@@ -2852,6 +2864,7 @@ class _GroupDiscussionDataCollectionState
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Header section
                         Row(
                           children: [
                             Container(
@@ -2902,14 +2915,17 @@ class _GroupDiscussionDataCollectionState
                           ],
                         ),
                         const SizedBox(height: 24),
+
+                        // Form fields
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // Group Name field
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Group Name',
+                                  'Group Name *',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -2929,6 +2945,7 @@ class _GroupDiscussionDataCollectionState
                                     ),
                                   ),
                                   child: TextField(
+                                    controller: nameController,
                                     autofocus: true,
                                     decoration: InputDecoration(
                                       hintText: 'Enter group name...',
@@ -2951,9 +2968,6 @@ class _GroupDiscussionDataCollectionState
                                           .onSurface,
                                       fontSize: 16,
                                     ),
-                                    onChanged: (value) => context
-                                        .read<DataCollectCubit>()
-                                        .updateNewGroupData('name', value),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -2970,6 +2984,8 @@ class _GroupDiscussionDataCollectionState
                               ],
                             ),
                             const SizedBox(height: 20),
+
+                            // Description field
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -2994,6 +3010,7 @@ class _GroupDiscussionDataCollectionState
                                     ),
                                   ),
                                   child: TextField(
+                                    controller: descriptionController,
                                     decoration: InputDecoration(
                                       hintText: 'Optional group description...',
                                       border: InputBorder.none,
@@ -3017,10 +3034,6 @@ class _GroupDiscussionDataCollectionState
                                     ),
                                     maxLines: 3,
                                     minLines: 2,
-                                    onChanged: (value) => context
-                                        .read<DataCollectCubit>()
-                                        .updateNewGroupData(
-                                            'description', value),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -3037,6 +3050,8 @@ class _GroupDiscussionDataCollectionState
                               ],
                             ),
                             const SizedBox(height: 20),
+
+                            // Homogeneity Group field
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -3088,9 +3103,7 @@ class _GroupDiscussionDataCollectionState
                                     ),
                                   ),
                                   child: DropdownButtonFormField<String?>(
-                                    value:
-                                        state.newGroupData['homogeneityGroup']
-                                            as String?,
+                                    value: selectedHomogeneityGroup,
                                     items: [
                                       DropdownMenuItem<String?>(
                                         value: null,
@@ -3116,10 +3129,11 @@ class _GroupDiscussionDataCollectionState
                                         );
                                       }).toList(),
                                     ],
-                                    onChanged: (value) => context
-                                        .read<DataCollectCubit>()
-                                        .updateNewGroupData(
-                                            'homogeneityGroup', value),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedHomogeneityGroup = value;
+                                      });
+                                    },
                                     decoration: const InputDecoration(
                                       border: InputBorder.none,
                                       contentPadding: EdgeInsets.symmetric(
@@ -3146,16 +3160,15 @@ class _GroupDiscussionDataCollectionState
                           ],
                         ),
                         const SizedBox(height: 32),
+
+                        // Action buttons
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Expanded(
                               child: OutlinedButton(
                                 onPressed: () {
-                                  context
-                                      .read<DataCollectCubit>()
-                                      .cancelCreateGroup();
-                                  Navigator.pop(context);
+                                  Navigator.pop(dialogContext);
                                 },
                                 style: OutlinedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
@@ -3183,29 +3196,54 @@ class _GroupDiscussionDataCollectionState
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () async {
-                                  if (state.newGroupData['name'] != null &&
-                                      state.newGroupData['name']
-                                          .toString()
-                                          .isNotEmpty) {
-                                    // Close the input dialog first
-                                    Navigator.pop(context);
+                                  final groupName = nameController.text.trim();
+                                  final description =
+                                      descriptionController.text.trim();
 
-                                    // Show loading dialog
-                                    DialogLoading.show(context);
-
-                                    // Create group and wait for it to complete
-                                    await context
-                                        .read<DataCollectCubit>()
-                                        .createStudyGroup(
-                                            widget.studyId, state.newGroupData);
-
-                                    // Hide loading dialog
-                                    if (context.mounted) {
-                                      DialogLoading.hide(context);
-                                    }
-                                  } else {
+                                  if (groupName.isEmpty) {
                                     ToastService.showErrorToast(
                                         message: 'Group name is required');
+                                    return;
+                                  }
+
+                                  // Close the dialog
+                                  Navigator.pop(dialogContext);
+
+                                  // Show loading dialog
+                                  DialogLoading.show(context);
+
+                                  // Prepare group data
+                                  final groupData = {
+                                    'name': groupName,
+                                    'description': description,
+                                    if (selectedHomogeneityGroup != null)
+                                      'homogeneityGroup':
+                                          selectedHomogeneityGroup,
+                                  };
+
+                                  try {
+                                    // Create group
+                                    await cubit.createStudyGroup(
+                                        widget.studyId, groupData);
+
+                                    // Hide loading dialog
+                                    if (mounted) {
+                                      DialogLoading.hide(context);
+                                    }
+
+                                    // Show success message
+                                    ToastService.showSuccessToast(
+                                        message: 'Group created successfully');
+                                  } catch (error) {
+                                    // Hide loading dialog on error
+                                    if (mounted) {
+                                      DialogLoading.hide(context);
+                                    }
+
+                                    // Show error message
+                                    ToastService.showErrorToast(
+                                        message:
+                                            'Failed to create group: $error');
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -3240,15 +3278,128 @@ class _GroupDiscussionDataCollectionState
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );
   }
 
-  void _showCreateRespondentDialog() {
+  void _createGroupWithDialog(Study study) {
+    // Show a simpler dialog for name input
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController descriptionController = TextEditingController();
+    String? selectedHomogeneityGroup;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Create New Group'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Group Name *',
+                  hintText: 'Enter group name...',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'Optional description...',
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (study.homogeneityGroups.isNotEmpty)
+                DropdownButtonFormField<String?>(
+                  value: selectedHomogeneityGroup,
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('No homogeneity group'),
+                    ),
+                    ...study.homogeneityGroups.map((group) {
+                      final groupId = group.id as String?;
+                      final groupName =
+                          group.name as String? ?? 'Unnamed Group';
+                      return DropdownMenuItem<String?>(
+                        value: groupId,
+                        child: Text(groupName),
+                      );
+                    }).toList(),
+                  ],
+                  onChanged: (value) {
+                    selectedHomogeneityGroup = value;
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Homogeneity Group (Optional)',
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.trim().isEmpty) {
+                  ToastService.showErrorToast(
+                      message: 'Group name is required');
+                  return;
+                }
+
+                final groupData = {
+                  'name': nameController.text.trim(),
+                  'description': descriptionController.text.trim(),
+                  if (selectedHomogeneityGroup != null)
+                    'homogeneityGroup': selectedHomogeneityGroup,
+                };
+
+                Navigator.pop(context);
+
+                // Show loading dialog
+                DialogLoading.show(context);
+
+                // Create the group
+                context
+                    .read<DataCollectCubit>()
+                    .createStudyGroup(
+                      widget.studyId,
+                      groupData,
+                    )
+                    .then((_) {
+                  // Hide loading dialog
+                  if (context.mounted) {
+                    DialogLoading.hide(context);
+                  }
+                }).catchError((error) {
+                  // Hide loading dialog on error
+                  if (context.mounted) {
+                    DialogLoading.hide(context);
+                    ToastService.showErrorToast(
+                      message: 'Failed to create group: $error',
+                    );
+                  }
+                });
+              },
+              child: const Text('Create'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCreateRespondentDialog(BuildContext context) {
     final state = context.read<DataCollectCubit>().state;
 
     if (state.study == null || state.selectedGroup == null) {
@@ -3291,30 +3442,36 @@ class CreateRespondentScreen extends StatefulWidget {
 
 class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
   final Map<String, TextEditingController> _respondentFieldControllers = {};
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _initializeRespondentCreation();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = context.read<DataCollectCubit>().state;
-      final initialCode = _generateRespondentCode(state);
-      context
-          .read<DataCollectCubit>()
-          .updateNewRespondentData('code', initialCode);
-
-      // Also update the controller if it exists
-      final controller = _respondentFieldControllers['code'];
-      if (controller != null) {
-        controller.text = initialCode;
-      }
-    });
+    if (!_initialized) {
+      _initialized = true;
+      _initializeRespondentCreation();
+    }
   }
 
   void _initializeRespondentCreation() {
     final cubit = context.read<DataCollectCubit>();
     cubit.startCreateRespondentFlow();
+
+    // Generate and set initial code
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final state = cubit.state;
+        final initialCode = _generateRespondentCode(state);
+        cubit.updateNewRespondentData('code', initialCode);
+
+        // Also update the controller if it exists
+        final controller = _respondentFieldControllers['code'];
+        if (controller != null) {
+          controller.text = initialCode;
+        }
+      }
+    });
   }
 
   @override
@@ -3328,22 +3485,31 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
   Widget build(BuildContext context) {
     return BlocBuilder<DataCollectCubit, DataCollectState>(
       builder: (context, state) {
+        // Ensure code is generated
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && state.newRespondentData['code'] == null) {
+            final cubit = context.read<DataCollectCubit>();
+            final initialCode = _generateRespondentCode(state);
+            cubit.updateNewRespondentData('code', initialCode);
+          }
+        });
+
         final study = widget.study;
         final selectedGroup = widget.selectedGroup;
         final homogeneityFields = study.homogeneity?.fields ?? [];
 
         final selectedHomogeneityGroup =
-            selectedGroup['homogeneityGroup'] != null
-                ? study.homogeneity?.groups?.firstWhere(
-                    (group) => group.id == selectedGroup['homogeneityGroup'],
-                    orElse: () => HomogeneityGroup(
-                      id: '',
-                      name: '',
-                      criteria: [],
-                      description: '',
-                    ),
-                  )
-                : null;
+        selectedGroup['homogeneityGroup'] != null
+            ? study.homogeneity?.groups?.firstWhere(
+              (group) => group.id == selectedGroup['homogeneityGroup'],
+          orElse: () => HomogeneityGroup(
+            id: '',
+            name: '',
+            criteria: [],
+            description: '',
+          ),
+        )
+            : null;
 
         return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
@@ -3413,14 +3579,14 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
                                     Icons.person_add_rounded,
                                     size: 30,
                                     color:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Add New Participant',
@@ -3570,6 +3736,16 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
                             color: Theme.of(context).colorScheme.primary,
                           ),
                           const SizedBox(width: 4),
+                          Text(
+                            'Auto-generated',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.5),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -3658,7 +3834,7 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color:
-                                        Theme.of(context).colorScheme.onSurface,
+                                    Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -3690,26 +3866,26 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _validateRespondentFormSilent(
-                              state, selectedHomogeneityGroup)
+                          state, selectedHomogeneityGroup)
                           ? () {
-                              if (_validateRespondentForm(
-                                  state, selectedHomogeneityGroup)) {
-                                _createRespondent(state, selectedGroup);
-                              }
-                            }
+                        if (_validateRespondentForm(
+                            state, selectedHomogeneityGroup)) {
+                          _createRespondent(state, selectedGroup);
+                        }
+                      }
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _validateRespondentFormSilent(
-                                state, selectedHomogeneityGroup)
+                            state, selectedHomogeneityGroup)
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.surfaceVariant,
                         foregroundColor: _validateRespondentFormSilent(
-                                state, selectedHomogeneityGroup)
+                            state, selectedHomogeneityGroup)
                             ? Theme.of(context).colorScheme.onPrimary
                             : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.4),
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.4),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -3718,25 +3894,25 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
                       ),
                       child: state.isLoading
                           ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ))
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ))
                           : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.person_add_rounded, size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Create Respondent',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.person_add_rounded, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Create Respondent',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -3744,11 +3920,11 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed:
-                          state.isLoading ? null : () => Navigator.pop(context),
+                      state.isLoading ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         foregroundColor:
-                            Theme.of(context).colorScheme.onSurface,
+                        Theme.of(context).colorScheme.onSurface,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -3784,10 +3960,10 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
   }
 
   List<Widget> _buildDynamicFields(
-    DataCollectState state,
-    List<HomogeneityField> fields,
-    HomogeneityGroup? homogeneityGroup,
-  ) {
+      DataCollectState state,
+      List<HomogeneityField> fields,
+      HomogeneityGroup? homogeneityGroup,
+      ) {
     final criteriaFields = homogeneityGroup != null
         ? homogeneityGroup.criteria.map((c) => c.field.id).toList()
         : [];
@@ -3862,17 +4038,17 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
         ),
       ),
       child:
-          _buildFieldByType(field, fieldType, isRequired, controller, options),
+      _buildFieldByType(field, fieldType, isRequired, controller, options),
     );
   }
 
   Widget _buildFieldByType(
-    HomogeneityField field,
-    String fieldType,
-    bool isRequired,
-    TextEditingController controller,
-    List<String> options,
-  ) {
+      HomogeneityField field,
+      String fieldType,
+      bool isRequired,
+      TextEditingController controller,
+      List<String> options,
+      ) {
     final fieldId = field.id;
 
     switch (fieldType) {
@@ -3942,7 +4118,7 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
                 );
                 if (selectedDate != null) {
                   final dateString =
-                      selectedDate.toIso8601String().split('T')[0];
+                  selectedDate.toIso8601String().split('T')[0];
                   controller.text = dateString;
                   context
                       .read<DataCollectCubit>()
@@ -4004,7 +4180,7 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
         vertical: 14,
       ),
       errorText:
-          isRequired && currentValue.isEmpty ? 'This field is required' : null,
+      isRequired && currentValue.isEmpty ? 'This field is required' : null,
     );
   }
 
@@ -4017,14 +4193,14 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
 
     try {
       final criterion = homogeneityGroup.criteria.firstWhere(
-        (c) => c.field.id == fieldId,
+            (c) => c.field.id == fieldId,
       );
 
       final operator = criterion.operator;
       final expectedValue = criterion.value;
 
       bool isValid =
-          _validateCriterion(field, fieldValue, operator, expectedValue);
+      _validateCriterion(field, fieldValue, operator, expectedValue);
 
       return Row(
         children: [
@@ -4082,8 +4258,8 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
           if (number > highestNumber) {
             highestNumber = number;
           }
-        } else {}
-      } else {}
+        }
+      }
     }
 
     // Generate next sequential code
@@ -4138,11 +4314,11 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
   }
 
   bool _validateCriterion(
-    HomogeneityField field,
-    dynamic actualValue,
-    String operator,
-    String expectedValue,
-  ) {
+      HomogeneityField field,
+      dynamic actualValue,
+      String operator,
+      String expectedValue,
+      ) {
     if (actualValue == null || actualValue.toString().isEmpty) {
       return false;
     }
@@ -4270,9 +4446,6 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
     final cubit = context.read<DataCollectCubit>();
     final respondentData = Map<String, dynamic>.from(state.newRespondentData);
 
-    print('debug: _createRespondent - starting');
-    print('debug: _createRespondent - respondentData: $respondentData');
-
     // Validate required fields
     if (respondentData['name'] == null ||
         respondentData['name'].toString().isEmpty) {
@@ -4285,28 +4458,20 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
     if (respondentData['code'] == null ||
         respondentData['code'].toString().isEmpty) {
       respondentData['code'] = _generateRespondentCode(state);
-      print(
-          'debug: _createRespondent - generated code: ${respondentData['code']}');
     }
 
     respondentData['group'] = selectedGroup['_id'];
-    print('debug: _createRespondent - final respondentData: $respondentData');
 
     // Show loading dialog
     DialogLoading.show(context);
 
     try {
-      print('debug: _createRespondent - calling cubit.createRespondent');
       await cubit.createRespondent(widget.studyId, respondentData);
-
-      print('debug: _createRespondent - success, clearing controllers');
       // Clear all text controllers
       _respondentFieldControllers.forEach((key, controller) {
         controller.clear();
       });
       _respondentFieldControllers.clear();
-
-      print('debug: _createRespondent - navigating back');
 
       // Hide loading dialog
       if (mounted) {
@@ -4319,9 +4484,6 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
         });
       }
     } catch (e, stackTrace) {
-      print('debug: _createRespondent - error: $e');
-      print('debug: _createRespondent - stackTrace: $stackTrace');
-
       // Hide loading dialog on error
       if (mounted) {
         DialogLoading.hide(context);

@@ -1,3 +1,4 @@
+import 'package:data4impact/features/home/cubit/home_cubit.dart';
 import 'package:data4impact/features/study/cubit/study_cubit.dart';
 import 'package:data4impact/features/study_detail/pages/study_detail_page.dart';
 import 'package:flutter/material.dart';
@@ -20,9 +21,7 @@ class AssignmentCard extends StatelessWidget {
     final study = collector['study'] as Map<String, dynamic>? ?? {};
     final studyName = study['name'] as String? ?? 'Unknown Study';
     final studyDescription = study['description'] as String? ?? '';
-    final responseCount = collector['responseCount'] as int? ??
-        study['responseCount'] as int? ??
-        0;
+    final responseCount = collector['responseCount'] as int? ?? 0;
     final maxLimit =
         collector['maxLimit'] as int? ?? study['sampleSize'] as int? ?? 0;
     final status = collector['study']['status'] as String? ?? '';
@@ -284,7 +283,7 @@ class AssignmentCard extends StatelessWidget {
                         elevation: 0,
                         shadowColor: Colors.transparent,
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         if (isLimitReached) {
                           ToastService.showErrorToast(
                             message:
@@ -298,9 +297,9 @@ class AssignmentCard extends StatelessWidget {
                             studyCubit.getStudyById(study['_id'] as String);
 
                         if (studyData != null) {
-                          Navigator.push(
+                          final result = await Navigator.push<bool>(
                             context,
-                            MaterialPageRoute<Widget>(
+                            MaterialPageRoute<bool>(
                               builder: (context) => StudyDetailPage(
                                 studyId: study['_id'] as String,
                                 studyData: studyData,
@@ -309,6 +308,11 @@ class AssignmentCard extends StatelessWidget {
                               ),
                             ),
                           );
+
+                          print('AssignmentCard: result is $result');
+                          if (result == true && context.mounted) {
+                            context.read<HomeCubit>().fetchAllProjects();
+                          }
                         }
                       },
                       child: Row(

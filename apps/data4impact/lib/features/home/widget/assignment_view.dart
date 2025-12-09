@@ -13,9 +13,6 @@ class AssignmentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🎯 AssignmentView build called');
-    print('🎯 Collectors count: ${collectors.length}');
-    print('🎯 Collectors data: $collectors');
     if (collectors.isEmpty) {
       return _buildEmptyState(context);
     }
@@ -31,7 +28,6 @@ class AssignmentView extends StatelessWidget {
             ),
           ),
           children: collectors.map((collector) {
-            print('collectorsss: ${collector}');
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: BlocBuilder<HomeCubit, HomeState>(

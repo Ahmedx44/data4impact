@@ -42,7 +42,8 @@ class _TeamViewState extends State<TeamView> {
             return BlocBuilder<HomeCubit, HomeState>(
               builder: (context, homeState) {
                 // Calculate collector statistics from HomeCubit data
-                final totalCollectors = _getTotalCollectors(homeState.collectors);
+                final totalCollectors =
+                    _getTotalCollectors(homeState.collectors);
 
                 if (teamState.isLoading && teamState.teams.isEmpty) {
                   return _buildLoadingState(context);
@@ -52,7 +53,8 @@ class _TeamViewState extends State<TeamView> {
                   return _buildErrorState(context, teamState.error!);
                 }
 
-                return _buildContent(context, teamState, homeState, totalCollectors);
+                return _buildContent(
+                    context, teamState, homeState, totalCollectors);
               },
             );
           },
@@ -74,7 +76,8 @@ class _TeamViewState extends State<TeamView> {
           Text(
             'Loading Teams...',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+              color:
+                  Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
               fontSize: 16,
             ),
           ),
@@ -116,7 +119,8 @@ class _TeamViewState extends State<TeamView> {
               error,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
                 fontSize: 14,
               ),
             ),
@@ -126,7 +130,8 @@ class _TeamViewState extends State<TeamView> {
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
               child: const Text('Try Again'),
             ),
@@ -136,7 +141,8 @@ class _TeamViewState extends State<TeamView> {
     );
   }
 
-  Widget _buildContent(BuildContext context, TeamState teamState, HomeState homeState, int totalCollectors) {
+  Widget _buildContent(BuildContext context, TeamState teamState,
+      HomeState homeState, int totalCollectors) {
     return RefreshIndicator(
       onRefresh: () async {
         await context.read<TeamCubit>().getTeams();
@@ -213,9 +219,13 @@ class _TeamViewState extends State<TeamView> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -230,11 +240,13 @@ class _TeamViewState extends State<TeamView> {
                   const Spacer(),
                   if (homeState.isOffline)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.orange.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                        border:
+                            Border.all(color: Colors.orange.withOpacity(0.3)),
                       ),
                       child: Row(
                         children: [
@@ -268,7 +280,7 @@ class _TeamViewState extends State<TeamView> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
-                      (context, index) {
+                  (context, index) {
                     final team = teamState.teams[index];
                     return _buildTeamCard(context, team);
                   },
@@ -281,7 +293,8 @@ class _TeamViewState extends State<TeamView> {
           if (homeState.pendingSyncCount > 0)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -321,7 +334,8 @@ class _TeamViewState extends State<TeamView> {
                       ),
                       if (!homeState.isSyncing)
                         TextButton(
-                          onPressed: () => context.read<HomeCubit>().manualSync(),
+                          onPressed: () =>
+                              context.read<HomeCubit>().manualSync(),
                           child: Text(
                             'Sync Now',
                             style: TextStyle(
@@ -336,7 +350,8 @@ class _TeamViewState extends State<TeamView> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.blue),
                           ),
                         ),
                     ],
@@ -359,13 +374,19 @@ class _TeamViewState extends State<TeamView> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceVariant
+                    .withOpacity(0.5),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.group_off_rounded,
                 size: 64,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withOpacity(0.5),
               ),
             ),
             const SizedBox(height: 24),
@@ -382,7 +403,8 @@ class _TeamViewState extends State<TeamView> {
               'Create your first team to get started',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
                 fontSize: 14,
               ),
             ),
@@ -394,7 +416,8 @@ class _TeamViewState extends State<TeamView> {
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
               child: const Text('Create Team'),
             ),
@@ -440,7 +463,8 @@ class _TeamViewState extends State<TeamView> {
                   height: 60,
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -474,9 +498,13 @@ class _TeamViewState extends State<TeamView> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -495,7 +523,10 @@ class _TeamViewState extends State<TeamView> {
                         team.description as String ?? 'No description',
                         style: GoogleFonts.lexendDeca(
                           fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
                           height: 1.4,
                         ),
                         maxLines: 2,
@@ -524,7 +555,8 @@ class _TeamViewState extends State<TeamView> {
                 // Chevron
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                   size: 20,
                 ),
               ],

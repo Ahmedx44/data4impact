@@ -15,10 +15,12 @@ class CrossSectionalDataCollection extends StatefulWidget {
   const CrossSectionalDataCollection({super.key, required this.studyId});
 
   @override
-  State<CrossSectionalDataCollection> createState() => _CrossSectionalDataCollectionState();
+  State<CrossSectionalDataCollection> createState() =>
+      _CrossSectionalDataCollectionState();
 }
 
-class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollection> {
+class _CrossSectionalDataCollectionState
+    extends State<CrossSectionalDataCollection> {
   final Map<String, TextEditingController> _textControllers = {};
   String? _previousError;
 
@@ -52,9 +54,8 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
         }
 
         if (state.submissionResult != null) {
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
-
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (state.isSubmitting) {
@@ -225,13 +226,13 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                           onPressed: state.isLocationLoading
                               ? null
                               : () => context
-                              .read<DataCollectCubit>()
-                              .previousQuestion(),
+                                  .read<DataCollectCubit>()
+                                  .previousQuestion(),
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
-                            Theme.of(context).colorScheme.surfaceVariant,
+                                Theme.of(context).colorScheme.surfaceVariant,
                             foregroundColor:
-                            Theme.of(context).colorScheme.onSurface,
+                                Theme.of(context).colorScheme.onSurface,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -250,30 +251,30 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                         onPressed: state.isLocationLoading
                             ? null
                             : context
-                            .read<DataCollectCubit>()
-                            .canProceed(question)
-                            ? () {
-                          context
-                              .read<DataCollectCubit>()
-                              .nextQuestion(studyId: widget.studyId);
-                        }
-                            : null,
+                                    .read<DataCollectCubit>()
+                                    .canProceed(question)
+                                ? () {
+                                    context
+                                        .read<DataCollectCubit>()
+                                        .nextQuestion(studyId: widget.studyId);
+                                  }
+                                : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: !state.isLocationLoading &&
-                              context
-                                  .read<DataCollectCubit>()
-                                  .canProceed(question)
+                                  context
+                                      .read<DataCollectCubit>()
+                                      .canProceed(question)
                               ? Theme.of(context).colorScheme.primary
                               : Theme.of(context).colorScheme.surfaceVariant,
                           foregroundColor: !state.isLocationLoading &&
-                              context
-                                  .read<DataCollectCubit>()
-                                  .canProceed(question)
+                                  context
+                                      .read<DataCollectCubit>()
+                                      .canProceed(question)
                               ? Theme.of(context).colorScheme.onPrimary
                               : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -281,17 +282,17 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                         ),
                         child: state.isLocationLoading
                             ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child:
-                          CircularProgressIndicator(strokeWidth: 2),
-                        )
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
                             : Text(
-                          currentQuestionIndex ==
-                              study.questions.length - 1
-                              ? 'Submit'
-                              : 'Next',
-                        ),
+                                currentQuestionIndex ==
+                                        study.questions.length - 1
+                                    ? 'Submit'
+                                    : 'Next',
+                              ),
                       ),
                     ),
                   ],
@@ -339,7 +340,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                 style: TextStyle(
                   fontSize: 16,
                   color:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 32),
@@ -354,7 +355,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
                 child: const Text('Try Again'),
               ),
@@ -403,8 +404,8 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
               state.isRecording
                   ? displayText // Use the dynamic display text
                   : hasAudioFile
-                  ? 'Audio recorded'
-                  : 'Audio recording ready',
+                      ? 'Audio recorded'
+                      : 'Audio recording ready',
               style: TextStyle(
                 color: state.isRecording ? Colors.red : Colors.grey,
                 fontSize: 14,
@@ -461,7 +462,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
               Text(
                 'Audio recorded: ${state.audioFilePath!.split('/').last}',
                 style:
-                const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                    const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
               ),
 
               // Audio player controls
@@ -670,7 +671,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
       onChanged: (value) => cubit.updateAnswer(question.id, value),
       decoration: InputDecoration(
         hintText:
-        question.getPlaceholder(languageCode) ?? 'Type your answer here...',
+            question.getPlaceholder(languageCode) ?? 'Type your answer here...',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -687,7 +688,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
         ),
         filled: true,
         fillColor:
-        Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
         errorText: isRequired && (answer == null || (answer as String).isEmpty)
             ? 'This field is required'
             : null,
@@ -740,7 +741,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                         choice as Map<String, dynamic>, languageCode),
                     style: TextStyle(
                       fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.normal,
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurface,
@@ -806,7 +807,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                         choice as Map<String, dynamic>, languageCode),
                     style: TextStyle(
                       fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.normal,
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurface,
@@ -874,7 +875,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                     : 'You rated: $answer/$maxRating',
                 style: TextStyle(
                   color:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
               if (question.lowerLabel != null || question.upperLabel != null)
@@ -962,7 +963,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                             selected: isSelected,
                             onSelected: (selected) {
                               final newAnswers =
-                              Map<String, dynamic>.from(matrixAnswers);
+                                  Map<String, dynamic>.from(matrixAnswers);
                               if (selected) {
                                 newAnswers[rowId as String] = columnId;
                               } else if (newAnswers[rowId] == columnId) {
@@ -974,9 +975,9 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                                 ? Theme.of(context).colorScheme.primary
                                 : Theme.of(context).colorScheme.surfaceVariant,
                             selectedColor:
-                            Theme.of(context).colorScheme.primary,
+                                Theme.of(context).colorScheme.primary,
                             checkmarkColor:
-                            Theme.of(context).colorScheme.onPrimary,
+                                Theme.of(context).colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                               side: BorderSide(
@@ -1033,7 +1034,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
               final index = entry.key;
               final choiceId = entry.value;
               final choice = choices.firstWhere(
-                    (c) => c['id'] == choiceId,
+                (c) => c['id'] == choiceId,
                 orElse: () => {
                   'label': {'default': 'Unknown'}
                 },
@@ -1046,7 +1047,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                   height: 40,
                   decoration: BoxDecoration(
                     color:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
                         color: Theme.of(context).colorScheme.primary, width: 2),
@@ -1073,7 +1074,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
                       color: Theme.of(context).colorScheme.primary),
                 ),
                 contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               );
             }).toList(),
           ),
@@ -1164,7 +1165,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
         final item = items[index];
         final itemId = item['id'];
         final itemName =
-        question.getCascadeName(item as Map<String, dynamic>, languageCode);
+            question.getCascadeName(item as Map<String, dynamic>, languageCode);
         final hasChildren =
             item['children'] is List && (item['children'] as List).isNotEmpty;
         final isSelected = currentSelection.contains(itemId);
@@ -1181,40 +1182,40 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
           ),
           leading: !hasChildren
               ? Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
-                width: 2,
-              ),
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.transparent,
-            ),
-            child: isSelected
-                ? Icon(Icons.check,
-                size: 14,
-                color: Theme.of(context).colorScheme.onPrimary)
-                : null,
-          )
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
+                      width: 2,
+                    ),
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.transparent,
+                  ),
+                  child: isSelected
+                      ? Icon(Icons.check,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onPrimary)
+                      : null,
+                )
               : null,
           children: hasChildren
               ? [
-            Padding(
-              padding: const EdgeInsets.only(left: 24.0),
-              child: _buildCascadeTree(
-                  item['children'] as List<dynamic>,
-                  currentSelection,
-                  cubit,
-                  questionId,
-                  languageCode,
-                  question),
-            )
-          ]
+                  Padding(
+                    padding: const EdgeInsets.only(left: 24.0),
+                    child: _buildCascadeTree(
+                        item['children'] as List<dynamic>,
+                        currentSelection,
+                        cubit,
+                        questionId,
+                        languageCode,
+                        question),
+                  )
+                ]
               : [],
           onExpansionChanged: (expanded) {
             if (!hasChildren && !expanded) {
@@ -1243,7 +1244,7 @@ class _CrossSectionalDataCollectionState extends State<CrossSectionalDataCollect
               Text(
                 study.getEndingHeadline(state.selectedLanguage),
                 style:
-                const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),

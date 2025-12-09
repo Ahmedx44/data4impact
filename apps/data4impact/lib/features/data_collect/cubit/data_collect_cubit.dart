@@ -17,19 +17,24 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:data4impact/features/home/cubit/home_cubit.dart';
+
 class DataCollectCubit extends Cubit<DataCollectState> {
   final StudyService studyService;
   final AudioRecordingService audioRecordingService = AudioRecordingService();
   final FileUploadService fileUploadService;
   final AudioPlayer audioPlayer = AudioPlayer();
+  final HomeCubit? homeCubit; // Optional to avoid breaking tests if any
   bool _isNavigating = false;
   Timer? _recordingTimer;
   StreamSubscription? _audioPositionSubscription;
   StreamSubscription? _audioDurationSubscription;
 
-  DataCollectCubit(
-      {required this.studyService, required this.fileUploadService})
-      : super(const DataCollectState()) {
+  DataCollectCubit({
+    required this.studyService,
+    required this.fileUploadService,
+    this.homeCubit,
+  }) : super(const DataCollectState()) {
     _setupAudioPlayerListeners();
   }
 
@@ -1120,6 +1125,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
                   ? 'Longitudinal data submitted successfully'
                   : 'Interview submitted successfully',
         );
+
+        if (homeCubit != null) {
+          homeCubit!.incrementCollectorCount(studyId);
+          homeCubit!.fetchAllProjects();
+        }
       } catch (e) {
         // Check if the error is about respondent already responded
         final errorMessage = e.toString().toLowerCase();
@@ -1249,6 +1259,11 @@ class DataCollectCubit extends Cubit<DataCollectState> {
                   ? 'Longitudinal data saved offline. Will sync when internet is available.'
                   : 'Interview saved offline. Will sync when internet is available.',
         );
+
+        if (homeCubit != null) {
+          homeCubit!.incrementCollectorCount(studyId);
+          homeCubit!.fetchAllProjects();
+        }
       } catch (e) {
         emit(
           state.copyWith(

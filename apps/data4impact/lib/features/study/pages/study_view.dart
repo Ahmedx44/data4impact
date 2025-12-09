@@ -151,9 +151,10 @@ class _StudyViewState extends State<StudyView>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildActiveStudiesTab(
-                            projectSlug, homeState.collectors),
-                        _buildOldStudiesTab(projectSlug, homeState.collectors),
+                        _buildActiveStudiesTab(projectSlug,
+                            homeState.collectors, homeState.fetchingCollectors),
+                        _buildOldStudiesTab(projectSlug, homeState.collectors,
+                            homeState.fetchingCollectors),
                       ],
                     ),
                   ),
@@ -166,19 +167,13 @@ class _StudyViewState extends State<StudyView>
     );
   }
 
-  Widget _buildActiveStudiesTab(
-      String projectSlug, List<Map<String, dynamic>> collectors) {
+  Widget _buildActiveStudiesTab(String projectSlug,
+      List<Map<String, dynamic>> collectors, bool fetchingCollectors) {
     return BlocConsumer<StudyCubit, StudyState>(
-      listener: (context, studyState) {
-        if (studyState.studies.isNotEmpty) {
-          for (var study in studyState.studies) {
-            final status = study['status'] as String? ?? 'unknown';
-            final name = study['name'] as String? ?? 'Unnamed';
-          }
-        }
-      },
+      listener: (context, studyState) {},
       builder: (context, studyState) {
-        if (studyState.isLoading && studyState.studies.isEmpty) {
+        if ((studyState.isLoading && studyState.studies.isEmpty) ||
+            fetchingCollectors) {
           return _buildSkeletonStudyList(projectSlug);
         } else if (studyState.hasError && studyState.studies.isEmpty) {
           return ApiErrorWidget(
@@ -217,6 +212,7 @@ class _StudyViewState extends State<StudyView>
           if (activeStudies.isEmpty) {
             return RefreshIndicator(
               onRefresh: () async {
+                context.read<HomeCubit>().fetchAllProjects();
                 if (projectSlug.isNotEmpty) {
                   context.read<StudyCubit>().fetchStudies(projectSlug);
                 }
@@ -234,6 +230,7 @@ class _StudyViewState extends State<StudyView>
 
           return RefreshIndicator(
             onRefresh: () async {
+              context.read<HomeCubit>().fetchAllProjects();
               if (projectSlug.isNotEmpty) {
                 context.read<StudyCubit>().fetchStudies(projectSlug);
               }
@@ -270,9 +267,7 @@ class _StudyViewState extends State<StudyView>
                 int sample = 0;
 
                 if (matchingCollector != null) {
-                  responses = matchingCollector['responseCount'] as int? ??
-                      study['responseCount'] as int? ??
-                      0;
+                  responses = matchingCollector['responseCount'] as int? ?? 0;
                   sample = matchingCollector['maxLimit'] as int? ??
                       study['sampleSize'] as int? ??
                       0;
@@ -291,7 +286,7 @@ class _StudyViewState extends State<StudyView>
                   progress: progress,
                   status: study['status'] as String? ?? 'unknown',
                   isLimitReached: isLimitReached,
-                  callback: () {
+                  callback: () async {
                     if (isLimitReached) {
                       ToastService.showErrorToast(
                         message:
@@ -305,9 +300,9 @@ class _StudyViewState extends State<StudyView>
                         studyCubit.getStudyById(study['_id'] as String);
 
                     if (studyData != null) {
-                      Navigator.push(
+                      final result = await Navigator.push(
                         context,
-                        MaterialPageRoute<Widget>(
+                        MaterialPageRoute<bool>(
                           builder: (context) => StudyDetailPage(
                             studyId: study['_id'] as String,
                             studyData: studyData,
@@ -316,6 +311,12 @@ class _StudyViewState extends State<StudyView>
                           ),
                         ),
                       );
+                      if (context.mounted && result == true) {
+                        context.read<HomeCubit>().fetchAllProjects();
+                        if (projectSlug.isNotEmpty) {
+                          context.read<StudyCubit>().fetchStudies(projectSlug);
+                        }
+                      }
                     }
                   },
                 );
@@ -327,12 +328,13 @@ class _StudyViewState extends State<StudyView>
     );
   }
 
-  Widget _buildOldStudiesTab(
-      String projectSlug, List<Map<String, dynamic>> collectors) {
+  Widget _buildOldStudiesTab(String projectSlug,
+      List<Map<String, dynamic>> collectors, bool fetchingCollectors) {
     return BlocConsumer<StudyCubit, StudyState>(
       listener: (context, studyState) {},
       builder: (context, studyState) {
-        if (studyState.isLoading && studyState.studies.isEmpty) {
+        if ((studyState.isLoading && studyState.studies.isEmpty) ||
+            fetchingCollectors) {
           return _buildSkeletonStudyList(projectSlug);
         } else if (studyState.hasError && studyState.studies.isEmpty) {
           return ApiErrorWidget(
@@ -369,6 +371,7 @@ class _StudyViewState extends State<StudyView>
           if (oldStudies.isEmpty) {
             return RefreshIndicator(
               onRefresh: () async {
+                context.read<HomeCubit>().fetchAllProjects();
                 if (projectSlug.isNotEmpty) {
                   context.read<StudyCubit>().fetchStudies(projectSlug);
                 }
@@ -386,6 +389,7 @@ class _StudyViewState extends State<StudyView>
 
           return RefreshIndicator(
             onRefresh: () async {
+              context.read<HomeCubit>().fetchAllProjects();
               if (projectSlug.isNotEmpty) {
                 context.read<StudyCubit>().fetchStudies(projectSlug);
               }
@@ -412,16 +416,22 @@ class _StudyViewState extends State<StudyView>
                       'No description available',
                   progress: progress,
                   status: study['status'] as String? ?? 'unknown',
-                  callback: () {
-                    Navigator.push(
+                  callback: () async {
+                    final result = await Navigator.push(
                       context,
-                      MaterialPageRoute<Widget>(
+                      MaterialPageRoute<bool>(
                         builder: (context) => StudyDetailPage(
                           studyId: study['_id'] as String,
                           studyData: study,
                         ),
                       ),
                     );
+                    if (context.mounted && result == true) {
+                      context.read<HomeCubit>().fetchAllProjects();
+                      if (projectSlug.isNotEmpty) {
+                        context.read<StudyCubit>().fetchStudies(projectSlug);
+                      }
+                    }
                   },
                 );
               },
@@ -435,6 +445,7 @@ class _StudyViewState extends State<StudyView>
   Widget _buildSkeletonStudyList(String projectSlug) {
     return RefreshIndicator(
       onRefresh: () async {
+        context.read<HomeCubit>().fetchAllProjects();
         if (projectSlug.isNotEmpty) {
           context.read<StudyCubit>().fetchStudies(projectSlug);
         }

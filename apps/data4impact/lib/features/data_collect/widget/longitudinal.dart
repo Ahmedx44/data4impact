@@ -60,7 +60,7 @@ class _LongitudinalDataCollectionState
         if (state.submissionResult != null) {
           if (state.isManagingSubjects) {
           } else {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           }
         }
 

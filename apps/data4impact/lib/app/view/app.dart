@@ -109,9 +109,11 @@ class App extends StatelessWidget {
             create: (_) => StudyCubit(studyService: studyService),
           ),
           BlocProvider(
-            create: (_) => DataCollectCubit(
-                studyService: studyService,
-                fileUploadService: fileUploadService),
+            create: (context) => DataCollectCubit(
+              studyService: studyService,
+              fileUploadService: fileUploadService,
+              homeCubit: context.read<HomeCubit>(),
+            ),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(

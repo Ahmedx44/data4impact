@@ -223,7 +223,7 @@ class _StudyDetailViewState extends State<StudyDetailView>
                       ),
                     ],
                   ),
-                  onTap: () {
+                  onTap: () async {
                     if (totalResponses > 0 &&
                         (currentResponses as int) >= (totalResponses as int)) {
                       ToastService.showErrorToast(
@@ -232,9 +232,9 @@ class _StudyDetailViewState extends State<StudyDetailView>
                       );
                       return;
                     }
-                    Navigator.pushReplacement(
+                    final result = await Navigator.push<bool>(
                       context,
-                      MaterialPageRoute<Widget>(
+                      MaterialPageRoute<bool>(
                         builder: (context) => DataCollectionPage(
                           studyId: widget.studyId,
                           studyType: _getStudyType(),
@@ -244,6 +244,10 @@ class _StudyDetailViewState extends State<StudyDetailView>
                         ),
                       ),
                     );
+
+                    if (result == true && context.mounted) {
+                      Navigator.pop(context, true);
+                    }
                   },
                 ),
               ),
