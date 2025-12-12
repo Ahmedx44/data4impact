@@ -48,8 +48,6 @@ class InboxCubit extends Cubit<InboxState> {
   }
 
   Future<void> getInvitation() async {
-    // Keep this for backward compatibility or specific refresh
-    // But ideally we should use loadInbox
     try {
       final invitations = await invitationService.getMyInvitation();
       emit(state.copyWith(

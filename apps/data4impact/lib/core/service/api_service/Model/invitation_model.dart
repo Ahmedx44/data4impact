@@ -6,7 +6,7 @@ class InvitationModel {
   final String targetId;
   final String status;
   final List<String> roles;
-  final String token;
+  final String? token; // Made nullable since it's not in response
   final DateTime expiredAt;
   final String message;
   final DateTime createdAt;
@@ -20,7 +20,7 @@ class InvitationModel {
     required this.targetId,
     required this.status,
     required this.roles,
-    required this.token,
+    this.token, // Made optional
     required this.expiredAt,
     required this.message,
     required this.createdAt,
@@ -35,8 +35,23 @@ class InvitationModel {
       type: json['type'] as String,
       targetId: json['targetId'] as String,
       status: json['status'] as String,
-      roles: List<String>.from(json['roles'] as List ?? []),
-      token: json['token'] as String,
+      // Fix: Extract role names from objects
+      roles: List<String>.from(
+        (json['roles'] as List? ?? [])
+            .map((role) {
+          // Check if role is already a string or an object
+          if (role is String) {
+            return role;
+          } else if (role is Map<String, dynamic>) {
+            return role['name'] as String? ?? '';
+          } else {
+            return '';
+          }
+        })
+            .where((name) => name.isNotEmpty) // Remove empty names
+            .toList(),
+      ),
+      token: json['token'] as String?,
       expiredAt: DateTime.parse(json['expiredAt'] as String),
       message: json['message'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),

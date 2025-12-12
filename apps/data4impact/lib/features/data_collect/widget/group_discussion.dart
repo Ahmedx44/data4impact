@@ -4488,7 +4488,6 @@ class _CreateRespondentScreenState extends State<CreateRespondentScreen> {
       if (mounted) {
         DialogLoading.hide(context);
       }
-
       ToastService.showErrorToast(message: 'Failed to create respondent: $e');
     }
   }
